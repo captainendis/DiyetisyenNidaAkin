@@ -12,13 +12,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
-    proxy: {
-      '/api': 'http://localhost:4000',
-      '/uploads': 'http://localhost:4000',
-      '/sitemap.xml': 'http://localhost:4000',
-      '/robots.txt': 'http://localhost:4000',
-    },
+    port: Number(process.env.WEB_PORT ?? 5173),
+    proxy: Object.fromEntries(['/api', '/uploads', '/sitemap.xml', '/robots.txt'].map((p) => [p, `http://localhost:${process.env.API_PORT ?? 4000}`])),
   },
   build: {
     target: 'es2022',
