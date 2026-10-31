@@ -39,9 +39,9 @@ function FieldShell({ label, error, htmlFor, children, hint }: { label: string; 
   );
 }
 
-export function StepIndicator({ step, tone = 'light' }: { step: Step; tone?: 'light' | 'dark' }) {
+export function StepIndicator({ step, tone = 'light', vertical = false }: { step: Step; tone?: 'light' | 'dark'; vertical?: boolean }) {
   return (
-    <ol className="flex items-center gap-3" aria-label="Adımlar">
+    <ol className={cn('flex gap-3', vertical ? 'flex-col items-start' : 'items-center')} aria-label="Adımlar">
       {STEP_LABELS.map((l, i) => {
         const n = (i + 1) as Step;
         const active = step === n;
@@ -58,8 +58,8 @@ export function StepIndicator({ step, tone = 'light' }: { step: Step; tone?: 'li
             >
               {done ? <Check className="h-3.5 w-3.5" /> : n}
             </span>
-            <span className={cn('hidden text-[0.8rem] font-medium sm:inline', tone === 'dark' ? (active ? 'text-cream' : 'text-cream/50') : active ? 'text-espresso' : 'text-taupe')}>{l}</span>
-            {i < STEP_LABELS.length - 1 && <span className={cn('h-px w-6 sm:w-10', tone === 'dark' ? 'bg-cream/20' : 'bg-espresso/15')} aria-hidden />}
+            <span className={cn('text-[0.8rem] font-medium', vertical ? 'inline' : 'hidden sm:inline', tone === 'dark' ? (active ? 'text-cream' : 'text-cream/50') : active ? 'text-espresso' : 'text-taupe')}>{l}</span>
+            {!vertical && i < STEP_LABELS.length - 1 && <span className={cn('h-px w-6 sm:w-10', tone === 'dark' ? 'bg-cream/20' : 'bg-espresso/15')} aria-hidden />}
           </li>
         );
       })}
@@ -300,15 +300,16 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
             <fieldset className="mt-7">
               <legend className="sr-only">Hizmet</legend>
               <div className="grid gap-px overflow-hidden border border-espresso/12 bg-espresso/12 sm:grid-cols-2">
-                {[{ id: null as string | null, title: 'Henüz karar vermedim', icon: 'sprout' }, ...site.services.map((s) => ({ id: s.id as string | null, title: s.title, icon: s.icon }))].map((s) => {
+                {[{ id: null as string | null, title: 'Henüz karar vermedim', icon: 'sprout' }, ...site.services.map((s) => ({ id: s.id as string | null, title: s.title, icon: s.icon }))].map((s, i, all) => {
                   const active = serviceId === s.id;
+                  const spanLast = all.length % 2 === 1 && i === all.length - 1;
                   return (
                     <button
                       key={s.id ?? 'none'}
                       type="button"
                       onClick={() => setServiceId(s.id)}
                       aria-pressed={active}
-                      className={cn('flex items-center gap-3.5 px-4 py-3.5 text-left text-[0.92rem] transition-colors', active ? 'bg-espresso text-cream' : 'bg-ivory hover:bg-cream')}
+                      className={cn('flex items-center gap-3.5 px-4 py-3.5 text-left text-[0.92rem] transition-colors', spanLast && 'sm:col-span-2', active ? 'bg-espresso text-cream' : 'bg-ivory hover:bg-cream')}
                     >
                       <ServiceIcon name={s.icon} className={cn('h-7 w-7 shrink-0', active ? 'text-rose' : 'text-gold')} />
                       <span className="leading-snug">{s.title}</span>

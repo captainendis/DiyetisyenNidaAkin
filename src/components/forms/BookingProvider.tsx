@@ -52,7 +52,7 @@ function BookingDialog({ serviceId, onClose }: { serviceId: string | null; onClo
 
   return (
     <motion.div className="fixed inset-0 z-[70] flex items-end justify-center lg:items-center lg:p-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-      <div className="absolute inset-0 bg-espresso/70 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-[#120c08]/80" onClick={onClose} aria-hidden />
       <motion.div
         ref={ref}
         role="dialog"
@@ -62,17 +62,17 @@ function BookingDialog({ serviceId, onClose }: { serviceId: string | null; onClo
         animate={{ y: 0, opacity: 1 }}
         exit={reduce ? { opacity: 0 } : { y: 30, opacity: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative flex h-[100dvh] w-full max-w-6xl overflow-hidden bg-ivory lg:h-auto lg:max-h-[min(860px,92dvh)]"
+        className="relative flex h-[100dvh] w-full max-w-6xl overflow-hidden bg-ivory lg:h-[min(820px,92dvh)] lg:shadow-[0_40px_120px_-30px_rgba(0,0,0,0.7)] lg:ring-1 lg:ring-cream/10"
       >
-        <aside className="grain relative hidden w-[34%] shrink-0 flex-col justify-between overflow-hidden bg-espresso p-10 text-cream lg:flex">
-          <img src="/images/mekan-masa-585.webp" alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" loading="lazy" width={585} height={696} />
-          <div className="absolute inset-0 bg-gradient-to-b from-espresso/60 via-espresso/40 to-espresso" aria-hidden />
+        <aside className="grain relative hidden w-[34%] shrink-0 flex-col justify-between overflow-hidden bg-cocoa p-10 text-cream lg:flex">
+          <img src="/images/mekan-masa-585.webp" alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" loading="lazy" width={585} height={696} />
+          <div className="absolute inset-0 bg-gradient-to-b from-cocoa/70 via-cocoa/30 to-cocoa/95" aria-hidden />
           <div className="relative z-[2]">
             <LogoMark className="h-10 w-10 text-rose" />
             <p id="booking-title" className="mt-8 font-display text-[2.6rem] leading-[1.02] font-medium">Randevu<br /><em className="font-normal text-rose">talebi</em></p>
           </div>
           <div className="relative z-[2] space-y-6">
-            <StepIndicator step={step === 4 ? 4 : step} tone="dark" />
+            <StepIndicator step={step === 4 ? 4 : step} tone="dark" vertical />
             <p className="max-w-xs text-[0.85rem] leading-relaxed text-mist">{site.settings.appointment.formNote}</p>
           </div>
         </aside>

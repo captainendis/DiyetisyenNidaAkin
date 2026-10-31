@@ -10,7 +10,7 @@ export function AuthLayout({ title, description, children }: { title: string; de
     <div className="panel-root grid min-h-dvh bg-panel-bg text-espresso lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       <meta name="robots" content="noindex, nofollow" />
       <aside className="grain relative hidden overflow-hidden bg-espresso text-cream lg:flex lg:flex-col lg:justify-between lg:p-14 xl:p-16">
-        <Picture {...VENUE.facade} sizes="45vw" className="absolute inset-0" imgClassName="h-full w-full object-cover opacity-40" />
+        <Picture {...VENUE.facade} sizes="45vw" className="absolute inset-0" imgClassName="h-full w-full object-cover object-[50%_95%] opacity-40" />
         <div className="absolute inset-0 bg-gradient-to-t from-espresso via-espresso/70 to-espresso/40" aria-hidden />
         <Link to="/" className="relative z-[2]" aria-label="Web sitesine dön"><Logo /></Link>
         <div className="relative z-[2] max-w-md">

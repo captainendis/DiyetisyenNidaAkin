@@ -33,12 +33,12 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
             {c.sections.map((s) => (
               <section key={s.heading}>
                 <h2>{s.heading}</h2>
-                {s.paragraphs?.map((p, i) => <p key={i}>{p}</p>)}
                 {s.list && (
                   <ul>
                     {s.list.map((l, i) => <li key={i}>{l}</li>)}
                   </ul>
                 )}
+                {s.paragraphs?.map((p, i) => <p key={i}>{p}</p>)}
               </section>
             ))}
           </div>
