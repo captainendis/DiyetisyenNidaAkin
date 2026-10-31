@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useSite } from '@/data/SiteContext';
 import { Reveal } from '@/components/motion/Reveal';
-import { VENUE } from '@/config/media';
+import { useSiteImages } from '@/config/media';
 import { formatPhone } from '@/lib/text';
 import { Picture } from './Picture';
 import { SectionLabel } from './SectionLabel';
@@ -67,6 +67,7 @@ export function MapBlock({ className = '' }: { className?: string }) {
 
 /** İletişim bölümü — gerçek mekân fotoğrafı + bilgiler + harita. Boş alanlar "Yakında eklenecek". */
 export function ContactSection({ index = '06', heading = true }: { index?: string; heading?: boolean }) {
+  const images = useSiteImages();
   const { site } = useSite();
   const c = site.settings.contact;
   const s = site.settings.social;
@@ -78,7 +79,7 @@ export function ContactSection({ index = '06', heading = true }: { index?: strin
       <div className="container-edge grid gap-14 py-24 sm:py-32 lg:grid-cols-12 lg:gap-x-10 lg:py-40">
         <Reveal className="lg:col-span-4">
           <div className="relative lg:sticky lg:top-28">
-            <Picture {...VENUE.table} sizes="(min-width: 1024px) 30vw, 90vw" className="block" imgClassName="aspect-[4/5] h-auto w-full object-cover" />
+            <Picture {...images.venue} sizes="(min-width: 1024px) 30vw, 90vw" className="block" imgClassName="aspect-[4/5] h-auto w-full object-cover" />
             <p className="mt-4 text-[0.8rem] leading-relaxed text-taupe">
               {c.venueName ? <>{c.venueName}{place ? ` — ${place.split(',')[0]}` : ''}</> : 'Sıcak ışıklı, sakin bir mekânda — kendinize ayırdığınız zaman için.'}
             </p>

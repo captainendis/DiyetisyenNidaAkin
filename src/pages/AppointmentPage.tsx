@@ -3,10 +3,11 @@ import { useSite } from '@/data/SiteContext';
 import { PageHeader } from '@/components/sections/PageHeader';
 import { BookingForm } from '@/components/forms/BookingForm';
 import { Seo } from '@/components/seo/Seo';
-import { VENUE } from '@/config/media';
+import { useSiteImages } from '@/config/media';
 import { Picture } from '@/components/sections/Picture';
 
 export default function AppointmentPage() {
+  const images = useSiteImages();
   const { site } = useSite();
   const [params] = useSearchParams();
   const crumbs = [{ name: 'Randevu', path: '/randevu' }];
@@ -23,7 +24,7 @@ export default function AppointmentPage() {
           </div>
           <aside className="hidden lg:col-span-3 lg:col-start-10 lg:block">
             <div className="sticky top-28">
-              <Picture {...VENUE.table} sizes="25vw" imgClassName="aspect-[4/5] w-full object-cover" />
+              <Picture {...images.venue} sizes="25vw" imgClassName="aspect-[4/5] w-full object-cover" />
               <p className="mt-5 text-[0.85rem] leading-relaxed text-taupe">
                 Talebiniz kesinleşmiş bir randevu değildir. Uygunluk kontrolünden sonra sizinle iletişime geçilerek randevunuz onaylanır.
               </p>

@@ -1,14 +1,24 @@
 /**
- * Görsel varlıklar — tek yerden değiştirilebilir.
- * Gerçek portre fotoğrafı geldiğinde: public/images/ içine koyun ve PORTRAIT'i doldurun
- * (ör. { src: '/images/nida-akin-portre.webp', width: 1200, height: 1500, alt: 'Diyetisyen Nida Akın' }).
- * Doldurulana kadar sitede zarif bir yer tutucu gösterilir; stok fotoğraf KULLANILMAZ.
+ * Site görselleri
+ * ───────────────
+ * Görseller panelden yönetilir: Panel → Web Sitesi İçeriği → Görseller.
+ * Panelde görsel yüklenmemişse aşağıdaki yerleşik mekân fotoğrafları kullanılır
+ * (scripts/prepare-images.py ile üretilir). Portre için yerleşik görsel YOKTUR:
+ * yüklenene kadar zarif bir yer tutucu gösterilir; stok fotoğraf kullanılmaz.
  */
-export interface MediaImage { src: string; width: number; height: number; alt: string }
+import { useSite } from '@/data/SiteContext';
+import type { SiteImage } from '@shared/settings';
 
-export const PORTRAIT: MediaImage | null = null;
+export interface PictureSource {
+  base: string;
+  widths: readonly number[];
+  width: number;
+  height: number;
+  alt: string;
+  /** CSS object-position (ör. "50% 30%") */
+  position?: string;
+}
 
-/** Gerçek mekân fotoğrafları (scripts/prepare-images.py ile üretilir) */
 export const VENUE = {
   facade: {
     base: '/images/mekan-cephe',
@@ -24,11 +34,22 @@ export const VENUE = {
     height: 464,
     alt: 'Pelin Tek Studio Bahçekent: cam cephenin ardında ahşap masa ve sandalyeler, sıcak iç aydınlatma',
   },
-  sign: {
-    base: '/images/mekan-tabela',
-    widths: [210, 315],
-    width: 210,
-    height: 352,
-    alt: 'Stüdyonun cam cephesindeki yazılar; stüdyoda sunulan çalışmalar arasında beslenme danışmanlığı da yer alır',
-  },
-} as const;
+} as const satisfies Record<string, PictureSource>;
+
+function fromSetting(img: SiteImage | null | undefined): PictureSource | null {
+  if (!img) return null;
+  return { base: img.base, widths: img.widths, width: img.width, height: img.height, alt: img.alt, position: `${img.focusX ?? 50}% ${img.focusY ?? 50}%` };
+}
+
+/** Panelden yüklenen görseller (yoksa yerleşik mekân fotoğrafları); portre yoksa null */
+export function useSiteImages() {
+  const { site } = useSite();
+  const m = site.settings.media;
+  return {
+    hero: fromSetting(m?.hero) ?? VENUE.facade,
+    venue: fromSetting(m?.venue) ?? VENUE.table,
+    portrait: fromSetting(m?.portrait),
+    /** Kapak fotoğrafı panelden mi geldi? (yerleşik fotoğrafa özgü kırpma ayarlarını atlamak için) */
+    heroIsCustom: !!m?.hero,
+  };
+}

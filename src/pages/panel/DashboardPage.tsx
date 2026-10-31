@@ -15,6 +15,7 @@ import { minutesOf, timeOf } from '@shared/time';
 import { usePanelAuth } from '@/components/panel/PanelAuth';
 import { Button, Card, CardHeader, EmptyState, ErrorState, SkeletonRows, StatusBadge, useFeedback } from '@/components/panel/ui';
 import { StatCard, StatCardSkeleton } from '@/components/panel/dashboard/StatCard';
+import { SetupChecklist } from '@/components/panel/dashboard/SetupChecklist';
 import { StackedBarChart } from '@/components/panel/charts/StackedBarChart';
 import AppointmentDetailModal from '@/components/panel/appointments/AppointmentDetailModal';
 import { CHART_COLORS, displayName, type AppointmentDTO } from '@/components/panel/appointments/types';
@@ -103,6 +104,8 @@ export default function DashboardPage() {
         </div>
         <p className="mt-1 text-sm text-panel-muted capitalize tabular sm:hidden">{now.toFormat('d MMMM yyyy, cccc')}</p>
       </header>
+
+      {can('content:write') && <SetupChecklist />}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         {/* Bugünün ajandası */}

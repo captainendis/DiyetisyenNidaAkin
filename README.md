@@ -182,8 +182,12 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   "tıbbi tavsiye yerine geçmez" uyarısı gösterilir.
 - **Çalışma saatleri:** Seed'de **tüm günler kapalıdır** (saatler uydurulmadı). Panel → Çalışma Takvimi'nden
   girilene kadar web sitesindeki form yalnızca "saat seçmeden iletişim talebi" kabul eder.
-- **Portre:** Gerçek portre olmadığı için stok fotoğraf kullanılmadı; yer tutucu alan vardır. Fotoğraf eklendiğinde
-  `src/config/media.ts` içindeki `PORTRAIT` alanını doldurmak yeterlidir.
+- **Görseller:** **Panel → Web Sitesi İçeriği → Görseller** — ana sayfa kapak fotoğrafı, görüşme alanı fotoğrafı ve portre.
+  Yüklenen fotoğraf sunucuda döndürülür, **konum (GPS) ve cihaz bilgileri silinir**, AVIF + WebP olarak 4 boyuta kadar
+  hazırlanır; önizlemeye tıklanarak odak noktası seçilir. Görsel yüklenmemişse yerleşik mekân fotoğrafları, portre için
+  stok fotoğraf yerine zarif bir yer tutucu gösterilir.
+- **Kurulum kontrol listesi:** Panel ana sayfasındaki "Siteyi tamamlayın" kartı, yayın öncesi eksik bilgileri (iletişim,
+  çalışma saatleri, görseller, sertifikalar, hizmet doğrulaması, KVKK) gerçek veriden hesaplayıp ilgili ekrana bağlar.
 - **Mekân:** Pelin Tek Studio Bahçekent (Esenyurt) — adres ve harita doğrulanmış olarak yapılandırmadadır. Görüşmeler
   stüdyonun üst katındaki danışmanlık alanında yapılır; vitrindeki pilates/yoga vb. stüdyonun hizmetleridir ve sitede
   diyetisyenin hizmeti olarak gösterilmez.
@@ -264,14 +268,14 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 
 | Modül | Uç noktalar |
 | --- | --- |
-| Dashboard | `GET /api/dashboard/stats` · `/agenda?date` · `/weekly` |
+| Dashboard | `GET /api/dashboard/stats` · `/agenda?date` · `/weekly` · `/setup` (kurulum kontrol listesi) |
 | Randevular | `GET/POST /api/appointments` · `GET/PATCH/DELETE /api/appointments/:id` · `POST /:id/status` · `GET /slots?date&duration&ignoreId` · `GET /day-plans?from&to` |
 | Danışanlar | `GET/POST /api/clients` · `GET/PATCH/DELETE /:id` · `GET /:id/appointments` · `/:id/notes` (CRUD) · `POST /:id/health-consent` · `POST /:id/kvkk-notice` · `/:id/measurements` (CRUD) · `/:id/files` (yükle/listele/indir/sil) · `GET /:id/export` |
 | Bildirimler | `GET /api/notifications` · `GET /unread-count` · `POST /:id/read` · `/:id/unread` · `/read-all` · `DELETE /:id` · `GET /channels` |
 | Raporlar | `GET /api/reports?from&to` · `GET /export.csv?from&to` |
 | Hizmetler | `GET/POST /api/services` · `PATCH/DELETE /:id` · `POST /reorder` · `PATCH /:id/visibility` |
 | Çalışma takvimi | `GET/PUT /api/availability/rules` · `GET/POST /api/availability/blocked-dates` · `DELETE /blocked-dates/:id` |
-| İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
+| İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `POST /site-images` (görsel işleme) · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
@@ -336,9 +340,7 @@ yedeklerle aynı yerde tutmayın. Geri yükleme komutları `scripts/backup.sh` i
 
 `public/images/` altındaki mekân görselleri `assets-src/mekan-referans.png` dosyasından **arayüz öğelerine
 dokunmadan** kırpılarak üretildi (yalnızca hafif kontrast/sıcaklık ayarı; mimari ve perspektif korunur).
-Kaynak görsel düşük çözünürlüklü bir tasarım çalışması olduğu için, gerçek yüksek çözünürlüklü mekân
-fotoğrafları geldiğinde `assets-src/` içine koyup `scripts/prepare-images.py` içindeki `CROPS` listesini
-güncelleyin ve `npm run images` çalıştırın (AVIF + WebP, çoklu genişlik).
+Bunlar yalnızca yerleşik yedek görsellerdir; gerçek fotoğraflar **panelden** yüklenir (bkz. İçerik ve yapılandırma).
 
 ## Yayın öncesi kontrol listesi
 

@@ -8,11 +8,13 @@ import { ContactForm, SocialForm } from '@/components/panel/content/ContactForm'
 import { SeoForm } from '@/components/panel/content/SeoForm';
 import { BlogList } from '@/components/panel/content/BlogList';
 import { FaqManager } from '@/components/panel/content/FaqManager';
+import { SiteImagesForm } from '@/components/panel/content/SiteImagesForm';
 import type { SettingsKey } from '@shared/settings';
 
-type Tab = 'ana-sayfa' | 'hakkimda' | 'iletisim' | 'blog' | 'sss' | 'seo';
+type Tab = 'ana-sayfa' | 'gorseller' | 'hakkimda' | 'iletisim' | 'blog' | 'sss' | 'seo';
 const TAB_KEYS: Record<Tab, SettingsKey[]> = {
   'ana-sayfa': ['hero', 'intro', 'approach', 'process', 'cta'],
+  gorseller: ['media'],
   hakkimda: ['about'],
   iletisim: ['contact', 'social'],
   blog: [],
@@ -35,6 +37,7 @@ function Body() {
         onChange={(t) => setParams({ sekme: t }, { replace: true })}
         tabs={[
           { value: 'ana-sayfa', label: mark('ana-sayfa', 'Ana Sayfa') },
+          { value: 'gorseller', label: mark('gorseller', 'Görseller') },
           { value: 'hakkimda', label: mark('hakkimda', 'Hakkımda') },
           { value: 'iletisim', label: mark('iletisim', 'İletişim & Sosyal') },
           { value: 'blog', label: 'Beslenme Rehberi' },
@@ -60,6 +63,7 @@ function Body() {
               <CtaForm />
             </>
           )}
+          {tab === 'gorseller' && <SiteImagesForm />}
           {tab === 'hakkimda' && <AboutForm />}
           {tab === 'iletisim' && (
             <>

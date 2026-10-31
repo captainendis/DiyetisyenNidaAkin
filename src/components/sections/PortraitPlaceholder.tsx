@@ -1,16 +1,18 @@
-import { PORTRAIT } from '@/config/media';
+import { useSiteImages } from '@/config/media';
+import { Picture } from './Picture';
 import { LogoMark } from '@/components/icons/Logo';
 import { cn } from '@/lib/text';
 
 /**
- * Portre alanı. src/config/media.ts → PORTRAIT doldurulduğunda gerçek fotoğrafı gösterir.
+ * Portre alanı. Panel → Web Sitesi İçeriği → Görseller'den portre yüklendiğinde gerçek fotoğrafı gösterir.
  * Boşken: ince çerçeveli, monogramlı zarif bir yer tutucu (stok kişi fotoğrafı kullanılmaz).
  */
 export function PortraitPlaceholder({ className, caption = true }: { className?: string; caption?: boolean }) {
-  if (PORTRAIT) {
+  const { portrait } = useSiteImages();
+  if (portrait) {
     return (
       <figure className={cn('relative aspect-[4/5] overflow-hidden bg-sand', className)}>
-        <img src={PORTRAIT.src} width={PORTRAIT.width} height={PORTRAIT.height} alt={PORTRAIT.alt} loading="lazy" className="h-full w-full object-cover" />
+        <Picture {...portrait} sizes="(min-width: 1024px) 40vw, 90vw" className="block h-full w-full" imgClassName="h-full w-full object-cover" />
       </figure>
     );
   }

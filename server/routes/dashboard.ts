@@ -8,6 +8,7 @@ import { prisma } from '../lib/db';
 import { parse } from '../lib/http';
 import { requirePermission } from '../auth/session';
 import { appointmentInclude, toDTO } from '../services/appointments';
+import { getSettings } from '../services/settings';
 import { dateStr } from '../../shared/schemas';
 import { TIME_ZONE, type AppointmentStatus } from '../../shared/constants';
 import { addDays, eachDay, endOfDayExclusive, startOfDay, toDateStr, todayStr } from '../../shared/time';
@@ -134,4 +135,33 @@ dashboardRouter.get('/weekly', async (_req, res) => {
       open: 'Henüz sonuçlandırılmamış (onaylı veya onay bekleyen)',
     },
   });
+});
+
+/**
+ * Kurulum kontrol listesi — sitenin yayına hazır olması için panelden doldurulması gerekenler.
+ * Her madde gerçek veriden hesaplanır; tamamlandıkça otomatik işaretlenir.
+ */
+dashboardRouter.get('/setup', async (_req, res) => {
+  const s = await getSettings(['contact', 'social', 'media', 'about', 'kvkk', 'business']);
+  const [workingDays, services, publishedPosts] = await Promise.all([
+    prisma.availabilityRule.count({ where: { isWorking: true } }),
+    prisma.service.findMany({ select: { createdAt: true, updatedAt: true } }),
+    prisma.blogPost.count({ where: { status: 'PUBLISHED' } }),
+  ]);
+  const servicesReviewed = services.length > 0 && services.every((x) => x.updatedAt.getTime() - x.createdAt.getTime() > 1000);
+  const items = [
+    { key: 'phone', group: 'İletişim', label: 'Telefon numarası', done: !!s.contact.phone, href: '/panel/icerikler?sekme=iletisim' },
+    { key: 'whatsapp', group: 'İletişim', label: 'WhatsApp numarası', hint: 'Randevu formunda “WhatsApp’tan yazın” seçeneğini açar', done: !!s.contact.whatsapp, href: '/panel/icerikler?sekme=iletisim' },
+    { key: 'email', group: 'İletişim', label: 'E-posta adresi', done: !!s.contact.email, href: '/panel/icerikler?sekme=iletisim' },
+    { key: 'instagram', group: 'İletişim', label: 'Instagram hesabı', done: !!s.social.instagram, href: '/panel/icerikler?sekme=iletisim' },
+    { key: 'hours', group: 'Randevu', label: 'Çalışma saatleri', hint: 'Girilene kadar web sitesi yalnızca “beni arayın” talebi alır', done: workingDays > 0, href: '/panel/ayarlar/takvim' },
+    { key: 'portrait', group: 'Görseller', label: 'Portre fotoğrafı', done: !!s.media.portrait, href: '/panel/icerikler?sekme=gorseller' },
+    { key: 'venue', group: 'Görseller', label: 'Görüşme alanı (üst kat) fotoğrafı', done: !!s.media.venue, href: '/panel/icerikler?sekme=gorseller' },
+    { key: 'credentials', group: 'Hakkımda', label: 'Eğitim ve sertifika bilgileri', done: s.about.credentials.length > 0, href: '/panel/icerikler?sekme=hakkimda' },
+    { key: 'services', group: 'Hizmetler', label: 'Hizmet metinleri gözden geçirildi', hint: 'Her hizmeti açıp doğrulayın ve kaydedin', done: servicesReviewed, href: '/panel/hizmetler' },
+    { key: 'blog', group: 'İçerik', label: 'İlk blog yazısı yayında', done: publishedPosts > 0, href: '/panel/icerikler?sekme=blog' },
+    { key: 'legalName', group: 'KVKK', label: 'Veri sorumlusu (resmî unvan)', done: !!s.business.legalName, href: '/panel/ayarlar?sekme=isletme' },
+    { key: 'legal', group: 'KVKK', label: 'Yasal metinler hukuk uzmanınca incelendi', done: s.kvkk.legalReviewCompleted, href: '/panel/ayarlar?sekme=kvkk' },
+  ];
+  res.json({ items, done: items.filter((i) => i.done).length, total: items.length });
 });

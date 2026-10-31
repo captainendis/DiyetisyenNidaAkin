@@ -6,7 +6,7 @@ import { CtaButton, TextLink } from '@/components/forms/Button';
 import { FadeIn, StaggerLines } from '@/components/motion/Reveal';
 import { FEATURE_ICONS } from '@/components/icons/FeatureIcons';
 import { AppleOutline } from '@/components/icons/Botanical';
-import { VENUE } from '@/config/media';
+import { useSiteImages } from '@/config/media';
 import { Picture } from './Picture';
 import { shortPlace } from './address';
 
@@ -17,6 +17,7 @@ export function Hero() {
   const booking = useBooking();
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
+  const images = useSiteImages();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const imgY = useTransform(scrollYProgress, [0, 1], ['0%', reduce ? '0%' : '12%']);
   const textY = useTransform(scrollYProgress, [0, 1], ['0%', reduce ? '0%' : '-10%']);
@@ -26,7 +27,7 @@ export function Hero() {
       {/* Mekân fotoğrafı — masaüstünde sağ ~%58, mobilde tam arka plan */}
       <motion.div style={{ y: imgY }} className="absolute inset-x-0 top-0 -z-10 h-[64svh] lg:inset-y-0 lg:right-0 lg:left-auto lg:h-auto lg:w-[min(max(54vw,calc(100svh*0.83)),calc(100svh*0.98))]">
         <Picture
-          {...VENUE.facade}
+          {...images.hero}
           sizes="(min-width: 1024px) 60vw, 100vw"
           priority
           className="block h-full w-full"

@@ -78,6 +78,7 @@ export const defaultSettings: Settings = {
     formNote:
       'Gönderdiğiniz talep bir ön başvurudur. Randevunuz, uygunluk kontrolünden sonra sizinle iletişime geçilerek kesinleştirilir.',
   },
+  media: { hero: null, venue: null, portrait: null },
   kvkk: {
     retentionMonths: 36,
     noticeVersion: '2026-10-taslak',

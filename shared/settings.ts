@@ -126,6 +126,29 @@ export const kvkkSettingsSchema = z.object({
   legalReviewCompleted: z.boolean(),
 });
 
+/** Panelden yüklenen, sunucuda varyantları üretilmiş görsel (bkz. POST /api/content/site-images) */
+export const siteImageSchema = z.object({
+  /** Varyant taban yolu: <base>-<genişlik>.webp / .avif */
+  base: z.string().regex(/^\/uploads\/public\/site\/[a-z0-9]+$/, 'Geçersiz görsel yolu'),
+  widths: z.array(z.number().int().min(16).max(4000)).min(1).max(6),
+  width: z.number().int().min(1),
+  height: z.number().int().min(1),
+  alt: z.string().trim().min(3, 'Görseli kısaca tarif edin (erişilebilirlik ve SEO için)').max(300),
+  /** Odak noktası (object-position, %): kırpma telefonda ve masaüstünde buraya göre yapılır */
+  focusX: z.number().min(0).max(100).default(50),
+  focusY: z.number().min(0).max(100).default(50),
+});
+export type SiteImage = z.infer<typeof siteImageSchema>;
+
+export const mediaSchema = z.object({
+  /** Ana sayfa kapak fotoğrafı (mekân). Boşsa yerleşik mekân fotoğrafı kullanılır. */
+  hero: siteImageSchema.nullable(),
+  /** Görüşme alanı fotoğrafı (iletişim bölümü, randevu sayfası). Boşsa yerleşik fotoğraf kullanılır. */
+  venue: siteImageSchema.nullable(),
+  /** Nida Akın portresi. Boşsa zarif bir yer tutucu gösterilir (stok fotoğraf kullanılmaz). */
+  portrait: siteImageSchema.nullable(),
+});
+
 export const settingsSchemas = {
   hero: heroSchema,
   intro: introSchema,
@@ -139,6 +162,7 @@ export const settingsSchemas = {
   seo: seoSchema,
   appointment: appointmentSettingsSchema,
   kvkk: kvkkSettingsSchema,
+  media: mediaSchema,
 } as const;
 
 export type SettingsKey = keyof typeof settingsSchemas;
@@ -147,7 +171,7 @@ export type Settings = { [K in SettingsKey]: z.infer<(typeof settingsSchemas)[K]
 
 /** Herkese açık API'de dönülen ayar anahtarları (kvkk.retention gibi iç ayarlar dahil değil) */
 export const PUBLIC_SETTINGS_KEYS: SettingsKey[] = [
-  'hero', 'intro', 'about', 'approach', 'process', 'cta', 'contact', 'social', 'business', 'seo', 'appointment',
+  'hero', 'intro', 'about', 'approach', 'process', 'cta', 'contact', 'social', 'business', 'seo', 'appointment', 'media',
 ];
 
 export { defaultSettings } from './settings-defaults';

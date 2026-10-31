@@ -9,12 +9,13 @@ import { prisma } from '../lib/db';
 import { badRequest, conflict, HttpError, notFound, parse, validationError } from '../lib/http';
 import { audit } from '../lib/audit';
 import { requirePermission } from '../auth/session';
-import { MIME_EXT, PUBLIC_UPLOADS, sniffMime } from '../lib/storage';
+import { PUBLIC_UPLOADS, sniffMime } from '../lib/storage';
 import { getSettings, saveSetting } from '../services/settings';
 import { SETTINGS_KEYS, settingsSchemas, type SettingsKey } from '../../shared/settings';
 import { blogPostSchema, blogStatusSchema, faqSchema, serviceReorderSchema } from '../../shared/schemas';
 import { POST_STATUSES } from '../../shared/constants';
 import { slugify } from '../../shared/text';
+import { deleteSiteImage, processSiteImage, sanitizeImage } from '../services/images';
 
 export const contentRouter = Router();
 contentRouter.use(requirePermission('content:write'));
@@ -30,7 +31,13 @@ contentRouter.put('/settings/:key', async (req, res) => {
   if (!SETTINGS_KEYS.includes(key)) throw notFound('Ayar bulunamadı');
   const result = settingsSchemas[key].safeParse(req.body);
   if (!result.success) throw validationError(result.error);
+  const previous = key === 'media' ? (await getSettings(['media'])).media : null;
   await saveSetting(key, result.data as never, req.user!.id);
+  if (previous) {
+    // Değiştirilen/kaldırılan site görsellerinin dosyalarını temizle
+    const now = new Set(Object.values(result.data as Record<string, { base: string } | null>).map((v) => v?.base));
+    for (const img of Object.values(previous)) if (img && !now.has(img.base)) await deleteSiteImage(img.base);
+  }
   await audit(req, 'settings.updated', 'website_setting', key);
   res.json({ key, value: result.data });
 });
@@ -202,14 +209,52 @@ contentRouter.post('/media', (req, res, next) => {
   if (!file) throw badRequest('Dosya seçilmedi');
   const mime = sniffMime(file.buffer);
   if (!mime || mime === 'application/pdf') throw badRequest('Yalnızca JPG, PNG, WebP veya AVIF görseller yüklenebilir.');
-  const name = `${crypto.randomBytes(12).toString('hex')}.${MIME_EXT[mime]}`;
-  await fs.writeFile(path.join(PUBLIC_UPLOADS, name), file.buffer, { flag: 'wx' });
+  // Meta veriler (GPS konumu, cihaz bilgisi) silinir; görsel WebP olarak yeniden kodlanır
+  let clean: Buffer;
+  try {
+    clean = await sanitizeImage(file.buffer);
+  } catch {
+    throw badRequest('Görsel okunamadı. Farklı bir dosya deneyin.');
+  }
+  const name = `${crypto.randomBytes(12).toString('hex')}.webp`;
+  await fs.writeFile(path.join(PUBLIC_UPLOADS, name), clean, { flag: 'wx' });
   const alt = typeof req.body?.alt === 'string' ? req.body.alt.slice(0, 200) : null;
   const asset = await prisma.mediaAsset.create({
-    data: { url: `/uploads/public/${name}`, mimeType: mime, sizeBytes: file.size, alt, uploadedById: req.user!.id },
+    data: { url: `/uploads/public/${name}`, mimeType: 'image/webp', sizeBytes: clean.length, alt, uploadedById: req.user!.id },
   });
   await audit(req, 'media.uploaded', 'media_asset', asset.id, { mime, size: file.size });
   res.status(201).json({ id: asset.id, url: asset.url });
+});
+
+// ───────────── Site görselleri (kapak, görüşme alanı, portre) ─────────────
+
+const siteUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 1 } });
+
+contentRouter.post('/site-images', (req, res, next) => {
+  siteUpload.single('file')(req, res, (err: unknown) => {
+    if (err) {
+      const code = (err as { code?: string }).code;
+      return next(new HttpError(code === 'LIMIT_FILE_SIZE' ? 413 : 400, 'UPLOAD_ERROR', code === 'LIMIT_FILE_SIZE' ? 'Dosya en fazla 20 MB olabilir.' : 'Dosya yüklenemedi.'));
+    }
+    next();
+  });
+}, async (req, res) => {
+  const file = req.file;
+  if (!file) throw badRequest('Dosya seçilmedi');
+  const mime = sniffMime(file.buffer);
+  if (!mime || mime === 'application/pdf') throw badRequest('Yalnızca JPG, PNG, WebP veya AVIF fotoğraflar yüklenebilir.');
+  let img;
+  try {
+    img = await processSiteImage(file.buffer);
+  } catch (e) {
+    if ((e as Error).message === 'TOO_SMALL') throw badRequest('Fotoğraf çok küçük. En az 400×400 piksel olmalı; mümkünse 1600 piksel ve üzeri yükleyin.');
+    throw badRequest('Fotoğraf işlenemedi. Farklı bir dosya deneyin.');
+  }
+  await prisma.mediaAsset.create({
+    data: { url: `${img.base}-${img.width}.webp`, mimeType: 'image/webp', sizeBytes: file.size, uploadedById: req.user!.id },
+  });
+  await audit(req, 'media.site_image_uploaded', 'media_asset', img.id, { widths: img.widths });
+  res.status(201).json({ image: { base: img.base, widths: img.widths, width: img.width, height: img.height } });
 });
 
 contentRouter.get('/media', async (_req, res) => {
