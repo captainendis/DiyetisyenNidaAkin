@@ -128,7 +128,7 @@ export default function AppointmentDetailModal({
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 outline-none" tabIndex={-1} data-autofocus>
             <StatusBadge status={a.status} />
             <span className="text-[0.78rem] text-panel-muted">
               {a.source === 'WEBSITE' ? 'Web sitesinden talep' : 'Panelden oluşturuldu'} · {relativeTime(a.createdAt)}

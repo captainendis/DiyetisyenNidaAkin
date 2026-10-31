@@ -1,5 +1,5 @@
 /** Yeni randevu: mevcut danışan seçimi veya yeni kişi, hizmet, gün + saat, tür, durum, not */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search, UserPlus, X } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useDebounced } from '@/hooks/useApi';
@@ -39,6 +39,13 @@ export default function NewAppointmentModal({
   const [note, setNote] = useState('');
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const searchRef = useRef<HTMLInputElement>(null);
+  // Modal ilk odaklanabilir öğeye ("Yeni kişi") odaklanır; arama alanı daha doğal başlangıç noktası
+  useEffect(() => {
+    if (!open || initial?.clientId) return;
+    const t = setTimeout(() => searchRef.current?.focus(), 60);
+    return () => clearTimeout(t);
+  }, [open, initial?.clientId]);
 
   // Açılışta sıfırla + başlangıç değerleri
   useEffect(() => {
@@ -180,6 +187,7 @@ export default function NewAppointmentModal({
               <div className="relative">
                 <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-panel-muted" />
                 <input
+                  ref={searchRef}
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Ad, soyad veya telefon ile arayın"

@@ -28,7 +28,9 @@ export function Modal({
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const t = setTimeout(() => {
-      const first = ref.current?.querySelector<HTMLElement>('[data-autofocus], input:not([type=hidden]), select, textarea, button:not([data-close])');
+      const first =
+        ref.current?.querySelector<HTMLElement>('[data-autofocus]') ??
+        ref.current?.querySelector<HTMLElement>('input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
       (first ?? ref.current)?.focus();
     }, 20);
     const onKey = (e: KeyboardEvent) => {

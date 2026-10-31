@@ -4,7 +4,7 @@
  * tek eksen, kılavuz çizgileri 1px düz ve geri planda. ≥2 seri → lejant her zaman var.
  * Her sütunda üzerine gelince araç ipucu; ekran okuyucular için gizli tablo.
  */
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 export interface StackSeries { key: string; label: string; color: string }
 export interface StackDatum { key: string; label: string; sublabel?: string; values: Record<string, number> }
@@ -27,7 +27,16 @@ export function StackedBarChart({ data, series, height = 220, caption }: { data:
     return [0, 1, 2, 3, 4].map((i) => Math.round(i * step));
   }, [max]);
 
-  const W = 640;
+  // Metin boyutları sabit kalsın diye viewBox kapsayıcı genişliğine eşitlenir
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(640);
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(Math.max(280, Math.round(e.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const padL = 28, padR = 8, padT = 12, padB = 40;
   const plotW = W - padL - padR;
   const plotH = height - padT - padB;
@@ -45,7 +54,8 @@ export function StackedBarChart({ data, series, height = 220, caption }: { data:
           </span>
         ))}
       </div>
-      <svg viewBox={`0 0 ${W} ${height}`} className="h-auto w-full overflow-visible" role="img" aria-labelledby={`${id}-cap`}>
+      <div ref={boxRef}>
+      <svg viewBox={`0 0 ${W} ${height}`} width={W} height={height} className="block max-w-full overflow-visible" role="img" aria-labelledby={`${id}-cap`}>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} stroke="#ECE5DA" strokeWidth={1} />
@@ -83,6 +93,7 @@ export function StackedBarChart({ data, series, height = 220, caption }: { data:
         })}
         <line x1={padL} x2={W - padR} y1={y(0)} y2={y(0)} stroke="#D9CFC1" strokeWidth={1} />
       </svg>
+      </div>
       {hover !== null && (
         <div
           className="pointer-events-none absolute top-8 z-10 min-w-40 -translate-x-1/2 rounded-lg bg-espresso px-3 py-2 text-[0.75rem] text-ivory shadow-lg"

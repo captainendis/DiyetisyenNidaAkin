@@ -178,9 +178,9 @@ export default function DashboardPage() {
       </div>
 
       {/* İstatistikler */}
-      <section aria-label="İstatistikler" className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="İstatistikler" className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.error ? (
-          <Card className="sm:col-span-2 xl:col-span-4"><ErrorState message={stats.error.message} onRetry={stats.reload} /></Card>
+          <Card className="col-span-2 xl:col-span-4"><ErrorState message={stats.error.message} onRetry={stats.reload} /></Card>
         ) : !c ? (
           Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
