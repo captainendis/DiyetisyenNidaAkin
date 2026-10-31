@@ -76,10 +76,12 @@ export const contactSchema = z.object({
   city: nullableText(80),
   postalCode: nullableText(10),
   mapEmbedUrl: url.refine(
-    (v) => v === null || v.startsWith('https://www.google.com/maps/embed'),
-    'Google Haritalar "Yerleştir" bağlantısı olmalı (https://www.google.com/maps/embed?...)',
+    (v) => v === null || v.startsWith('https://www.google.com/maps/embed') || (v.startsWith('https://www.google.com/maps?') && v.includes('output=embed')),
+    'Google Haritalar "Yerleştir" bağlantısı olmalı (https://www.google.com/maps/embed?... veya ...&output=embed)',
   ),
   mapLinkUrl: url,
+  venueName: nullableText(120),
+  venueNote: nullableText(240),
   hoursNote: nullableText(160),
 });
 

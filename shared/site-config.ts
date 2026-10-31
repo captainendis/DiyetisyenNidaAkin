@@ -31,6 +31,10 @@ export interface ContactInfo {
   mapEmbedUrl: string | null;
   /** Yol tarifi için Google Haritalar paylaşım bağlantısı */
   mapLinkUrl: string | null;
+  /** Danışmanlığın verildiği mekânın adı (ör. stüdyo) */
+  venueName: string | null;
+  /** Mekân hakkında kısa not (ör. "Pilates çalışmalarının da yapıldığı stüdyo") */
+  venueNote: string | null;
   /** Ziyaretçiye gösterilecek çalışma saatleri metni (ör. "Hafta içi 10.00 – 19.00"). Uydurulmamalı. */
   hoursNote: string | null;
 }
@@ -63,12 +67,16 @@ export const siteConfig = {
     phone: null,
     whatsapp: null,
     email: null,
-    addressLine: null,
-    district: null,
-    city: null,
-    postalCode: null,
-    mapEmbedUrl: null,
-    mapLinkUrl: null,
+    // Kaynak: Google Haritalar kaydı (müşteri tarafından iletildi, 2026-10-31)
+    addressLine: 'Orhangazi Mah. Tunç Cd. Semt Bahçekent Sitesi No: 8E D:1. Etap',
+    district: 'Esenyurt',
+    city: 'İstanbul',
+    postalCode: '34538',
+    mapEmbedUrl:
+      'https://www.google.com/maps?q=Pelin+Tek+Studio+Bah%C3%A7ekent,+Tun%C3%A7+Cd.+No:8E,+34538+Esenyurt%2F%C4%B0stanbul&output=embed',
+    mapLinkUrl: 'https://maps.app.goo.gl/RCaCUjdeuWs2R6Yj8',
+    venueName: 'Pelin Tek Studio Bahçekent',
+    venueNote: 'Beslenme danışmanlığının yanı sıra pilates çalışmalarının da yapıldığı stüdyo.',
     hoursNote: null,
   } satisfies ContactInfo,
 
