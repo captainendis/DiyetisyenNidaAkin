@@ -76,7 +76,7 @@ export const siteConfig = {
       'https://www.google.com/maps?q=Pelin+Tek+Studio+Bah%C3%A7ekent,+Tun%C3%A7+Cd.+No:8E,+34538+Esenyurt%2F%C4%B0stanbul&output=embed',
     mapLinkUrl: 'https://maps.app.goo.gl/RCaCUjdeuWs2R6Yj8',
     venueName: 'Pelin Tek Studio Bahçekent',
-    venueNote: 'Beslenme danışmanlığının yanı sıra pilates çalışmalarının da yapıldığı stüdyo.',
+    venueNote: 'Görüşmeler, pilates çalışmalarının da yapıldığı stüdyonun üst katında, diyetisyenin danışmanlık alanında yapılır.',
     hoursNote: null,
   } satisfies ContactInfo,
 
