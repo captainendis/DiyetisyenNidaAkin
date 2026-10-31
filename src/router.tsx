@@ -32,6 +32,8 @@ const BlogEditorPage = lazy(() => import('@/pages/panel/BlogEditorPage'));
 const SettingsPage = lazy(() => import('@/pages/panel/SettingsPage'));
 const CalendarSettingsPage = lazy(() => import('@/pages/panel/CalendarSettingsPage'));
 const AuditLogPage = lazy(() => import('@/pages/panel/AuditLogPage'));
+const PlansPage = lazy(() => import('@/pages/panel/PlansPage'));
+const PlanEditorPage = lazy(() => import('@/pages/panel/PlanEditorPage'));
 
 function PublicFallback() {
   return <div className="min-h-dvh bg-espresso" aria-busy="true" />;
@@ -79,6 +81,8 @@ export const router = createBrowserRouter([
           { path: 'randevular', element: s(<AppointmentsPage />, true) },
           { path: 'danisanlar', element: s(<ClientsPage />, true) },
           { path: 'danisanlar/:id', element: s(<ClientDetailPage />, true) },
+          { path: 'planlar', element: s(<PlansPage />, true) },
+          { path: 'planlar/:id', element: s(<PlanEditorPage />, true) },
           { path: 'bildirimler', element: s(<NotificationsPage />, true) },
           { path: 'raporlar', element: s(<ReportsPage />, true) },
           { path: 'hizmetler', element: s(<ServicesAdminPage />, true) },

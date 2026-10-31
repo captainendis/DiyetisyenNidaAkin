@@ -20,6 +20,8 @@ const schema = z.object({
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
   MAIL_FROM: z.string().optional().default(''),
+  /** PDF üretimi için Chromium yolu (boşsa Playwright'ın kurulu tarayıcısı aranır) */
+  CHROMIUM_PATH: z.string().optional().default(''),
   DEMO_MODE: z.string().optional().default('false').transform((v) => v === 'true'),
 });
 

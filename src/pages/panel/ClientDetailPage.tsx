@@ -14,9 +14,10 @@ import { AppointmentsTab } from '@/components/panel/clients/AppointmentsTab';
 import { NotesTab } from '@/components/panel/clients/NotesTab';
 import { MeasurementsTab } from '@/components/panel/clients/MeasurementsTab';
 import { FilesTab } from '@/components/panel/clients/FilesTab';
+import { ClientPlansTab } from '@/components/panel/plans/ClientPlansTab';
 import { CLIENT_STATUS_TONE, type Client, type ClientStats } from '@/components/panel/clients/types';
 
-type Tab = 'genel' | 'randevular' | 'notlar' | 'takip' | 'dosyalar';
+type Tab = 'genel' | 'randevular' | 'notlar' | 'planlar' | 'takip' | 'dosyalar';
 
 function ClinicalLocked() {
   return (
@@ -109,6 +110,7 @@ function Detail() {
           { value: 'genel', label: 'Genel Bakış' },
           { value: 'randevular', label: 'Randevu Geçmişi' },
           { value: 'notlar', label: <span className="flex items-center gap-1.5">Görüşme Notları{!clinical && <Lock className="h-3 w-3" />}</span> },
+          { value: 'planlar', label: <span className="flex items-center gap-1.5">Beslenme Planları{!clinical && <Lock className="h-3 w-3" />}</span> },
           { value: 'takip', label: <span className="flex items-center gap-1.5">Beslenme Takibi{!clinical && <Lock className="h-3 w-3" />}</span> },
           { value: 'dosyalar', label: <span className="flex items-center gap-1.5">Dosyalar{!clinical && <Lock className="h-3 w-3" />}</span> },
         ]}
@@ -118,6 +120,7 @@ function Detail() {
         {tab === 'genel' && <OverviewTab client={client} stats={stats} onClientChanged={updateClient} />}
         {tab === 'randevular' && <AppointmentsTab clientId={client.id} />}
         {tab === 'notlar' && (clinical ? <NotesTab clientId={client.id} /> : <ClinicalLocked />)}
+        {tab === 'planlar' && (clinical ? <ClientPlansTab clientId={client.id} clientName={`${client.firstName} ${client.lastName}`} /> : <ClinicalLocked />)}
         {tab === 'takip' && (clinical ? <MeasurementsTab client={client} onClientChanged={updateClient} /> : <ClinicalLocked />)}
         {tab === 'dosyalar' && (clinical ? <FilesTab client={client} onClientChanged={updateClient} /> : <ClinicalLocked />)}
       </div>

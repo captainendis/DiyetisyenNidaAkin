@@ -11,6 +11,8 @@ import { ROLE_PERMISSIONS } from '../server/auth/permissions';
 import { ROLE_LABEL, DEFAULT_BLOG_CATEGORIES } from '../shared/constants';
 import { defaultSettings, SETTINGS_KEYS } from '../shared/settings';
 import { seedFaqs, seedPosts, seedServices } from '../shared/seed-content';
+import { samplePlanTemplate } from '../shared/plan';
+import { encryptJson } from '../server/lib/crypto';
 
 async function main() {
   for (const key of ['ADMIN', 'DIETITIAN', 'ASSISTANT'] as const) {
@@ -53,6 +55,11 @@ async function main() {
 
   if ((await prisma.faq.count()) === 0) {
     await prisma.faq.createMany({ data: seedFaqs.map((f, i) => ({ ...f, sortOrder: i })) });
+  }
+
+  // Diyetisyenin örnek planından oluşturulan başlangıç şablonu
+  if ((await prisma.nutritionPlan.count({ where: { isTemplate: true } })) === 0) {
+    await prisma.nutritionPlan.create({ data: { isTemplate: true, name: '1. ay, 1. liste (örnek şablon)', dataEnc: encryptJson(samplePlanTemplate()) } });
   }
 
   console.log('✓ Temel veriler hazır. Yönetici hesabı için: npm run admin:create');

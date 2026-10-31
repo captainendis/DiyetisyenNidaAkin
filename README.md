@@ -133,7 +133,7 @@ npm run db:seed        # temel verileri yazar; mevcut içeriği EZMEZ, tekrar ç
 Tablolar: `users`, `roles`, `sessions`, `password_reset_tokens`, `clients`, `appointments`,
 `appointment_status_history`, `services`, `availability_rules`, `blocked_dates`, `notifications`,
 `notification_deliveries`, `consultation_notes`, `measurements`, `client_files`, `blog_categories`,
-`blog_posts`, `faqs`, `media_assets`, `website_settings`, `audit_logs`.
+`blog_posts`, `faqs`, `media_assets`, `website_settings`, `nutrition_plans`, `audit_logs`.
 
 `appointments_no_overlap_confirmed` adlı PostgreSQL **exclusion constraint**, onaylanmış/tamamlanmış randevuların
 zaman aralıklarının çakışmasını veritabanı seviyesinde de engeller (uygulama katmanındaki kilitli kontrolün yedeği).
@@ -191,6 +191,24 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
 - **Mekân:** Pelin Tek Studio Bahçekent (Esenyurt) — adres ve harita doğrulanmış olarak yapılandırmadadır. Görüşmeler
   stüdyonun üst katındaki danışmanlık alanında yapılır; vitrindeki pilates/yoga vb. stüdyonun hizmetleridir ve sitede
   diyetisyenin hizmeti olarak gösterilmez.
+
+## Beslenme planları (tek sayfa PDF)
+
+**Panel → Beslenme Planları** veya **Danışan → Beslenme Planları** sekmesi.
+
+- Plan; başlık, su hedefi (bardak takip kutucukları), hareket hedefi (haftanın günleri), en fazla 7 öğün × 3 seçenek,
+  alışkanlıklar kutusu, porsiyon tablosu, alt not ve imzadan oluşur. Düzen, diyetisyenin örnek planını temel alır.
+- Danışan seçilince başlık Türkçe ekle otomatik oluşur (“Ömer’in / Ayşe’nin / Nida’nın beslenme planı”).
+- **Şablonlar:** Danışana bağlı olmayan listeler. Kurulumda örnek plandan oluşturulan “1. ay, 1. liste” şablonu gelir;
+  yeni planlar bir şablondan kopyalanarak başlar. Her plan “Şablon olarak kaydet” ile şablona dönüştürülebilir.
+- **Canlı önizleme** PDF ile aynı şablonu kullanır (`shared/plan-template.ts`). İçerik uzarsa tüm ölçüler orantılı
+  küçültülerek **tek A4 sayfaya sığdırılır**; yazı %85'in altına inerse uyarı verilir, sığmazsa (%72 sınırı) indirmede bildirilir.
+- **PDF** sunucuda Chromium ile üretilir: vektör metin (telefonda yakınlaştırınca net kalır, aranabilir), gömülü Manrope
+  yazı tipi, etiketli (erişilebilir) PDF, renkler baskıda korunur. PDF diske yazılmaz, doğrudan indirilir.
+- Plan içerikleri sağlık verisi niteliği taşıyabileceğinden **şifreli** saklanır; yalnızca klinik yetkili roller erişir,
+  görüntüleme ve PDF indirme denetim kaydına yazılır.
+- Sunucuda Chromium gerekir: Docker imajında otomatik kurulur; diğer ortamlarda `CHROMIUM_PATH` ile yolu verin
+  (boşsa Playwright'ın kurulu tarayıcısı aranır).
 
 ## Randevu sistemi nasıl çalışır
 
@@ -277,6 +295,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | Çalışma takvimi | `GET/PUT /api/availability/rules` · `GET/POST /api/availability/blocked-dates` · `DELETE /blocked-dates/:id` |
 | İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `POST /site-images` (görsel işleme) · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
+| Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/pdf` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 

@@ -60,6 +60,7 @@ model User {
   statusChanges      AppointmentStatusHistory[]
   measurements       Measurement[]
   clientFiles        ClientFile[]
+  nutritionPlans     NutritionPlan[]
   createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
 
   @@map("users")
@@ -144,6 +145,7 @@ model Client {
   measurements      Measurement[]
   files             ClientFile[]
   notifications     Notification[]
+  nutritionPlans    NutritionPlan[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -400,6 +402,27 @@ model ClientFile {
 
   @@index([clientId])
   @@map("client_files")
+}
+
+/// Beslenme planı. Danışana bağlı değilse (clientId boş, isTemplate) yeniden kullanılabilir şablondur.
+/// İçerik sağlık verisi niteliği taşıyabileceğinden şifreli tutulur (şema: shared/plan.ts).
+model NutritionPlan {
+  id          String   @id @default(cuid())
+  clientId    String?
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  isTemplate  Boolean  @default(false)
+  /// Listeleme için kısa ad (ör. "1. ay, 1. liste"). Kişisel/sağlık bilgisi yazılmamalı.
+  name        String
+  /// AES-256-GCM şifreli JSON (NutritionPlanData)
+  dataEnc     String
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([clientId])
+  @@index([isTemplate])
+  @@map("nutrition_plans")
 }
 
 // ───────────────────────────── İçerik ─────────────────────────────

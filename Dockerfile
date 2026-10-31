@@ -12,6 +12,9 @@ RUN npx prisma generate && npm run build
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+# Beslenme planı PDF'leri için Chromium (yazı tipi PDF'e gömülür; sistem fontu gerekmez)
+RUN apk add --no-cache chromium
+ENV CHROMIUM_PATH=/usr/bin/chromium-browser
 COPY package*.json ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
