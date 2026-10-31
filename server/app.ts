@@ -1,6 +1,4 @@
 /** Express uygulaması — API, statik dosyalar ve SPA servisi */
-import path from 'node:path';
-import fs from 'node:fs';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -24,11 +22,8 @@ import { contentRouter } from './routes/content';
 import { settingsRouter } from './routes/settings';
 import { auditRouter } from './routes/audit';
 import { registerSeo } from './seo';
+import { PUBLIC_UPLOADS } from './lib/storage';
 
-export const UPLOAD_ROOT = path.resolve(env.UPLOAD_DIR);
-export const PUBLIC_UPLOADS = path.join(UPLOAD_ROOT, 'public');
-export const PRIVATE_UPLOADS = path.join(UPLOAD_ROOT, 'private');
-for (const dir of [PUBLIC_UPLOADS, PRIVATE_UPLOADS]) fs.mkdirSync(dir, { recursive: true });
 
 export function createApp() {
   const app = express();
