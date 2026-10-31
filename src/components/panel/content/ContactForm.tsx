@@ -1,4 +1,4 @@
-import { Input } from '@/components/panel/ui';
+import { Input, Textarea } from '@/components/panel/ui';
 import { Badge } from '@/components/panel/ui';
 import { FormCard, FormSection, Notice, SaveBar } from './FormBits';
 import { useSettingForm } from './settingsStore';
@@ -47,10 +47,8 @@ export function ContactForm() {
         <Input label="Çalışma saatleri notu" placeholder="Ör. Hafta içi 10.00 – 19.00" hint="Ziyaretçiye gösterilen metin. Randevu saatleri ise Çalışma Takvimi'nden yönetilir." value={d.hoursNote ?? ''} error={f.errors.hoursNote} onChange={(e) => f.set('hoursNote', n(e.target.value))} />
       </FormSection>
       <FormSection title="Mekân ve adres" description="Danışmanlığın verildiği mekân ve açık adresi.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Mekân adı" placeholder="Ör. stüdyo / merkez adı" value={d.venueName ?? ''} maxLength={120} error={f.errors.venueName} onChange={(e) => f.set('venueName', n(e.target.value))} />
-          <Input label="Mekân notu" placeholder="Ör. giriş, kat veya bulma tarifi" hint="İletişim sayfasında adresin altında gösterilir." value={d.venueNote ?? ''} maxLength={240} error={f.errors.venueNote} onChange={(e) => f.set('venueNote', n(e.target.value))} />
-        </div>
+        <Input label="Mekân adı" placeholder="Ör. stüdyo / merkez adı" value={d.venueName ?? ''} maxLength={120} error={f.errors.venueName} onChange={(e) => f.set('venueName', n(e.target.value))} />
+        <Textarea label="Mekân notu" rows={2} placeholder="Ör. giriş, kat veya bulma tarifi" hint="İletişim sayfasında adresin altında gösterilir." value={d.venueNote ?? ''} maxLength={240} error={f.errors.venueNote} onChange={(e) => f.set('venueNote', n(e.target.value))} />
         <Input label="Açık adres" placeholder="Mahalle, cadde/sokak, bina no" value={d.addressLine ?? ''} error={f.errors.addressLine} onChange={(e) => f.set('addressLine', n(e.target.value))} />
         <div className="grid gap-4 sm:grid-cols-3">
           <Input label="İlçe" value={d.district ?? ''} error={f.errors.district} onChange={(e) => f.set('district', n(e.target.value))} />

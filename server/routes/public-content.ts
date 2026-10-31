@@ -25,7 +25,8 @@ publicContentRouter.get('/site', async (_req, res) => {
     prisma.faq.findMany({ where: { isPublished: true }, orderBy: { sortOrder: 'asc' }, select: { id: true, question: true, answer: true } }),
     prisma.blogCategory.findMany({ orderBy: { sortOrder: 'asc' }, select: { id: true, slug: true, name: true } }),
   ]);
-  res.set('Cache-Control', 'public, max-age=60');
+  // Panelde yapılan değişiklikler yenilemede hemen görünsün
+  res.set('Cache-Control', 'no-cache');
   res.json({ settings, services: services.map(serializeService), faqs, categories });
 });
 

@@ -128,14 +128,14 @@ export default function ServicesAdminPage() {
                 onDragEnd={() => (setDragId(null), setOverId(null))}
                 onDrop={(e) => onDrop(e, s.id)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-4 transition-colors sm:gap-4 sm:px-5',
+                  'flex flex-wrap items-center gap-3 px-4 py-4 transition-colors sm:flex-nowrap sm:gap-4 sm:px-5',
                   dragId === s.id && 'opacity-50',
                   overId === s.id && dragId !== s.id && 'bg-rose/10',
                   !s.isPublished && 'bg-panel-bg/40',
                 )}
               >
                 <GripVertical className="hidden h-5 w-5 shrink-0 cursor-grab text-panel-muted sm:block" aria-hidden />
-                <span className="w-6 shrink-0 font-display text-[1.05rem] text-gold [font-variant-numeric:lining-nums_tabular-nums]">{String(i + 1).padStart(2, '0')}</span>
+                <span className="hidden w-6 shrink-0 sm:inline font-display text-[1.05rem] text-gold [font-variant-numeric:lining-nums_tabular-nums]">{String(i + 1).padStart(2, '0')}</span>
                 <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-lg', s.isPublished ? 'bg-espresso text-rose' : 'bg-panel-line/60 text-cocoa/50')}>
                   <ServiceIcon name={s.icon} className="h-7 w-7" />
                 </span>
@@ -150,13 +150,13 @@ export default function ServicesAdminPage() {
                     {s.priceCents != null && <span>{formatMoney(s.priceCents)}{s.showPrice ? '' : ' (gizli)'}</span>}
                   </span>
                 </button>
-                <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-                  <div className="mr-1 hidden sm:block">
+                <div className="flex w-full shrink-0 items-center justify-end gap-0.5 border-t border-panel-line/70 pt-2 sm:w-auto sm:gap-1 sm:border-0 sm:pt-0">
+                  <div className="mr-auto sm:mr-1">
                     <Switch checked={s.isPublished} onChange={() => void toggle(s)} label={<span className="sr-only">{s.title} yayında</span>} />
                   </div>
                   <IconButton label="Yukarı taşı" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp className="h-4 w-4" /></IconButton>
                   <IconButton label="Aşağı taşı" disabled={i === items.length - 1} onClick={() => move(i, 1)}><ArrowDown className="h-4 w-4" /></IconButton>
-                  <IconButton label="Düzenle" className="hidden sm:inline-flex" onClick={() => setEditing({ service: s })}><Pencil className="h-4 w-4" /></IconButton>
+                  <IconButton label="Düzenle" onClick={() => setEditing({ service: s })}><Pencil className="h-4 w-4" /></IconButton>
                   <IconButton label="Sil" className="hover:text-danger" onClick={() => void remove(s)}><Trash2 className="h-4 w-4" /></IconButton>
                 </div>
               </li>
