@@ -1,0 +1,14 @@
+{
+  "name": "Nida Akın — Diyetisyen",
+  "short_name": "Nida Akın",
+  "lang": "tr",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#211710",
+  "theme_color": "#211710",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/apple-touch-icon.png", "type": "image/png", "sizes": "180x180" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}

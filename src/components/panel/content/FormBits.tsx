@@ -22,8 +22,8 @@ export function SaveBar({ dirty, saving, onSave, onReset, viewHref, note }: { di
   return (
     <div
       className={cn(
-        'sticky bottom-0 z-10 flex flex-wrap items-center gap-3 rounded-b-xl border-t px-5 py-3 transition-colors sm:px-6',
-        dirty ? 'border-warning/40 bg-[#fbf5ea]' : 'border-panel-line bg-white',
+        'z-10 flex flex-wrap items-center gap-3 rounded-b-xl border-t px-5 py-3 transition-colors sm:px-6',
+        dirty ? 'sticky bottom-0 border-warning/40 bg-[#fbf5ea] shadow-[0_-8px_24px_-16px_rgba(33,23,16,0.35)]' : 'border-panel-line bg-white',
       )}
     >
       <p className="mr-auto text-[0.8rem] text-panel-muted" aria-live="polite">

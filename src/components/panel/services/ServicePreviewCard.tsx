@@ -7,7 +7,7 @@ export function ServicePreviewCard({ title, summary, icon, durationMinutes, pric
     <div className="relative overflow-hidden rounded-sm border border-cream/12 bg-espresso p-6 text-cream">
       <div className="flex items-start justify-between">
         <ServiceIcon name={icon} className="h-11 w-11 text-rose" />
-        <span className="font-display text-[0.95rem] text-gold tabular">{String(index + 1).padStart(2, '0')}</span>
+        <span className="font-display text-[0.95rem] text-gold [font-variant-numeric:lining-nums_tabular-nums]">{String(index + 1).padStart(2, '0')}</span>
       </div>
       <p className="mt-8 font-display text-[1.6rem] leading-[1.1] font-medium">{title || 'Hizmet başlığı'}</p>
       <p className="mt-3 text-[0.85rem] leading-relaxed text-mist">{summary || 'Kısa açıklama burada görünür.'}</p>

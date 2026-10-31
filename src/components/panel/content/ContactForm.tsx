@@ -7,7 +7,7 @@ const n = (v: string) => (v.trim() === '' ? null : v);
 
 const CONTACT_LABELS: Record<string, string> = {
   phone: 'Telefon', whatsapp: 'WhatsApp', email: 'E-posta', addressLine: 'Adres', district: 'İlçe', city: 'Şehir',
-  postalCode: 'Posta kodu', mapEmbedUrl: 'Harita', mapLinkUrl: 'Yol tarifi bağlantısı', hoursNote: 'Çalışma saatleri notu',
+  postalCode: 'Posta kodu', venueName: 'Mekân adı', venueNote: 'Mekân notu', mapEmbedUrl: 'Harita', mapLinkUrl: 'Yol tarifi bağlantısı', hoursNote: 'Çalışma saatleri notu',
 };
 
 export function ContactForm() {
@@ -46,7 +46,11 @@ export function ContactForm() {
         <Input label="E-posta" type="email" placeholder="ornek@alanadi.com" value={d.email ?? ''} error={f.errors.email} onChange={(e) => f.set('email', n(e.target.value))} />
         <Input label="Çalışma saatleri notu" placeholder="Ör. Hafta içi 10.00 – 19.00" hint="Ziyaretçiye gösterilen metin. Randevu saatleri ise Çalışma Takvimi'nden yönetilir." value={d.hoursNote ?? ''} error={f.errors.hoursNote} onChange={(e) => f.set('hoursNote', n(e.target.value))} />
       </FormSection>
-      <FormSection title="Adres" description="Mekânın açık adresi.">
+      <FormSection title="Mekân ve adres" description="Danışmanlığın verildiği mekân ve açık adresi.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input label="Mekân adı" placeholder="Ör. stüdyo / merkez adı" value={d.venueName ?? ''} maxLength={120} error={f.errors.venueName} onChange={(e) => f.set('venueName', n(e.target.value))} />
+          <Input label="Mekân notu" placeholder="Ör. giriş, kat veya bulma tarifi" hint="İletişim sayfasında adresin altında gösterilir." value={d.venueNote ?? ''} maxLength={240} error={f.errors.venueNote} onChange={(e) => f.set('venueNote', n(e.target.value))} />
+        </div>
         <Input label="Açık adres" placeholder="Mahalle, cadde/sokak, bina no" value={d.addressLine ?? ''} error={f.errors.addressLine} onChange={(e) => f.set('addressLine', n(e.target.value))} />
         <div className="grid gap-4 sm:grid-cols-3">
           <Input label="İlçe" value={d.district ?? ''} error={f.errors.district} onChange={(e) => f.set('district', n(e.target.value))} />
@@ -58,13 +62,13 @@ export function ContactForm() {
         title="Harita"
         description={
           <>
-            Google Haritalar’da mekânı bulun → <em>Paylaş</em> → <em>Harita yerleştir</em> → HTML kodundaki <code>src="…"</code> bağlantısını yapıştırın.
+            Google Haritalar’da mekânı bulun → <em>Paylaş</em> → <em>Harita yerleştir</em> → HTML kodundaki <code>src="…"</code> bağlantısını yapıştırın (…/maps/embed?… veya …&amp;output=embed).
           </>
         }
       >
         <Input label="Harita yerleştirme bağlantısı" placeholder="https://www.google.com/maps/embed?pb=…" value={d.mapEmbedUrl ?? ''} error={f.errors.mapEmbedUrl} onChange={(e) => f.set('mapEmbedUrl', n(e.target.value))} />
         <Input label="Yol tarifi bağlantısı" placeholder="https://maps.app.goo.gl/…" value={d.mapLinkUrl ?? ''} error={f.errors.mapLinkUrl} onChange={(e) => f.set('mapLinkUrl', n(e.target.value))} />
-        {d.mapEmbedUrl?.startsWith('https://www.google.com/maps/embed') && (
+        {d.mapEmbedUrl && (d.mapEmbedUrl.startsWith('https://www.google.com/maps/embed') || (d.mapEmbedUrl.startsWith('https://www.google.com/maps?') && d.mapEmbedUrl.includes('output=embed'))) && (
           <iframe title="Harita önizleme" src={d.mapEmbedUrl} className="h-56 w-full rounded-lg border border-panel-line" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
         )}
       </FormSection>
