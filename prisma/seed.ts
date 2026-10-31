@@ -13,6 +13,13 @@ import { defaultSettings, SETTINGS_KEYS } from '../shared/settings';
 import { seedFaqs, seedPosts, seedServices } from '../shared/seed-content';
 import { samplePlanTemplate } from '../shared/plan';
 import { encryptJson } from '../server/lib/crypto';
+import { siteConfig } from '../shared/site-config';
+
+/** "Dyt. Nida Akın, 0552 454 34 23" — telefon merkezi yapılandırmadan */
+function planSignature() {
+  const m = siteConfig.contact.phone?.match(/^\+90(5\d{2})(\d{3})(\d{2})(\d{2})$/);
+  return [`Dyt. ${siteConfig.business.brandName}`, m ? `0${m[1]} ${m[2]} ${m[3]} ${m[4]}` : siteConfig.contact.phone].filter(Boolean).join(', ');
+}
 
 async function main() {
   for (const key of ['ADMIN', 'DIETITIAN', 'ASSISTANT'] as const) {
@@ -59,7 +66,7 @@ async function main() {
 
   // Diyetisyenin örnek planından oluşturulan başlangıç şablonu
   if ((await prisma.nutritionPlan.count({ where: { isTemplate: true } })) === 0) {
-    await prisma.nutritionPlan.create({ data: { isTemplate: true, name: '1. ay, 1. liste (örnek şablon)', dataEnc: encryptJson(samplePlanTemplate()) } });
+    await prisma.nutritionPlan.create({ data: { isTemplate: true, name: '1. ay, 1. liste (örnek şablon)', dataEnc: encryptJson(samplePlanTemplate(planSignature())) } });
   }
 
   console.log('✓ Temel veriler hazır. Yönetici hesabı için: npm run admin:create');

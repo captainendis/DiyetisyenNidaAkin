@@ -84,6 +84,10 @@
   .panel-root :focus-visible {
     outline-color: var(--color-cocoa);
   }
+  /* Telefon numaraları: eski stil rakamlar yerine düz (lining) rakamlar — okunabilirlik için */
+  a[href^="tel:"] {
+    font-variant-numeric: lining-nums tabular-nums;
+  }
   img {
     max-width: 100%;
     height: auto;

@@ -64,7 +64,8 @@ export const siteConfig = {
   } satisfies BusinessInfo,
 
   contact: {
-    phone: null,
+    // Kaynak: diyetisyenin beslenme planı örneği + müşteri onayı (2026-10-31)
+    phone: '+905524543423',
     whatsapp: null,
     email: null,
     // Kaynak: Google Haritalar kaydı (müşteri tarafından iletildi, 2026-10-31)

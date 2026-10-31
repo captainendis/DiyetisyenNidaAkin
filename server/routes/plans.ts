@@ -88,7 +88,10 @@ plansRouter.post('/', write, async (req, res) => {
     data = decode(src.dataEnc);
   } else data = emptyPlan(await defaultSignature());
   if (client) data = { ...data, title: planTitleFor(client.firstName) };
-  if (!data.signature) data.signature = await defaultSignature();
+  const sig = await defaultSignature();
+  const { business } = await getSettings(['business']);
+  // Boş ya da telefonsuz varsayılan imza ("Dyt. Nida Akın") → iletişim ayarlarındaki telefonla güncel imza
+  if (!data.signature || data.signature === `Dyt. ${business.brandName}`) data.signature = sig;
 
   const plan = await prisma.nutritionPlan.create({
     data: {
