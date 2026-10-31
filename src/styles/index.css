@@ -106,6 +106,7 @@
   .eyebrow-line::after {
     content: '';
     display: block;
+    flex-shrink: 0;
     width: 3.5rem;
     height: 1px;
     background: currentColor;
