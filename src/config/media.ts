@@ -15,20 +15,20 @@ export const VENUE = {
     widths: [480, 668, 1000],
     width: 668,
     height: 828,
-    alt: 'Nida Akın Diyetisyen mekânının gece görünümü: siyah doğramalı geniş cam cephe, içeriden yayılan sıcak ışık',
+    alt: 'Görüşmelerin yapıldığı Pelin Tek Studio Bahçekent’in gece görünümü: siyah doğramalı geniş cam cephe, içeriden yayılan sıcak ışık',
   },
   table: {
     base: '/images/mekan-masa',
     widths: [390, 585],
     width: 390,
     height: 464,
-    alt: 'Mekânın cam cephesinin önünde ahşap masa ve sandalyeler, sıcak iç aydınlatma',
+    alt: 'Pelin Tek Studio Bahçekent: cam cephenin ardında ahşap masa ve sandalyeler, sıcak iç aydınlatma',
   },
   sign: {
     base: '/images/mekan-tabela',
     widths: [210, 315],
     width: 210,
     height: 352,
-    alt: 'Mekânın cam cephesindeki hizmet yazıları, aralarında "Beslenme Danışmanlığı"',
+    alt: 'Stüdyonun cam cephesindeki yazılar; stüdyoda sunulan çalışmalar arasında beslenme danışmanlığı da yer alır',
   },
 } as const;

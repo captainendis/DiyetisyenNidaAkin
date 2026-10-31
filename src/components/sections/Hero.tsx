@@ -8,10 +8,12 @@ import { FEATURE_ICONS } from '@/components/icons/FeatureIcons';
 import { AppleOutline } from '@/components/icons/Botanical';
 import { VENUE } from '@/config/media';
 import { Picture } from './Picture';
+import { shortPlace } from './address';
 
 export function Hero() {
   const { site } = useSite();
   const hero = site.settings.hero;
+  const { contact } = site.settings;
   const booking = useBooking();
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
@@ -34,6 +36,11 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-espresso/50 via-transparent to-transparent lg:from-espresso lg:via-espresso/0 lg:via-35%" aria-hidden />
         <div className="absolute inset-0 bg-gradient-to-t from-espresso from-25% via-espresso/45 to-espresso/0 lg:from-espresso/70 lg:from-0% lg:via-transparent lg:via-30% lg:to-espresso/80" aria-hidden />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-espresso/90 to-transparent" aria-hidden />
+        {contact.venueName && (
+          <p className="absolute right-6 bottom-8 z-[1] hidden text-right text-[0.68rem] tracking-[0.2em] text-cream/55 uppercase lg:block xl:right-10">
+            {contact.venueName}{shortPlace(contact) ? <span className="text-cream/40"> — {contact.district ?? contact.city}</span> : null}
+          </p>
+        )}
         <div className="absolute inset-0 lg:shadow-[inset_0_0_180px_60px_rgba(33,23,16,0.75)]" aria-hidden />
       </motion.div>
 

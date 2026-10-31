@@ -4,6 +4,7 @@
  * Köşeli parantez içindeki alanlar doğrulanmış bilgilerle doldurulmalıdır (panelden işletme/iletişim bilgileri girildikçe otomatik dolar).
  */
 import type { PublicSettings } from '@/data/types';
+import { formatAddress } from '../address';
 
 export type LegalDoc = 'kvkk' | 'consent' | 'privacy' | 'cookies';
 export interface LegalSection { heading: string; paragraphs?: string[]; list?: string[] }
@@ -11,7 +12,7 @@ export interface LegalContent { title: string; accent?: string; description: str
 
 export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
   const controller = s.business.legalName ?? '[Veri sorumlusunun resmî unvanı / adı soyadı]';
-  const address = [s.contact.addressLine, s.contact.district, s.contact.city].filter(Boolean).join(', ') || '[Açık adres]';
+  const address = formatAddress(s.contact) ?? '[Açık adres]';
   const email = s.business.kvkkContactEmail ?? s.contact.email ?? '[KVKK başvuru e-posta adresi]';
 
   const rights: string[] = [

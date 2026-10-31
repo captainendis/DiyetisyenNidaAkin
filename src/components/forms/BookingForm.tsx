@@ -340,6 +340,12 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
                 ))}
               </div>
               {errors.meetingType && <p className="mt-2 text-[0.8rem] text-danger" role="alert">{errors.meetingType}</p>}
+              {meetingType === 'IN_PERSON' && site.settings.contact.venueName && (
+                <p className="mt-3 max-w-md text-[0.85rem] leading-relaxed text-taupe">
+                  Yüz yüze görüşmeler {site.settings.contact.venueName}’in üst katındaki danışmanlık alanında yapılır
+                  {site.settings.contact.district ? ` (${site.settings.contact.district})` : ''}.
+                </p>
+              )}
             </fieldset>
           </motion.div>
         )}

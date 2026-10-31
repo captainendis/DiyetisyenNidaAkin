@@ -79,6 +79,7 @@ async function businessJsonLd() {
       addressCountry: 'TR',
     };
   }
+  if (contact.mapLinkUrl) ld.hasMap = contact.mapLinkUrl;
   const sameAs = Object.values(social).filter(Boolean);
   if (sameAs.length) ld.sameAs = sameAs;
   return ld;

@@ -4,6 +4,7 @@ import { SocialLinks } from '@/components/navigation/SocialLinks';
 import { NAV_LINKS } from '@/components/navigation/Navbar';
 import { useSite } from '@/data/SiteContext';
 import { formatPhone } from '@/lib/format';
+import { formatAddress } from '@/components/sections/address';
 
 const LEGAL = [
   { to: '/kvkk-aydinlatma-metni', label: 'KVKK Aydınlatma Metni' },
@@ -15,11 +16,11 @@ const LEGAL = [
 export function Footer() {
   const { site } = useSite();
   const { contact, social, business, approach } = site.settings;
-  const address = [contact.addressLine, contact.district, contact.city].filter(Boolean).join(', ');
+  const address = formatAddress(contact);
   const contactItems = [
     contact.phone && { label: 'Telefon', value: formatPhone(contact.phone), href: `tel:${contact.phone}` },
     contact.email && { label: 'E-posta', value: contact.email, href: `mailto:${contact.email}` },
-    address && { label: 'Adres', value: address, href: contact.mapLinkUrl ?? undefined },
+    address && { label: contact.venueName ?? 'Adres', value: address, href: contact.mapLinkUrl ?? undefined },
   ].filter(Boolean) as { label: string; value: string; href?: string }[];
 
   return (

@@ -6,6 +6,7 @@ import { VENUE } from '@/config/media';
 import { formatPhone } from '@/lib/format';
 import { Picture } from './Picture';
 import { SectionLabel } from './SectionLabel';
+import { formatAddress, shortPlace } from './address';
 
 function Row({ label, value, href, external }: { label: string; value: string | null; href?: string | null; external?: boolean }) {
   let content: ReactNode;
@@ -32,7 +33,7 @@ export function MapBlock({ className = '' }: { className?: string }) {
     return (
       <div className={`relative overflow-hidden bg-sand ${className}`}>
         <iframe
-          title="Harita — Nida Akın Diyetisyen konumu"
+          title={`Harita — ${c.venueName ?? 'Nida Akın Diyetisyen'} konumu`}
           src={c.mapEmbedUrl}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
@@ -69,7 +70,8 @@ export function ContactSection({ index = '06', heading = true }: { index?: strin
   const { site } = useSite();
   const c = site.settings.contact;
   const s = site.settings.social;
-  const address = [c.addressLine, c.district, c.city].filter(Boolean).join(', ') || null;
+  const address = formatAddress(c);
+  const place = shortPlace(c);
   const igHandle = s.instagram ? '@' + s.instagram.replace(/\/$/, '').split('/').pop() : null;
   return (
     <section className="bg-ivory text-espresso" aria-labelledby={heading ? 'contact-title' : undefined}>
@@ -77,7 +79,9 @@ export function ContactSection({ index = '06', heading = true }: { index?: strin
         <Reveal className="lg:col-span-4">
           <div className="relative lg:sticky lg:top-28">
             <Picture {...VENUE.table} sizes="(min-width: 1024px) 30vw, 90vw" className="block" imgClassName="aspect-[4/5] h-auto w-full object-cover" />
-            <p className="mt-4 text-[0.8rem] leading-relaxed text-taupe">Sıcak ışıklı, sakin bir mekânda — kendinize ayırdığınız zaman için.</p>
+            <p className="mt-4 text-[0.8rem] leading-relaxed text-taupe">
+              {c.venueName ? <>{c.venueName}{place ? ` — ${place.split(',')[0]}` : ''}</> : 'Sıcak ışıklı, sakin bir mekânda — kendinize ayırdığınız zaman için.'}
+            </p>
           </div>
         </Reveal>
         <div className="lg:col-span-7 lg:col-start-6">
@@ -89,18 +93,33 @@ export function ContactSection({ index = '06', heading = true }: { index?: strin
               </h2>
             </Reveal>
           )}
+          {c.venueName && (
+            <Reveal delay={0.05}>
+              <div className={heading ? 'mt-12' : ''}>
+                <p className="text-[0.68rem] font-semibold tracking-[0.2em] text-taupe uppercase">Görüşme yeri</p>
+                <p className="mt-3 font-display text-[2rem] leading-tight text-espresso sm:text-[2.3rem]">{c.venueName}</p>
+                {c.venueNote && <p className="mt-2 max-w-lg text-[0.95rem] leading-relaxed text-taupe">{c.venueNote}</p>}
+              </div>
+            </Reveal>
+          )}
           <Reveal delay={0.1}>
-            <dl className="mt-12 border-b border-espresso/12">
+            <dl className="mt-10 border-b border-espresso/12">
               <Row label="Telefon" value={c.phone ? formatPhone(c.phone) : null} href={c.phone ? `tel:${c.phone}` : null} />
               <Row label="WhatsApp" value={c.whatsapp ? 'Mesaj gönderin' : null} href={c.whatsapp ? `https://wa.me/${c.whatsapp}` : null} external />
               <Row label="Instagram" value={igHandle} href={s.instagram} external />
               <Row label="E-posta" value={c.email} href={c.email ? `mailto:${c.email}` : null} />
-              <Row label="Adres" value={address} href={c.mapLinkUrl} external />
+              <Row label="Adres" value={address} />
               {c.hoursNote && <Row label="Çalışma saatleri" value={c.hoursNote} />}
             </dl>
           </Reveal>
           <Reveal delay={0.15}>
             <MapBlock className="mt-10 aspect-[16/9] w-full" />
+            {c.mapLinkUrl && (
+              <a href={c.mapLinkUrl} target="_blank" rel="noopener noreferrer" className="group mt-6 inline-flex items-center gap-2.5 border-b border-espresso pb-1 text-[0.95rem] font-medium text-espresso">
+                Yol tarifi al
+                <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </a>
+            )}
             <p className="mt-5 text-[0.9rem] text-taupe">
               Randevu talebinizi doğrudan{' '}
               <Link to="/randevu" className="text-espresso underline decoration-gold underline-offset-4">çevrim içi form</Link> ile de iletebilirsiniz.
