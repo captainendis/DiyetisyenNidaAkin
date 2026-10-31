@@ -66,7 +66,7 @@ export const siteConfig = {
   contact: {
     // Kaynak: diyetisyenin beslenme planı örneği + müşteri onayı (2026-10-31)
     phone: '+905524543423',
-    whatsapp: null,
+    whatsapp: '905524543423', // müşteri onayı: telefonla aynı numara (2026-10-31)
     email: null,
     // Kaynak: Google Haritalar kaydı (müşteri tarafından iletildi, 2026-10-31)
     addressLine: 'Orhangazi Mah. Tunç Cd. Semt Bahçekent Sitesi No: 8E D:1. Etap',
