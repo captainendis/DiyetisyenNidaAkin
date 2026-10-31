@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@shared': path.resolve(__dirname, 'shared'),
+      '@': path.resolve(import.meta.dirname, 'src'),
+      '@shared': path.resolve(import.meta.dirname, 'shared'),
     },
   },
   server: {
@@ -18,13 +18,5 @@ export default defineConfig({
   build: {
     target: 'es2022',
     cssCodeSplit: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router'],
-          motion: ['motion'],
-        },
-      },
-    },
   },
 });

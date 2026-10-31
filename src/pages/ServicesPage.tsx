@@ -6,7 +6,7 @@ import { Reveal } from '@/components/motion/Reveal';
 import { ServiceIcon } from '@/components/icons/ServiceIcon';
 import { useBooking } from '@/components/forms/BookingProvider';
 import { Seo, SITE_URL } from '@/components/seo/Seo';
-import { formatMoney } from '@/lib/format';
+import { formatMoney } from '@/lib/text';
 
 export function ServiceMeta({ durationMinutes, priceCents }: { durationMinutes: number | null; priceCents: number | null }) {
   if (!durationMinutes && priceCents == null) return null;

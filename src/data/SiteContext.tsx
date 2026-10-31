@@ -4,7 +4,7 @@
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { api } from '@/lib/api';
-import { defaultSettings } from '@shared/settings';
+import { defaultSettings } from '@shared/settings-defaults';
 import { seedServices, seedFaqs } from '@shared/seed-content';
 import { DEFAULT_BLOG_CATEGORIES } from '@shared/constants';
 import type { SiteData } from './types';

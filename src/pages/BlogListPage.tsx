@@ -9,7 +9,7 @@ import { FaqList } from '@/components/sections/FaqList';
 import { Reveal } from '@/components/motion/Reveal';
 import { Seo, SITE_URL } from '@/components/seo/Seo';
 import { Sprig } from '@/components/icons/Botanical';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 const FAQ_SLUG = 'sik-sorulan-sorular';
 

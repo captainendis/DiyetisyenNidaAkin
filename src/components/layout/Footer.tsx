@@ -3,7 +3,7 @@ import { Logo } from '@/components/icons/Logo';
 import { SocialLinks } from '@/components/navigation/SocialLinks';
 import { NAV_LINKS } from '@/components/navigation/Navbar';
 import { useSite } from '@/data/SiteContext';
-import { formatPhone } from '@/lib/format';
+import { formatPhone } from '@/lib/text';
 import { formatAddress } from '@/components/sections/address';
 
 const LEGAL = [

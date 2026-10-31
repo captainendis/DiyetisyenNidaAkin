@@ -1,7 +1,7 @@
 import { useSite } from '@/data/SiteContext';
 import { Reveal } from '@/components/motion/Reveal';
 import { SectionLabel } from './SectionLabel';
-import { Sprig } from '@/components/icons/Botanical';
+import { LogoMark } from '@/components/icons/Logo';
 
 /** Marka tanıtımı — açık krem zemin, büyük tipografi, asimetrik yerleşim */
 export function Intro() {
@@ -26,7 +26,7 @@ export function Intro() {
         <div className="grid gap-12 lg:col-span-12 lg:grid-cols-12 lg:gap-x-10">
           <Reveal delay={0.1} className="hidden lg:col-span-3 lg:col-start-2 lg:block">
             <div className="flex h-full flex-col justify-between border-l border-gold/40 pl-6">
-              <Sprig className="w-20 text-gold" />
+              <LogoMark className="h-14 w-14 text-rose-deep/80" strokeWidth={1.1} />
               <p className="mt-16 text-[0.7rem] leading-relaxed font-semibold tracking-[0.22em] text-taupe uppercase">
                 Kişiye özel<br />beslenme danışmanlığı
               </p>

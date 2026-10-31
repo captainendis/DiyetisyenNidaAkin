@@ -6,7 +6,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router';
 import { CalendarDays } from 'lucide-react';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 type Tone = 'rose' | 'cream' | 'dark';
 const tones: Record<Tone, string> = {

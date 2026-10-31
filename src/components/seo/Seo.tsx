@@ -48,7 +48,7 @@ export function Seo({
   const { site } = useSite();
   const { pathname } = useLocation();
   const seo = site.settings.seo;
-  const fullTitle = title ? `${title}${seo.titleSuffix}` : seo.defaultTitle;
+  const fullTitle = title ? `${title} ${seo.titleSuffix.trim()}` : seo.defaultTitle;
   const desc = description ?? seo.defaultDescription;
   const url = `${SITE_URL}${pathname === '/' ? '/' : pathname.replace(/\/$/, '')}`;
   const img = image.startsWith('http') ? image : `${SITE_URL}${image}`;

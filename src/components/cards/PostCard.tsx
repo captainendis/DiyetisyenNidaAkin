@@ -1,8 +1,8 @@
 import { Link } from 'react-router';
 import type { PostCard as Post } from '@/data/types';
-import { formatDate } from '@/lib/format';
+import { formatDateIntl as formatDate } from '@/lib/text';
 import { Sprig } from '@/components/icons/Botanical';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 /** Kapak görseli yoksa: tipografik, sıcak tonlu kapak (stok görsel kullanılmaz) */
 function Cover({ post, large }: { post: Post; large?: boolean }) {

@@ -99,7 +99,7 @@ function breadcrumb(items: { name: string; path: string }[]) {
 export async function resolveMeta(pathname: string): Promise<PageMeta> {
   const clean = pathname.replace(/\/+$/, '') || '/';
   const { seo } = await getSettings(['seo']);
-  const t = (title?: string) => (title ? `${title}${seo.titleSuffix}` : seo.defaultTitle);
+  const t = (title?: string) => (title ? `${title} ${seo.titleSuffix.trim()}` : seo.defaultTitle);
 
   if (clean.startsWith('/panel')) {
     return { title: 'Yönetim Paneli | Nida Akın', description: 'Yetkili kullanıcılar için yönetim paneli.', canonicalPath: clean, noindex: true };

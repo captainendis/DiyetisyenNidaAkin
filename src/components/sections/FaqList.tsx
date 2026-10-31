@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import type { PublicFaq } from '@/data/types';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 /** Erişilebilir akordeon SSS listesi */
 export function FaqList({ faqs, tone = 'light' }: { faqs: PublicFaq[]; tone?: 'light' | 'dark' }) {

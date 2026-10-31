@@ -18,8 +18,7 @@ export function Picture({
         alt={alt}
         loading={priority ? 'eager' : 'lazy'}
         decoding={priority ? 'sync' : 'async'}
-        // @ts-expect-error fetchpriority henüz React tiplerinde küçük harfli değil
-        fetchpriority={priority ? 'high' : undefined}
+        fetchPriority={priority ? 'high' : undefined}
         className={imgClassName}
         {...rest}
       />

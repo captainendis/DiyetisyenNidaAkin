@@ -16,15 +16,15 @@ import { publicAppointmentRequestSchema } from '@shared/schemas';
 import { MEETING_TYPE_LABEL, TIME_ZONE, type MeetingType } from '@shared/constants';
 import { ServiceIcon } from '@/components/icons/ServiceIcon';
 import { WhatsappIcon } from '@/components/icons/SocialIcons';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 import { CtaButton } from './Button';
+import { StepIndicator, type Step } from './StepIndicator';
+export { StepIndicator };
 
 interface DaysRes { days: { date: string; available: number }[]; leadTimeHours: number; maxDaysAhead: number }
 interface SlotsRes { date: string; closedReason: string | null; slots: { time: string; endTime: string; available: boolean }[] }
 interface SubmitRes { ok: true; status: 'PENDING' | 'NEW_REQUEST'; reference: string; whatsapp: string | null }
 
-type Step = 1 | 2 | 3 | 4;
-const STEP_LABELS = ['Görüşme', 'Zaman', 'Bilgileriniz'];
 
 const fieldCls =
   'w-full rounded-none border-0 border-b border-espresso/20 bg-transparent px-0 py-3 text-[1rem] text-espresso placeholder:text-taupe/60 transition-colors focus:border-espresso focus:outline-none focus:ring-0 aria-[invalid=true]:border-danger';
@@ -36,34 +36,6 @@ function FieldShell({ label, error, htmlFor, children, hint }: { label: string; 
       {children}
       {error ? <p className="mt-1.5 text-[0.8rem] text-danger" role="alert">{error}</p> : hint ? <p className="mt-1.5 text-[0.8rem] text-taupe">{hint}</p> : null}
     </div>
-  );
-}
-
-export function StepIndicator({ step, tone = 'light', vertical = false }: { step: Step; tone?: 'light' | 'dark'; vertical?: boolean }) {
-  return (
-    <ol className={cn('flex gap-3', vertical ? 'flex-col items-start' : 'items-center')} aria-label="Adımlar">
-      {STEP_LABELS.map((l, i) => {
-        const n = (i + 1) as Step;
-        const active = step === n;
-        const done = step > n;
-        return (
-          <li key={l} className="flex items-center gap-3" aria-current={active ? 'step' : undefined}>
-            <span
-              className={cn(
-                'flex h-7 w-7 items-center justify-center rounded-full border text-[0.72rem] font-semibold transition-colors',
-                tone === 'dark'
-                  ? done ? 'border-rose bg-rose text-espresso' : active ? 'border-rose text-rose' : 'border-cream/25 text-cream/50'
-                  : done ? 'border-espresso bg-espresso text-cream' : active ? 'border-espresso text-espresso' : 'border-espresso/20 text-taupe',
-              )}
-            >
-              {done ? <Check className="h-3.5 w-3.5" /> : n}
-            </span>
-            <span className={cn('text-[0.8rem] font-medium', vertical ? 'inline' : 'hidden sm:inline', tone === 'dark' ? (active ? 'text-cream' : 'text-cream/50') : active ? 'text-espresso' : 'text-taupe')}>{l}</span>
-            {!vertical && i < STEP_LABELS.length - 1 && <span className={cn('h-px w-6 sm:w-10', tone === 'dark' ? 'bg-cream/20' : 'bg-espresso/15')} aria-hidden />}
-          </li>
-        );
-      })}
-    </ol>
   );
 }
 

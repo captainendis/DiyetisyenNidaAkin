@@ -1,4 +1,4 @@
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 /** Editoryal bölüm etiketi: numara + ince çizgi + ad */
 export function SectionLabel({ index, children, tone = 'dark', className }: { index?: string; children: string; tone?: 'dark' | 'light'; className?: string }) {

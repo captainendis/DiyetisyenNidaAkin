@@ -10,7 +10,7 @@ import { CtaButton } from '@/components/forms/Button';
 import { useBooking } from '@/components/forms/BookingProvider';
 import { useSite } from '@/data/SiteContext';
 import { SocialLinks } from './SocialLinks';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 export const NAV_LINKS = [
   { to: '/', label: 'Ana Sayfa', end: true },
@@ -22,7 +22,7 @@ export const NAV_LINKS = [
 
 function MenuToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'} aria-expanded={open} aria-controls="mobile-menu" className="relative z-[61] -mr-2 flex h-11 w-11 items-center justify-center lg:hidden">
+    <button type="button" onClick={onClick} aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'} aria-expanded={open} aria-controls="mobile-menu" className="relative z-[61] -mr-2 flex h-11 w-11 items-center justify-center xl:hidden">
       <span className="relative block h-3 w-7">
         <span className={cn('absolute left-0 h-px w-7 bg-cream transition-transform duration-500 ease-[var(--ease-soft)]', open ? 'top-1.5 rotate-45' : 'top-0')} />
         <span className={cn('absolute left-0 h-px bg-cream transition-all duration-500 ease-[var(--ease-soft)]', open ? 'top-1.5 w-7 -rotate-45' : 'top-3 w-4')} />
@@ -59,15 +59,15 @@ export function Navbar() {
       <a href="#icerik" className="sr-only z-[100] bg-rose px-4 py-2 text-espresso focus:not-sr-only focus:fixed focus:top-3 focus:left-3">İçeriğe geç</a>
       <header
         className={cn(
-          'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter,padding] duration-500 ease-[var(--ease-soft)]',
+          'fixed inset-x-0 top-0 z-[65] transition-[background-color,border-color,backdrop-filter,padding] duration-500 ease-[var(--ease-soft)]',
           scrolled && !open ? 'border-b border-cream/10 bg-espresso/75 backdrop-blur-xl' : 'border-b border-transparent bg-transparent',
         )}
       >
-        <div className={cn('container-edge flex items-center justify-between gap-6 transition-[height] duration-500', scrolled ? 'h-[72px]' : 'h-[88px] lg:h-[104px]')}>
+        <div className={cn('container-edge flex items-center justify-between gap-6 transition-[height] duration-500', scrolled ? 'h-[72px]' : 'h-[88px] xl:h-[104px]')}>
           <Link to="/" aria-label="Nida Akın Diyetisyen — Ana sayfa" className="relative z-[61] shrink-0">
             <Logo compact={scrolled} />
           </Link>
-          <nav aria-label="Ana menü" className="hidden lg:block">
+          <nav aria-label="Ana menü" className="hidden xl:block">
             <ul className="flex items-center gap-8 xl:gap-12">
               {NAV_LINKS.map((l) => (
                 <li key={l.to}>
@@ -84,7 +84,7 @@ export function Navbar() {
             </ul>
           </nav>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:block"><CtaButton onClick={() => booking.open()} className="h-11 px-5 text-[0.88rem]">Randevu Al</CtaButton></div>
+            <div className="hidden sm:block"><CtaButton onClick={() => booking.open()} className="h-11 px-5 text-[0.88rem] whitespace-nowrap">Randevu Al</CtaButton></div>
             <MenuToggle open={open} onClick={() => setOpen((o) => !o)} />
           </div>
         </div>
@@ -94,7 +94,7 @@ export function Navbar() {
         {open && (
           <motion.div
             id="mobile-menu"
-            className="grain fixed inset-0 z-[60] flex flex-col bg-espresso lg:hidden"
+            className="grain fixed inset-0 z-[60] flex flex-col bg-espresso xl:hidden"
             initial={reduce ? { opacity: 0 } : { clipPath: 'inset(0 0 100% 0)' }}
             animate={reduce ? { opacity: 1 } : { clipPath: 'inset(0 0 0% 0)' }}
             exit={reduce ? { opacity: 0 } : { clipPath: 'inset(0 0 100% 0)' }}

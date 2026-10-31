@@ -1,6 +1,6 @@
 import type { SocialLinks as Social } from '@shared/site-config';
 import { InstagramIcon, LinkedinIcon, XIcon, YoutubeIcon } from '@/components/icons/SocialIcons';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 const ITEMS = [
   { key: 'instagram', label: 'Instagram', Icon: InstagramIcon },

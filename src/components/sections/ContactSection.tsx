@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useSite } from '@/data/SiteContext';
 import { Reveal } from '@/components/motion/Reveal';
 import { VENUE } from '@/config/media';
-import { formatPhone } from '@/lib/format';
+import { formatPhone } from '@/lib/text';
 import { Picture } from './Picture';
 import { SectionLabel } from './SectionLabel';
 import { formatAddress, shortPlace } from './address';

@@ -24,7 +24,7 @@ export function Hero() {
   return (
     <section ref={ref} className="grain relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-espresso" aria-label="Giriş">
       {/* Mekân fotoğrafı — masaüstünde sağ ~%58, mobilde tam arka plan */}
-      <motion.div style={{ y: imgY }} className="absolute inset-x-0 top-0 -z-10 h-[64svh] lg:inset-y-0 lg:right-0 lg:left-auto lg:h-auto lg:w-[max(54vw,calc(100svh*0.83))]">
+      <motion.div style={{ y: imgY }} className="absolute inset-x-0 top-0 -z-10 h-[64svh] lg:inset-y-0 lg:right-0 lg:left-auto lg:h-auto lg:w-[min(max(54vw,calc(100svh*0.83)),calc(100svh*0.98))]">
         <Picture
           {...VENUE.facade}
           sizes="(min-width: 1024px) 60vw, 100vw"

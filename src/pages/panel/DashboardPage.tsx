@@ -104,7 +104,7 @@ export default function DashboardPage() {
         <p className="mt-1 text-sm text-panel-muted capitalize tabular sm:hidden">{now.toFormat('d MMMM yyyy, cccc')}</p>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         {/* Bugünün ajandası */}
         <Card>
           <CardHeader
@@ -221,7 +221,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader title="Son 7 gün: randevular nasıl sonuçlandı?" description="Randevu tarihine göre, günlük" />
           <div className="px-5 pt-4 pb-5">

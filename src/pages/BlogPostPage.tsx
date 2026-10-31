@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/sections/PageHeader';
 import { PostCard } from '@/components/cards/PostCard';
 import { CtaBand } from '@/components/sections/CtaBand';
 import { Seo, SITE_URL } from '@/components/seo/Seo';
-import { formatDate } from '@/lib/format';
+import { formatDateIntl as formatDate } from '@/lib/text';
 import NotFoundPage from './NotFoundPage';
 
 export default function BlogPostPage() {

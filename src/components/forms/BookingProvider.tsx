@@ -2,12 +2,15 @@
  * Global randevu modalı. Sitedeki tüm "Randevu Al" düğmeleri useBooking().open() çağırır.
  * Masaüstü: sol koyu bilgi şeridi + sağ form. Mobil: tam yükseklikte alt sayfa.
  */
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { X } from 'lucide-react';
 import { useLocation } from 'react-router';
-import { BookingForm, StepIndicator } from './BookingForm';
+import { StepIndicator } from './StepIndicator';
+
+// Form (zod doğrulama + luxon takvim) yalnızca randevu penceresi açıldığında yüklenir
+const BookingForm = lazy(() => import('./BookingForm').then((m) => ({ default: m.BookingForm })));
 import { LogoMark } from '@/components/icons/Logo';
 import { useSite } from '@/data/SiteContext';
 
@@ -85,7 +88,9 @@ function BookingDialog({ serviceId, onClose }: { serviceId: string | null; onClo
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-5 pt-6 pb-10 sm:px-8 lg:px-12 lg:pt-4">
-            <BookingForm initialServiceId={serviceId} onStepChange={setStep} />
+            <Suspense fallback={<div className="flex h-40 items-center justify-center" aria-busy="true"><span className="h-6 w-6 animate-spin rounded-full border-2 border-espresso/15 border-t-espresso" /></div>}>
+              <BookingForm initialServiceId={serviceId} onStepChange={setStep} />
+            </Suspense>
           </div>
         </div>
       </motion.div>

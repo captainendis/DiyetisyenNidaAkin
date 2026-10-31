@@ -182,7 +182,11 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   "tıbbi tavsiye yerine geçmez" uyarısı gösterilir.
 - **Çalışma saatleri:** Seed'de **tüm günler kapalıdır** (saatler uydurulmadı). Panel → Çalışma Takvimi'nden
   girilene kadar web sitesindeki form yalnızca "saat seçmeden iletişim talebi" kabul eder.
-- **Portre:** Gerçek portre olmadığı için stok fotoğraf kullanılmadı; yer tutucu alan vardır.
+- **Portre:** Gerçek portre olmadığı için stok fotoğraf kullanılmadı; yer tutucu alan vardır. Fotoğraf eklendiğinde
+  `src/config/media.ts` içindeki `PORTRAIT` alanını doldurmak yeterlidir.
+- **Mekân:** Pelin Tek Studio Bahçekent (Esenyurt) — adres ve harita doğrulanmış olarak yapılandırmadadır. Görüşmeler
+  stüdyonun üst katındaki danışmanlık alanında yapılır; vitrindeki pilates/yoga vb. stüdyonun hizmetleridir ve sitede
+  diyetisyenin hizmeti olarak gösterilmez.
 
 ## Randevu sistemi nasıl çalışır
 
@@ -236,20 +240,46 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 `details.fields` alan bazlı Türkçe mesajlar içerir (HTTP 422). Çakışmalar HTTP 409 döner.
 
 <!-- api:start -->
+**Kimlik doğrulama** (`/api/auth`)
+
 | Yöntem | Yol | Açıklama |
 | --- | --- | --- |
-| POST | `/api/auth/login` | Giriş (`email`, `password`, `remember`) |
-| POST | `/api/auth/logout` | Çıkış |
-| GET | `/api/auth/me` | Oturum bilgisi + CSRF token |
-| POST | `/api/auth/forgot-password` · `/reset-password` · `/change-password` | Şifre işlemleri |
-| GET | `/api/public/site` | Yayınlanmış site içeriği, hizmetler, SSS |
-| GET | `/api/public/blog` · `/api/public/blog/:slug` | Yayınlanmış yazılar |
+| POST | `/login` | `{ email, password, remember }` → oturum cookie'si. 401 hatalı bilgi · 423 hesap kilitli · 429 hız sınırı |
+| POST | `/logout` | Oturumu kapatır |
+| GET | `/me` | Kullanıcı, izinler ve CSRF token'ı |
+| POST | `/forgot-password` · `/reset-password` · `/change-password` | Şifre işlemleri |
+
+**Herkese açık** (`/api/public`, oturum gerekmez, kişisel veri dönmez)
+
+| Yöntem | Yol | Açıklama |
+| --- | --- | --- |
+| GET | `/site` | Yayındaki içerik, hizmetler, SSS, blog kategorileri |
+| GET | `/services/:slug` | Hizmet detayı |
+| GET | `/blog?category&page` · `/blog/:slug` | Yayınlanmış yazılar (+ ilgili yazılar) |
+| GET | `/availability/days?from&to&serviceId` | Uygun saat sayısı olan günler |
+| GET | `/availability/slots?date&serviceId` | Günün boş dilimleri |
+| POST | `/appointments` | Randevu talebi → 201 `{ status, reference }`; 409 `SLOT_TAKEN`, `TOO_SOON`, `DUPLICATE_REQUEST` … |
+
+**Panel** (oturum + CSRF; rol izinleri sunucuda denetlenir)
+
+| Modül | Uç noktalar |
+| --- | --- |
+| Dashboard | `GET /api/dashboard/stats` · `/agenda?date` · `/weekly` |
+| Randevular | `GET/POST /api/appointments` · `GET/PATCH/DELETE /api/appointments/:id` · `POST /:id/status` · `GET /slots?date&duration&ignoreId` · `GET /day-plans?from&to` |
+| Danışanlar | `GET/POST /api/clients` · `GET/PATCH/DELETE /:id` · `GET /:id/appointments` · `/:id/notes` (CRUD) · `POST /:id/health-consent` · `POST /:id/kvkk-notice` · `/:id/measurements` (CRUD) · `/:id/files` (yükle/listele/indir/sil) · `GET /:id/export` |
+| Bildirimler | `GET /api/notifications` · `GET /unread-count` · `POST /:id/read` · `/:id/unread` · `/read-all` · `DELETE /:id` · `GET /channels` |
+| Raporlar | `GET /api/reports?from&to` · `GET /export.csv?from&to` |
+| Hizmetler | `GET/POST /api/services` · `PATCH/DELETE /:id` · `POST /reorder` · `PATCH /:id/visibility` |
+| Çalışma takvimi | `GET/PUT /api/availability/rules` · `GET/POST /api/availability/blocked-dates` · `DELETE /blocked-dates/:id` |
+| İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
+| Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
+| Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 
 ## Test
 
 ```bash
-npm test               # vitest: müsaitlik birim testleri + çakışma entegrasyon testleri (veritabanı gerekir)
+npm test               # vitest: 15 test — müsaitlik birim testleri + çakışma/eşzamanlılık entegrasyon testleri (veritabanı gerekir)
 npm run typecheck      # istemci + sunucu tip kontrolü
 ```
 

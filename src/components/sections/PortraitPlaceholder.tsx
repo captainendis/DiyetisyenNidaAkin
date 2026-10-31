@@ -1,6 +1,6 @@
 import { PORTRAIT } from '@/config/media';
 import { LogoMark } from '@/components/icons/Logo';
-import { cn } from '@/lib/format';
+import { cn } from '@/lib/text';
 
 /**
  * Portre alanı. src/config/media.ts → PORTRAIT doldurulduğunda gerçek fotoğrafı gösterir.
