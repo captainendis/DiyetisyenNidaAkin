@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+
+/*
+ * ─────────────────────────────────────────────────────────────
+ *  NİDA AKIN — TASARIM SİSTEMİ
+ *  Editorial wellness · minimal lüks · sıcak mekân ışığı
+ *
+ *  Renk rolleri
+ *   espresso  #211710  birincil koyu zemin (gece cephesi)
+ *   cocoa     #302219  ikincil koyu zemin
+ *   umber     #3B2B20  koyu yüzey
+ *   cream     #F4EBDD  açık zemin / koyu üzerinde metin
+ *   ivory     #FAF6EF  en açık zemin
+ *   rose      #DDAFA0  vurgu (yalnızca CTA ve kilit anlar)
+ *   gold      #B99569  ince çizgiler, numaralar, ikincil vurgu
+ *   mist      #B9A99A  koyu zeminde ikincil metin
+ * ─────────────────────────────────────────────────────────────
+ */
+
+@theme {
+  --color-espresso: #211710;
+  --color-cocoa: #302219;
+  --color-umber: #3b2b20;
+  --color-cream: #f4ebdd;
+  --color-ivory: #faf6ef;
+  --color-sand: #ebdfcc;
+  --color-rose: #ddafa0;
+  --color-rose-deep: #c99282;
+  --color-gold: #b99569;
+  --color-mist: #b9a99a;
+  --color-taupe: #7a6555;
+
+  /* Panel */
+  --color-panel-bg: #f5f1ea;
+  --color-panel-line: #e7dfd3;
+  --color-panel-muted: #8a7a6d;
+  --color-success: #6c9275;
+  --color-warning: #d5a35b;
+  --color-danger: #c56f6f;
+  --color-info: #7d8fa6;
+
+  --font-display: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Manrope Variable', Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --text-display-xl: clamp(3.5rem, 2rem + 6.2vw, 8.25rem);
+  --text-display-xl--line-height: 0.92;
+  --text-display-lg: clamp(2.6rem, 1.6rem + 3.6vw, 5.25rem);
+  --text-display-lg--line-height: 1;
+  --text-display-md: clamp(2.1rem, 1.5rem + 2.2vw, 3.6rem);
+  --text-display-md--line-height: 1.06;
+  --text-display-sm: clamp(1.6rem, 1.3rem + 1vw, 2.25rem);
+  --text-display-sm--line-height: 1.15;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --radius-pill: 999px;
+
+  --animate-fade-in: fade-in 0.8s var(--ease-soft) both;
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+  }
+  body {
+    @apply bg-espresso font-sans text-cream antialiased;
+    font-feature-settings: 'ss01' on;
+  }
+  ::selection {
+    background: var(--color-rose);
+    color: var(--color-espresso);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-rose);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  .panel-root :focus-visible {
+    outline-color: var(--color-cocoa);
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Editoryal üst etiket: geniş harf aralığı + ince çizgi */
+  .eyebrow {
+    @apply inline-flex items-center gap-4 text-[0.72rem] font-medium tracking-[0.22em] uppercase;
+  }
+  .eyebrow-line::after {
+    content: '';
+    display: block;
+    width: 3.5rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+  }
+
+  .container-edge {
+    @apply mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-14 xl:px-20;
+  }
+
+  /* Statik film greni — animasyonsuz, düşük opaklık */
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.09;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.45  0 0 0 0 0.4  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* Uzun metin tipografisi (blog, yasal sayfalar) */
+  .prose-editorial {
+    @apply text-[1.075rem] leading-[1.85] text-cocoa/90;
+  }
+  .prose-editorial h2 {
+    @apply font-display mt-14 mb-4 text-[2rem] leading-tight font-medium text-espresso;
+  }
+  .prose-editorial h3 {
+    @apply font-display mt-10 mb-3 text-[1.5rem] leading-snug font-medium text-espresso;
+  }
+  .prose-editorial p { @apply my-5; }
+  .prose-editorial ul { @apply my-6 space-y-2 pl-6; list-style: none; }
+  .prose-editorial ul li { position: relative; }
+  .prose-editorial ul li::before {
+    content: '';
+    position: absolute;
+    left: -1.25rem;
+    top: 0.85em;
+    width: 0.5rem;
+    height: 1px;
+    background: var(--color-gold);
+  }
+  .prose-editorial ol { @apply my-6 list-decimal space-y-2 pl-6 marker:text-gold; }
+  .prose-editorial a { @apply text-espresso underline decoration-gold/60 underline-offset-4 hover:decoration-espresso; }
+  .prose-editorial strong { @apply font-semibold text-espresso; }
+
+  /* Panel: tablo sayıları */
+  .tabular { font-variant-numeric: tabular-nums; }
+}

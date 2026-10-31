@@ -1,0 +1,500 @@
+// Nida Akın Diyetisyen — veritabanı şeması
+// Tüm zaman damgaları timestamptz (UTC) olarak saklanır; iş kuralları Europe/Istanbul saat diliminde hesaplanır.
+// Takvim günleri (izin günü, ölçüm tarihi, doğum tarihi) saat dilimi kaymasını önlemek için "YYYY-MM-DD" metni olarak tutulur.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../server/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Kimlik & Yetki ─────────────────────────────
+
+model Role {
+  id          String   @id @default(cuid())
+  key         RoleKey  @unique
+  name        String
+  /// İzin anahtarları (ör. "clinical:read"). Bkz. server/auth/permissions.ts
+  permissions String[]
+  users       User[]
+
+  @@map("roles")
+}
+
+enum RoleKey {
+  ADMIN
+  DIETITIAN
+  ASSISTANT
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  firstName         String
+  lastName          String
+  /// Panelde hitap için (ör. "Nida Hanım")
+  salutation        String?
+  passwordHash      String
+  roleId            String
+  role              Role      @relation(fields: [roleId], references: [id])
+  isActive          Boolean   @default(true)
+  failedLoginCount  Int       @default(0)
+  lockedUntil       DateTime? @db.Timestamptz(3)
+  lastLoginAt       DateTime? @db.Timestamptz(3)
+  passwordChangedAt DateTime? @db.Timestamptz(3)
+  /// { inApp: { [type]: boolean }, email: { [type]: boolean } }
+  notificationPrefs Json      @default("{}")
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+
+  sessions           Session[]
+  resetTokens        PasswordResetToken[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  consultationNotes  ConsultationNote[]
+  blogPosts          BlogPost[]
+  statusChanges      AppointmentStatusHistory[]
+  measurements       Measurement[]
+  clientFiles        ClientFile[]
+  createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
+
+  @@map("users")
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  /// Cookie'deki token'ın SHA-256 özeti. Ham token veritabanında tutulmaz.
+  tokenHash  String   @unique
+  csrfToken  String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  remember   Boolean  @default(false)
+  expiresAt  DateTime @db.Timestamptz(3)
+  lastSeenAt DateTime @default(now()) @db.Timestamptz(3)
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime  @db.Timestamptz(3)
+  usedAt    DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ───────────────────────────── Danışanlar ─────────────────────────────
+
+enum ClientStatus {
+  ACTIVE
+  PASSIVE
+  ARCHIVED
+}
+
+enum MeetingType {
+  IN_PERSON
+  ONLINE
+}
+
+enum RecordSource {
+  WEBSITE
+  PANEL
+}
+
+model Client {
+  id                   String        @id @default(cuid())
+  firstName            String
+  lastName             String
+  phone                String
+  email                String?
+  /// YYYY-MM-DD, isteğe bağlı
+  birthDate            String?       @db.VarChar(10)
+  /// YYYY-MM-DD
+  firstVisitDate       String?       @db.VarChar(10)
+  preferredMeetingType MeetingType?
+  status               ClientStatus  @default(ACTIVE)
+  source               RecordSource  @default(PANEL)
+  /// Kısa yönetimsel not (sağlık bilgisi içermemeli; klinik notlar consultation_notes'ta şifreli tutulur)
+  internalNote         String?
+  /// KVKK aydınlatma metninin danışana sunulduğu an
+  kvkkNoticeAt         DateTime?     @db.Timestamptz(3)
+  /// Sağlık verisi işlenmesine ilişkin açık rıza (ölçüm/beslenme takibi için zorunlu)
+  healthConsentAt      DateTime?     @db.Timestamptz(3)
+  healthConsentNote    String?
+  healthConsentWithdrawnAt DateTime? @db.Timestamptz(3)
+  createdAt            DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
+
+  appointments      Appointment[]
+  consultationNotes ConsultationNote[]
+  measurements      Measurement[]
+  files             ClientFile[]
+  notifications     Notification[]
+
+  @@index([lastName, firstName])
+  @@index([phone])
+  @@index([email])
+  @@map("clients")
+}
+
+// ───────────────────────────── Randevular ─────────────────────────────
+
+enum AppointmentStatus {
+  /// Web sitesinden saat seçilmeden gelen "beni arayın" talebi
+  NEW_REQUEST
+  /// Onay bekliyor (web talebi varsayılanı)
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model Appointment {
+  id                   String            @id @default(cuid())
+  clientId             String?
+  client               Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  serviceId            String?
+  service              Service?          @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  /// Talep anındaki iletişim bilgisi (danışan kaydı henüz oluşturulmamış olabilir)
+  contactName          String
+  contactPhone         String
+  contactEmail         String?
+  /// NEW_REQUEST durumunda boş olabilir
+  startsAt             DateTime?         @db.Timestamptz(3)
+  endsAt               DateTime?         @db.Timestamptz(3)
+  meetingType          MeetingType       @default(IN_PERSON)
+  status               AppointmentStatus @default(PENDING)
+  source               RecordSource      @default(PANEL)
+  clientMessage        String?
+  internalNote         String?
+  kvkkNoticeAcceptedAt DateTime?         @db.Timestamptz(3)
+  explicitConsentAt    DateTime?         @db.Timestamptz(3)
+  /// Yaklaşan randevu bildiriminin üretildiği an (tekrarı önler)
+  reminderNotifiedAt   DateTime?         @db.Timestamptz(3)
+  createdById          String?
+  createdBy            User?             @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt            DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime          @updatedAt @db.Timestamptz(3)
+
+  statusHistory     AppointmentStatusHistory[]
+  notifications     Notification[]
+  consultationNotes ConsultationNote[]
+
+  @@index([startsAt])
+  @@index([status])
+  @@index([clientId])
+  @@map("appointments")
+}
+
+model AppointmentStatusHistory {
+  id            String             @id @default(cuid())
+  appointmentId String
+  appointment   Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  fromStatus    AppointmentStatus?
+  toStatus      AppointmentStatus
+  /// Zaman değişikliklerinde önceki/sonraki başlangıç
+  previousStartsAt DateTime?       @db.Timestamptz(3)
+  newStartsAt      DateTime?       @db.Timestamptz(3)
+  note          String?
+  changedById   String?
+  changedBy     User?              @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  changedAt     DateTime           @default(now()) @db.Timestamptz(3)
+
+  @@index([appointmentId])
+  @@map("appointment_status_history")
+}
+
+// ───────────────────────────── Hizmetler ─────────────────────────────
+
+model Service {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  summary         String
+  description     String
+  /// Yerleşik çizgi-ikon anahtarı (src/components/icons/ServiceIcon.tsx)
+  icon            String   @default("leaf")
+  imageUrl        String?
+  isPublished     Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  durationMinutes Int?
+  /// Kuruş cinsinden; isteğe bağlı
+  priceCents      Int?
+  showPrice       Boolean  @default(false)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  appointments Appointment[]
+
+  @@index([sortOrder])
+  @@map("services")
+}
+
+// ───────────────────────────── Çalışma takvimi ─────────────────────────────
+
+model AvailabilityRule {
+  id            String  @id @default(cuid())
+  /// ISO gün numarası: 1 = Pazartesi … 7 = Pazar
+  weekday       Int     @unique
+  isWorking     Boolean @default(false)
+  /// "HH:mm" (Europe/Istanbul)
+  startTime     String? @db.VarChar(5)
+  endTime       String? @db.VarChar(5)
+  breakStart    String? @db.VarChar(5)
+  breakEnd      String? @db.VarChar(5)
+  slotMinutes   Int     @default(45)
+  bufferMinutes Int     @default(15)
+
+  @@map("availability_rules")
+}
+
+enum BlockedDateKind {
+  /// Tüm gün kapalı
+  FULL_DAY
+  /// O güne özel çalışma saatleri
+  CUSTOM_HOURS
+  /// Belirli saat aralığı kapalı
+  TIME_RANGE
+}
+
+enum BlockedDateReason {
+  HOLIDAY
+  LEAVE
+  MANUAL
+  OTHER
+}
+
+model BlockedDate {
+  id        String            @id @default(cuid())
+  /// YYYY-MM-DD (Europe/Istanbul)
+  date      String            @db.VarChar(10)
+  kind      BlockedDateKind   @default(FULL_DAY)
+  reason    BlockedDateReason @default(MANUAL)
+  label     String?
+  startTime String?           @db.VarChar(5)
+  endTime   String?           @db.VarChar(5)
+  createdAt DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([date])
+  @@map("blocked_dates")
+}
+
+// ───────────────────────────── Bildirimler ─────────────────────────────
+
+enum NotificationType {
+  APPOINTMENT_REQUESTED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_UPCOMING
+  CLIENT_CREATED
+}
+
+model Notification {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          NotificationType
+  title         String
+  body          String?
+  appointmentId String?
+  appointment   Appointment?     @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  clientId      String?
+  client        Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  readAt        DateTime?        @db.Timestamptz(3)
+  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+
+  deliveries NotificationDelivery[]
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+enum DeliveryChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum DeliveryStatus {
+  SENT
+  FAILED
+  SKIPPED_NOT_CONFIGURED
+  SKIPPED_BY_PREFERENCE
+}
+
+/// Harici kanal gönderim kayıtları (e-posta / WhatsApp). Kanal yapılandırılmamışsa SKIPPED_NOT_CONFIGURED yazılır.
+model NotificationDelivery {
+  id             String          @id @default(cuid())
+  notificationId String
+  notification   Notification    @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  channel        DeliveryChannel
+  status         DeliveryStatus
+  error          String?
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@map("notification_deliveries")
+}
+
+// ───────────────────────────── Klinik kayıtlar (şifreli) ─────────────────────────────
+
+model ConsultationNote {
+  id            String       @id @default(cuid())
+  clientId      String
+  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  authorId      String?
+  author        User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  /// AES-256-GCM ile şifrelenmiş içerik (server/lib/crypto.ts)
+  contentEnc    String
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([clientId])
+  @@map("consultation_notes")
+}
+
+model Measurement {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  /// YYYY-MM-DD
+  measuredOn  String   @db.VarChar(10)
+  /// Şifreli JSON: { heightCm, weightKg, targetWeightKg, note }
+  dataEnc     String
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([clientId, measuredOn])
+  @@map("measurements")
+}
+
+model ClientFile {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  originalName String
+  /// Disk üzerindeki şifreli dosya adı (UPLOAD_DIR/private)
+  storedName   String   @unique
+  mimeType     String
+  sizeBytes    Int
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([clientId])
+  @@map("client_files")
+}
+
+// ───────────────────────────── İçerik ─────────────────────────────
+
+model BlogCategory {
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  name      String
+  sortOrder Int        @default(0)
+  posts     BlogPost[]
+
+  @@map("blog_categories")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  UNPUBLISHED
+}
+
+model BlogPost {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  title           String
+  excerpt         String
+  /// Basit Markdown (başlık, paragraf, liste, kalın/italik, bağlantı)
+  content         String
+  coverImageUrl   String?
+  coverImageAlt   String?
+  categoryId      String?
+  category        BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  status          PostStatus    @default(DRAFT)
+  seoTitle        String?
+  metaDescription String?
+  readingMinutes  Int?
+  /// Uzman tarafından içerik onayı verildi mi? (yayınlamak için zorunlu)
+  expertReviewed  Boolean       @default(false)
+  publishedAt     DateTime?     @db.Timestamptz(3)
+  authorId        String?
+  author          User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(3)
+
+  @@index([status, publishedAt])
+  @@map("blog_posts")
+}
+
+model Faq {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("faqs")
+}
+
+model MediaAsset {
+  id          String   @id @default(cuid())
+  /// Herkese açık yol (/uploads/public/...)
+  url         String   @unique
+  mimeType    String
+  sizeBytes   Int
+  alt         String?
+  uploadedById String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("media_assets")
+}
+
+/// Anahtar-değer site ayarları (hero, about, contact, social, appointment, kvkk …). Şema: shared/settings.ts
+model WebsiteSetting {
+  key         String   @id
+  value       Json
+  updatedById String?
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("website_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
