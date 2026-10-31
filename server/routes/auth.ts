@@ -48,7 +48,10 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
     data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() },
   });
   await createSession(req, res, user.id, remember);
-  await audit({ ...req, user: { id: user.id } } as never, 'auth.login', 'user', user.id, { remember });
+  // Oturum bu istekte henüz yüklenmedi; denetim kaydı için kullanıcıyı geçici olarak bağla
+  req.user = { id: user.id } as never;
+  await audit(req, 'auth.login', 'user', user.id, { remember });
+  req.user = undefined;
   res.json({ ok: true });
 });
 
