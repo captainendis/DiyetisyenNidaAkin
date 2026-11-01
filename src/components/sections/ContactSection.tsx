@@ -5,7 +5,6 @@ import { Reveal } from '@/components/motion/Reveal';
 import { useSiteImages } from '@/config/media';
 import { formatPhone } from '@/lib/text';
 import { Picture } from './Picture';
-import { SectionLabel } from './SectionLabel';
 import { formatAddress, shortPlace } from './address';
 
 function Row({ label, value, href, external }: { label: string; value: string | null; href?: string | null; external?: boolean }) {
@@ -89,8 +88,7 @@ export function ContactSection({ heading = true }: { heading?: boolean }) {
         <div className="lg:col-span-7 lg:col-start-6">
           {heading && (
             <Reveal>
-              <SectionLabel>İletişim</SectionLabel>
-              <h2 id="contact-title" className="mt-8 font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
+              <h2 id="contact-title" className="font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
                 Görüşme yeri ve iletişim
               </h2>
             </Reveal>

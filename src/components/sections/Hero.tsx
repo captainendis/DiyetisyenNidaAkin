@@ -80,16 +80,6 @@ export function Hero() {
         </FadeIn>
       </motion.div>
 
-      {/* Kaydırma göstergesi: tek seferlik giriş, döngü yok */}
-      <a href="#tanisin" className="group absolute left-1/2 bottom-10 z-[2] hidden -translate-x-1/2 flex-col items-center gap-3 text-cream/60 transition-colors hover:text-cream xl:flex" aria-label="Aşağı kaydır">
-        <span className="text-[0.62rem] tracking-[0.32em] uppercase">Keşfet</span>
-        <motion.span
-          className="block h-12 w-px origin-top bg-cream/50"
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ delay: 1.6, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        />
-      </a>
     </section>
   );
 }

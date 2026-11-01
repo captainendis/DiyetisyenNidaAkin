@@ -3,7 +3,6 @@ import { useSite } from '@/data/SiteContext';
 import { Reveal } from '@/components/motion/Reveal';
 import { ServiceIcon } from '@/components/icons/ServiceIcon';
 import { TextLink } from '@/components/forms/Button';
-import { SectionLabel } from './SectionLabel';
 
 /**
  * Hizmetler — kart ızgarası yerine editoryal liste: numara, ikon, büyük başlık, hover'da açılan özet.
@@ -17,8 +16,7 @@ export function ServicesSection() {
         <div className="lg:col-span-4">
           <div className="lg:sticky lg:top-32">
             <Reveal>
-              <SectionLabel tone="light">Hizmetler</SectionLabel>
-              <h2 id="services-title" className="mt-8 font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
+              <h2 id="services-title" className="font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
                 Görüşmelerde ele aldığımız konular
               </h2>
               <p className="mt-6 max-w-sm text-[1rem] leading-relaxed text-mist">
