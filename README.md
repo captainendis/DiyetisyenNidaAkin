@@ -374,3 +374,8 @@ Bunlar yalnızca yerleşik yedek görsellerdir; gerçek fotoğraflar **panelden*
 - [ ] Veri sorumlusu (resmi unvan) ve KVKK başvuru e-postası girildi
 - [ ] SMTP yapılandırıldı (şifre sıfırlama ve e-posta bildirimleri için) — isteğe bağlı
 - [ ] Yedekleme ve saklama-imha işleri zamanlandı
+
+## Geliştirici
+
+Bu yazılım [PaperAxis](https://paperaxis.com) tarafından geliştirilmiştir.
+İletişim: info@paperaxis.com

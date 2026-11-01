@@ -1,6 +1,7 @@
 {
   "name": "nida-akin-diyetisyen",
   "private": true,
+  "author": "PaperAxis <admin@paperaxis.com> (https://paperaxis.com)",
   "version": "1.0.0",
   "type": "module",
   "engines": {

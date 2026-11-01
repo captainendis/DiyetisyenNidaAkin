@@ -7,7 +7,6 @@ import { Process } from '@/components/sections/Process';
 import { CtaBand } from '@/components/sections/CtaBand';
 import { Reveal } from '@/components/motion/Reveal';
 import { Seo, useBusinessJsonLd } from '@/components/seo/Seo';
-import { Sprig } from '@/components/icons/Botanical';
 
 export default function AboutPage() {
   const { site } = useSite();
@@ -67,12 +66,6 @@ export default function AboutPage() {
                 </div>
               </Reveal>
             )}
-            <Reveal>
-              <div className="mt-16 flex items-center gap-5">
-                <Sprig className="w-16 text-gold" />
-                <p className="font-display text-[2.6rem] leading-none italic text-cocoa/80" aria-label={`İmza: ${about.signature}`}>{about.signature}</p>
-              </div>
-            </Reveal>
           </div>
         </div>
       </section>

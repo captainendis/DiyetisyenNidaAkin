@@ -35,7 +35,6 @@ export const defaultSettings: Settings = {
     ],
     // Gerçek eğitim, sertifika ve deneyim bilgileri doğrulandıktan sonra panelden eklenmelidir.
     credentials: [],
-    signature: 'Nida Akın',
   },
   approach: {
     heading: 'Yasaklarla değil, dengeyle.',

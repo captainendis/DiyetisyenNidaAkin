@@ -61,9 +61,6 @@ export function AboutForm() {
           )}
         />
       </FormSection>
-      <FormSection title="İmza" description="Hakkımda bölümünün sonunda el yazısı stilinde gösterilir.">
-        <Input label="İmza metni" value={d.signature} maxLength={60} error={f.errors.signature} onChange={(e) => f.set('signature', e.target.value)} />
-      </FormSection>
       <SaveBar dirty={f.dirty} saving={f.saving} onSave={() => void f.save()} onReset={f.reset} viewHref="/hakkimda" />
     </FormCard>
   );
