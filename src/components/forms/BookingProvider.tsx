@@ -72,7 +72,7 @@ function BookingDialog({ serviceId, onClose }: { serviceId: string | null; onClo
           <div className="absolute inset-0 bg-gradient-to-b from-cocoa/70 via-cocoa/30 to-cocoa/95" aria-hidden />
           <div className="relative z-[2]">
             <LogoMark className="h-10 w-10 text-rose" />
-            <p id="booking-title" className="mt-8 font-display text-[2.6rem] leading-[1.02] font-medium">Randevu<br /><em className="font-normal text-rose">talebi</em></p>
+            <p id="booking-title" className="mt-8 font-display text-[2.6rem] leading-[1.02] font-medium">Randevu talebi</p>
           </div>
           <div className="relative z-[2] space-y-6">
             <StepIndicator step={step === 4 ? 4 : step} tone="dark" vertical />

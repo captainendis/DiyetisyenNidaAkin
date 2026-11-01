@@ -9,9 +9,10 @@ import { SectionLabel } from './SectionLabel';
 import { formatAddress, shortPlace } from './address';
 
 function Row({ label, value, href, external }: { label: string; value: string | null; href?: string | null; external?: boolean }) {
+  // Değer girilene kadar satır hiç gösterilmez; "yakında" yazısı siteyi yarım gösteriyordu.
+  if (!value) return null;
   let content: ReactNode;
-  if (!value) content = <span className="font-display text-[1.25rem] italic text-taupe/70">Yakında eklenecek</span>;
-  else if (href)
+  if (href)
     content = (
       <a href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="font-display text-[1.45rem] leading-snug break-words text-espresso underline-offset-4 hover:underline">
         {value}
@@ -65,7 +66,7 @@ export function MapBlock({ className = '' }: { className?: string }) {
   );
 }
 
-/** İletişim bölümü — gerçek mekân fotoğrafı + bilgiler + harita. Boş alanlar "Yakında eklenecek". */
+/** İletişim bölümü — gerçek mekân fotoğrafı + bilgiler + harita. Boş alanlar gösterilmez. */
 export function ContactSection({ heading = true }: { heading?: boolean }) {
   const images = useSiteImages();
   const { site } = useSite();
@@ -90,7 +91,7 @@ export function ContactSection({ heading = true }: { heading?: boolean }) {
             <Reveal>
               <SectionLabel>İletişim</SectionLabel>
               <h2 id="contact-title" className="mt-8 font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
-                Tanışmak için<br /><em className="font-normal text-rose-deep">bir mesaj yeter.</em>
+                Görüşme yeri ve iletişim
               </h2>
             </Reveal>
           )}

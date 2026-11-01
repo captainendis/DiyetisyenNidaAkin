@@ -16,7 +16,7 @@ export function AuthLayout({ title, description, children }: { title: string; de
         <Link to="/" className="relative z-[2]" aria-label="Web sitesine dön"><Logo /></Link>
         <div className="relative z-[2] max-w-md">
           <p className="font-display text-[3.2rem] leading-[1.02] font-medium text-ivory xl:text-[3.8rem]">
-            Hoş geldiniz,<br /><em className="font-normal text-rose">bugün kimleri ağırlıyoruz?</em>
+            Hoş geldiniz.
           </p>
           <p className="mt-6 text-[0.95rem] leading-relaxed text-mist">Randevularınızı, danışanlarınızı ve web sitenizi tek bir yerden yönetin.</p>
         </div>

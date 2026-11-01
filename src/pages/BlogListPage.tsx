@@ -49,31 +49,33 @@ export default function BlogListPage() {
         jsonLd={{ '@context': 'https://schema.org', '@type': 'Blog', name: 'Beslenme Rehberi', url: `${SITE_URL}/beslenme-rehberi`, inLanguage: 'tr-TR' }}
       />
       <PageHeader
-        title="Beslenme"
-        accent="rehberi."
+        title="Beslenme rehberi"
         crumbs={crumbs}
         lead="Günlük hayata dair sade, uygulanabilir yazılar. Buradaki içerikler genel bilgilendirme amaçlıdır; kişiye özel değerlendirme için bir uzmana danışın."
       />
       <section className="bg-ivory text-espresso">
         <div className="container-edge py-14 sm:py-20">
-          <nav aria-label="Kategoriler" className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
-            <ul className="flex min-w-max gap-7 border-b border-espresso/12">
-              {[{ slug: undefined as string | undefined, name: 'Tümü' }, ...site.categories].map((c) => {
-                const active = c.slug === category;
-                return (
-                  <li key={c.name}>
-                    <Link
-                      to={c.slug ? `/beslenme-rehberi/kategori/${c.slug}` : '/beslenme-rehberi'}
-                      aria-current={active ? 'page' : undefined}
-                      className={cn('-mb-px block border-b py-4 text-[0.92rem] transition-colors', active ? 'border-espresso text-espresso' : 'border-transparent text-taupe hover:text-espresso')}
-                    >
-                      {c.name}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+          {/* Hiç yayınlanmış yazı yokken boş kategori sekmeleri gösterilmez. */}
+          {!(data && data.total === 0 && !category) && (
+            <nav aria-label="Kategoriler" className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
+              <ul className="flex min-w-max gap-7 border-b border-espresso/12">
+                {[{ slug: undefined as string | undefined, name: 'Tümü' }, ...site.categories].map((c) => {
+                  const active = c.slug === category;
+                  return (
+                    <li key={c.name}>
+                      <Link
+                        to={c.slug ? `/beslenme-rehberi/kategori/${c.slug}` : '/beslenme-rehberi'}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn('-mb-px block border-b py-4 text-[0.92rem] transition-colors', active ? 'border-espresso text-espresso' : 'border-transparent text-taupe hover:text-espresso')}
+                      >
+                        {c.name}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          )}
 
           <div className="pt-14 sm:pt-20">
             {error ? (

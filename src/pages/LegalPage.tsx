@@ -18,7 +18,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
   return (
     <>
       <Seo title={crumbs[0].name} description={c.description} breadcrumbs={crumbs} />
-      <PageHeader title={c.title} accent={c.accent} crumbs={crumbs} />
+      <PageHeader title={c.accent ? `${c.title} ${c.accent}` : c.title} crumbs={crumbs} />
       <section className="bg-ivory text-espresso">
         <div className="container-edge grid gap-12 py-16 sm:py-24 lg:grid-cols-12 lg:gap-x-10">
           <aside className="lg:col-span-3">

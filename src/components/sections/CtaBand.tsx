@@ -9,8 +9,6 @@ export function CtaBand() {
   const { site } = useSite();
   const cta = site.settings.cta;
   const booking = useBooking();
-  const words = cta.heading.split(' ');
-  const cut = Math.ceil(words.length / 2);
   return (
     <section className="grain relative isolate overflow-hidden bg-cocoa text-cream" aria-labelledby="cta-title">
       <LeafPair className="absolute -top-8 -left-10 -z-[1] w-[260px] text-gold/35 sm:w-[360px]" />
@@ -18,8 +16,7 @@ export function CtaBand() {
       <div className="container-edge relative z-[2] flex flex-col items-center py-28 text-center sm:py-36 lg:py-44">
         <Reveal>
           <h2 id="cta-title" className="max-w-4xl font-display text-[clamp(2.5rem,1.4rem+4.2vw,5.6rem)] leading-[1] font-medium tracking-[-0.01em] text-ivory">
-            {words.slice(0, cut).join(' ')}{' '}
-            <em className="font-normal text-rose">{words.slice(cut).join(' ')}</em>
+            {cta.heading}
           </h2>
         </Reveal>
         <Reveal delay={0.1}>

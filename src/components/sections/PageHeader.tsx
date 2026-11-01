@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { FadeIn, StaggerLines } from '@/components/motion/Reveal';
-import { OliveBranch } from '@/components/icons/Botanical';
 import type { Crumb } from '@/components/seo/Seo';
 
 /** Alt sayfa başlığı — koyu, dokulu zemin; şeffaf navigasyonun altında başlar */
@@ -10,7 +9,6 @@ export function PageHeader({
 }: { title: string; accent?: string; lead?: ReactNode; crumbs?: Crumb[]; aside?: ReactNode; eyebrow?: string }) {
   return (
     <header className="grain relative isolate overflow-hidden bg-espresso text-cream">
-      <OliveBranch className="absolute top-20 right-[6%] -z-[1] h-[120%] rotate-[18deg] text-gold/15" />
       <div className="container-edge relative z-[2] grid gap-10 pt-40 pb-16 sm:pt-48 sm:pb-24 lg:grid-cols-12 lg:items-end">
         <div className="lg:col-span-8">
           {crumbs && (

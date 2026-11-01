@@ -37,20 +37,16 @@ export default function ServicesPage() {
       />
       <PageHeader
         title="Hizmetler"
-        accent="ihtiyacınıza göre."
         crumbs={crumbs}
-        lead="Her süreç, sizi tanımakla başlar. Aşağıdaki başlıklar bir başlangıç noktasıdır; size en uygun yolu ilk görüşmede birlikte belirleriz."
+        lead="Aşağıdaki başlıklar bir başlangıç noktası. Hangisinin size uyduğuna ilk görüşmede birlikte karar veriyoruz."
       />
       <section className="bg-ivory text-espresso">
         <div className="container-edge py-20 sm:py-28 lg:py-36">
-          <ol>
-            {site.services.map((s, i) => (
+          <ul>
+            {site.services.map((s) => (
               <Reveal as="li" key={s.id} amount={0.3}>
                 <article id={s.slug} className="grid scroll-mt-28 gap-6 border-t border-espresso/12 py-12 last:border-b sm:py-16 lg:grid-cols-12 lg:gap-x-10">
-                  <div className="flex items-start gap-5 lg:col-span-1 lg:flex-col">
-                    <span className="font-display text-[1.1rem] text-gold italic">{String(i + 1).padStart(2, '0')}</span>
-                  </div>
-                  <div className="lg:col-span-5">
+                  <div className="lg:col-span-6">
                     <ServiceIcon name={s.icon} className="h-12 w-12 text-gold" />
                     <h2 className="mt-6 font-display text-[clamp(2rem,1.5rem+1.6vw,3rem)] leading-[1.05] font-medium">
                       <Link to={`/hizmetler/${s.slug}`} className="hover:text-cocoa">{s.title}</Link>
@@ -62,7 +58,7 @@ export default function ServicesPage() {
                     <p className="mt-5 text-[1rem] leading-[1.85] text-cocoa/75">{s.description}</p>
                     <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3">
                       <button type="button" onClick={() => booking.open({ serviceId: s.id })} className="group inline-flex items-center gap-2 border-b border-espresso pb-1 text-[0.95rem] font-medium">
-                        Bu hizmet için randevu talebi
+                        Bu hizmet için randevu al
                         <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
                       </button>
                       <Link to={`/hizmetler/${s.slug}`} className="text-[0.9rem] text-taupe hover:text-espresso">Ayrıntılar</Link>
@@ -71,7 +67,7 @@ export default function ServicesPage() {
                 </article>
               </Reveal>
             ))}
-          </ol>
+          </ul>
         </div>
       </section>
       <CtaBand />

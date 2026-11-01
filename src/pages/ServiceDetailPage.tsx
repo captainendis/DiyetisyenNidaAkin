@@ -44,7 +44,7 @@ export default function ServiceDetailPage() {
           <Reveal className="lg:col-span-7 lg:col-start-5">
             <p className="text-[1.15rem] leading-[1.9] text-cocoa/85">{service.description}</p>
             <div className="mt-12 flex flex-wrap items-center gap-6 border-t border-espresso/12 pt-10">
-              <CtaButton tone="dark" size="lg" onClick={() => booking.open({ serviceId: service.id })}>Randevu talebi oluştur</CtaButton>
+              <CtaButton tone="dark" size="lg" onClick={() => booking.open({ serviceId: service.id })}>Randevu Al</CtaButton>
               <p className="max-w-xs text-[0.85rem] text-taupe">Talebiniz onay bekler; uygunluk kontrolünden sonra sizinle iletişime geçilir.</p>
             </div>
           </Reveal>

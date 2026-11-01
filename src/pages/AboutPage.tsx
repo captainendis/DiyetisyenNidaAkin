@@ -43,13 +43,10 @@ export default function AboutPage() {
               <div className="mt-14 border-t border-espresso/12 pt-10">
                 <p className="text-[0.7rem] font-semibold tracking-[0.22em] text-taupe uppercase">Danışanlarıma yaklaşımım</p>
                 <ul className="mt-8 space-y-8">
-                  {about.pillars.map((p, i) => (
-                    <li key={p.title} className="grid grid-cols-[3rem_1fr] gap-4">
-                      <span className="font-display text-[1.6rem] leading-none text-gold italic">{String(i + 1).padStart(2, '0')}</span>
-                      <div>
-                        <p className="font-display text-[1.6rem] leading-tight">{p.title}</p>
-                        <p className="mt-2 text-[0.98rem] leading-relaxed text-taupe">{p.body}</p>
-                      </div>
+                  {about.pillars.map((p) => (
+                    <li key={p.title}>
+                      <p className="font-display text-[1.6rem] leading-tight">{p.title}</p>
+                      <p className="mt-2 text-[0.98rem] leading-relaxed text-taupe">{p.body}</p>
                     </li>
                   ))}
                 </ul>

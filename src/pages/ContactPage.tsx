@@ -18,9 +18,8 @@ export default function ContactPage() {
       />
       <PageHeader
         title="İletişim"
-        accent="ve ulaşım."
         crumbs={crumbs}
-        lead={site.settings.contact.hoursNote ?? 'Sorularınız ve randevu talepleriniz için aşağıdaki kanalları kullanabilirsiniz.'}
+        lead={site.settings.contact.hoursNote ?? "Görüşmeler Pelin Tek Studio Bahçekent'in üst katında yapılır. Telefon, WhatsApp ya da randevu formundan ulaşabilirsiniz."}
       />
       <ContactSection heading={false} />
       <CtaBand />

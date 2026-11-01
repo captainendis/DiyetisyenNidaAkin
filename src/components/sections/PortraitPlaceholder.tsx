@@ -1,6 +1,5 @@
 import { useSiteImages } from '@/config/media';
 import { Picture } from './Picture';
-import { LogoMark } from '@/components/icons/Logo';
 import { cn } from '@/lib/text';
 
 /**
@@ -8,7 +7,7 @@ import { cn } from '@/lib/text';
  * Boşken: ince çerçeveli, monogramlı zarif bir yer tutucu (stok kişi fotoğrafı kullanılmaz).
  */
 export function PortraitPlaceholder({ className, caption = true }: { className?: string; caption?: boolean }) {
-  const { portrait } = useSiteImages();
+  const { portrait, venue } = useSiteImages();
   if (portrait) {
     return (
       <figure className={cn('relative aspect-[4/5] overflow-hidden bg-sand', className)}>
@@ -16,16 +15,14 @@ export function PortraitPlaceholder({ className, caption = true }: { className?:
       </figure>
     );
   }
+  // Portre yüklenene kadar görüşmelerin yapıldığı mekân gösterilir: yer tutucu
+  // kutusu herkese açık sayfada sitenin bitmediğini söylüyordu.
   return (
-    <figure className={cn('relative aspect-[4/5] overflow-hidden bg-[linear-gradient(160deg,#ebdfcc_0%,#e2d2bb_55%,#d9c6ac_100%)]', className)} aria-label="Portre fotoğrafı için ayrılmış alan">
-      <div className="absolute inset-4 border border-gold/45 sm:inset-5" aria-hidden />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 text-cocoa/35">
-        <LogoMark className="h-[34%] w-[34%]" strokeWidth={0.7} />
-        <span className="font-display text-[1.6rem] tracking-[0.3em] text-cocoa/40">N · A</span>
-      </div>
+    <figure className={cn('relative aspect-[4/5] overflow-hidden bg-sand', className)}>
+      <Picture {...venue} sizes="(min-width: 1024px) 40vw, 90vw" className="block h-full w-full" imgClassName="h-full w-full object-cover" />
       {caption && (
-        <figcaption className="absolute right-0 bottom-8 left-0 text-center text-[0.65rem] font-semibold tracking-[0.22em] text-cocoa/45 uppercase">
-          Portre fotoğrafı eklenecek
+        <figcaption className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-espresso/80 to-transparent px-5 pt-10 pb-4 text-[0.8rem] text-cream/90">
+          Görüşmelerin yapıldığı stüdyo
         </figcaption>
       )}
     </figure>

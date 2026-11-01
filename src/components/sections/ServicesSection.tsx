@@ -19,7 +19,7 @@ export function ServicesSection() {
             <Reveal>
               <SectionLabel tone="light">Hizmetler</SectionLabel>
               <h2 id="services-title" className="mt-8 font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
-                Size özel,<br /><em className="font-normal text-rose">adım adım.</em>
+                Görüşmelerde ele aldığımız konular
               </h2>
               <p className="mt-6 max-w-sm text-[1rem] leading-relaxed text-mist">
                 Her danışmanlık süreci, ihtiyacınıza göre şekillenir. Size en uygun başlığı ilk görüşmede birlikte belirleriz.

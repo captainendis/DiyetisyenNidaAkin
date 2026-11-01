@@ -16,7 +16,7 @@ export default function AppointmentPage() {
   return (
     <>
       <Seo title="Randevu Talebi" description="Diyetisyen Nida Akın ile görüşmek için çevrim içi randevu talebi oluşturun." breadcrumbs={crumbs} />
-      <PageHeader title="Randevu" accent="talebi." crumbs={crumbs} lead={site.settings.appointment.formNote} />
+      <PageHeader title="Randevu talebi" crumbs={crumbs} lead={site.settings.appointment.formNote} />
       <section className="bg-ivory text-espresso">
         <div className="container-edge grid gap-14 py-16 sm:py-24 lg:grid-cols-12 lg:gap-x-12">
           <div className="lg:col-span-8">

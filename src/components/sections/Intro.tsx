@@ -7,10 +7,6 @@ import { LogoMark } from '@/components/icons/Logo';
 export function Intro() {
   const { site } = useSite();
   const intro = site.settings.intro;
-  // Başlığın son iki kelimesi italik vurgulu
-  const words = intro.heading.split(' ');
-  const head = words.slice(0, -3).join(' ');
-  const tail = words.slice(-3).join(' ');
   return (
     <section id="tanisin" className="relative overflow-hidden bg-ivory text-espresso">
       <div className="container-edge grid gap-y-14 py-24 sm:py-32 lg:grid-cols-12 lg:gap-x-10 lg:py-44">
@@ -19,7 +15,7 @@ export function Intro() {
         </Reveal>
         <Reveal className="lg:col-span-9 lg:col-start-1">
           <h2 className="font-display text-[clamp(2.4rem,1.4rem+3.6vw,5rem)] leading-[1.04] font-medium tracking-[-0.01em]">
-            {head} <em className="font-normal text-rose-deep">{tail}</em>
+            {intro.heading}
           </h2>
         </Reveal>
 

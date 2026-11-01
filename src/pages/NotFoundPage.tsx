@@ -17,7 +17,7 @@ export default function NotFoundPage() {
       <div className="container-edge relative z-[2] py-40">
         <p className="eyebrow eyebrow-line text-mist">Hata 404</p>
         <h1 className="mt-8 font-display text-[clamp(3rem,2rem+5vw,7rem)] leading-[0.95] font-medium text-ivory">
-          Aradığınız sayfa<br /><em className="font-normal text-rose">burada değil.</em>
+          Bu sayfa bulunamadı.
         </h1>
         <p className="mt-8 max-w-md text-[1.05rem] leading-relaxed text-cream/70">Bağlantı değişmiş ya da sayfa kaldırılmış olabilir. Ana sayfadan devam edebilirsiniz.</p>
         <div className="mt-10 flex flex-wrap items-center gap-8">

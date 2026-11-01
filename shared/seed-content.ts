@@ -4,49 +4,49 @@ export const seedServices = [
     slug: 'kisiye-ozel-beslenme-danismanligi',
     title: 'Kişiye Özel Beslenme Danışmanlığı',
     icon: 'plate',
-    summary: 'Yaşam tarzınıza, alışkanlıklarınıza ve hedeflerinize göre birlikte şekillendirdiğimiz bir beslenme planı.',
+    summary: 'Gününüze ve sevdiğiniz yemeklere göre birlikte yazdığımız tek sayfalık beslenme planı.',
     description:
-      'Hazır listeler yerine, gününüzün nasıl geçtiğini, neleri sevdiğinizi ve nerede zorlandığınızı konuşarak başlıyoruz. Plan; sizin ritminize uyacak şekilde hazırlanır ve süreç içinde birlikte güncellenir.',
+      'İlk görüşmede gününüzün nasıl geçtiğini, neleri sevdiğinizi ve hangi saatlerde zorlandığınızı konuşuyoruz. Plan bu konuşmadan çıkar ve takip görüşmelerinde birlikte güncellenir.',
   },
   {
     slug: 'kilo-yonetimi',
     title: 'Kilo Yönetimi',
     icon: 'scale',
-    summary: 'Kısa süreli kısıtlamalar yerine, uzun vadede korunabilecek dengeli bir yaklaşım.',
+    summary: 'Ulaştığınız kiloyu koruyabileceğiniz alışkanlıklar üzerine kurulu bir program.',
     description:
-      'Hedefe giden yolu küçük, uygulanabilir adımlara bölüyoruz. Amaç yalnızca bir sayıya ulaşmak değil; ulaştığınız noktayı koruyabileceğiniz alışkanlıkları kazanmak.',
+      'Hedefe giden yolu, bir sonraki görüşmeye kadar uygulanabilecek küçük adımlara bölüyoruz. Her takip görüşmesinde işleyen adımları koruyup zorlananları değiştiriyoruz.',
   },
   {
     slug: 'saglikli-yasam-beslenmesi',
     title: 'Sağlıklı Yaşam Beslenmesi',
     icon: 'leaf',
-    summary: 'Enerjinizi, odaklanmanızı ve günlük iyi oluşunuzu destekleyen dengeli beslenme alışkanlıkları.',
+    summary: 'Kilo hedefi olmadan öğün düzenini ve besin çeşitliliğini gözden geçirmek isteyenler için.',
     description:
-      'Belirli bir kilo hedefi olmadan da beslenmenizi gözden geçirmek isteyebilirsiniz. Öğün düzeni, besin çeşitliliği ve günlük ritim üzerine birlikte çalışıyoruz.',
+      'Gün içindeki öğün saatlerinize ve tabağınızdaki çeşitliliğe birlikte bakıyoruz. Küçük değişikliklerle başlayıp hangilerinin size iyi geldiğini takip ediyoruz.',
   },
   {
     slug: 'surdurulebilir-beslenme-aliskanliklari',
     title: 'Sürdürülebilir Beslenme Alışkanlıkları',
     icon: 'cycle',
-    summary: 'Yasaklar yerine dengeyle: hayatınızdan vazgeçmeden iyi gelen değişiklikler.',
+    summary: 'Yoğun iş günlerinde ve davetlerde de uygulayabileceğiniz bir beslenme düzeni.',
     description:
-      'Sosyal hayat, yoğun iş temposu ve sevdiğiniz tatlar planın bir parçası. Yeme alışkanlıklarınızı fark etmeye ve onları adım adım dönüştürmeye odaklanıyoruz.',
+      'Planı hafta içi mesainize ve hafta sonu sofranıza göre kuruyoruz. Zorlandığınız anları takip görüşmelerinde birlikte ele alıyoruz.',
   },
   {
     slug: 'online-beslenme-danismanligi',
     title: 'Online Beslenme Danışmanlığı',
     icon: 'screen',
-    summary: 'Bulunduğunuz yerden, görüntülü görüşme ile aynı özenle sürdürülen danışmanlık.',
+    summary: 'Yüz yüze gelemediğiniz dönemlerde görüntülü görüşmeyle sürdürülen danışmanlık.',
     description:
-      'Yüz yüze görüşmeye vakit bulamadığınız ya da farklı bir şehirde olduğunuz durumlarda, görüşmeler çevrim içi olarak planlanabilir.',
+      'Yüz yüze görüşmeye vakit bulamadığınız ya da farklı bir şehirde olduğunuz durumlarda görüşmeler çevrim içi planlanabilir.',
   },
   {
     slug: 'beslenme-takibi',
     title: 'Beslenme Takibi',
     icon: 'notebook',
-    summary: 'Düzenli görüşmelerle sürecin değerlendirilmesi ve planın ihtiyaçlarınıza göre güncellenmesi.',
+    summary: 'Düzenli takip görüşmeleriyle planın gidişatınıza göre güncellenmesi.',
     description:
-      'Değişim doğrusal ilerlemez. Takip görüşmelerinde neyin işe yaradığını, neyin zorladığını konuşur ve planı birlikte yeniden düzenleriz.',
+      'Takip görüşmelerinde neyin işe yaradığını ve neyin zorladığını konuşur, planı birlikte yeniden düzenleriz.',
   },
 ] as const;
 
