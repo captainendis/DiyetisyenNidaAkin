@@ -62,8 +62,10 @@ export const siteConfig = {
   business: {
     brandName: 'Nida Akın',
     title: 'Diyetisyen',
-    legalName: null,
-    kvkkContactEmail: null,
+    // Veri sorumlusu: Nida Akın (müşteri onayı, 2026-11-01). PaperAxis veri işleyendir;
+    // KVKK başvuruları PaperAxis'in adresinden alınıp veri sorumlusuna iletilir.
+    legalName: 'Nida Akın',
+    kvkkContactEmail: 'info@paperaxis.com',
   } satisfies BusinessInfo,
 
   contact: {

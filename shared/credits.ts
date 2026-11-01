@@ -10,4 +10,6 @@ export const DEVELOPER = {
   url: 'https://paperaxis.com',
   contact: 'info@paperaxis.com',
   credit: 'PaperAxis tarafından yapılmıştır',
+  /** KVKK metinlerinde veri işleyen olarak anılan rol */
+  processorRole: 'web sitesi ve randevu sisteminin geliştirilmesi, barındırılması ve teknik bakımı',
 } as const;

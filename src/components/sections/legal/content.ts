@@ -8,6 +8,7 @@
  */
 import type { PublicSettings } from '@/data/types';
 import { formatAddress } from '../address';
+import { DEVELOPER } from '@shared/credits';
 
 export type LegalDoc = 'kvkk' | 'consent' | 'privacy' | 'cookies';
 export interface LegalSection { heading: string; paragraphs?: string[]; list?: string[] }
@@ -17,6 +18,10 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
   const controller = s.business.legalName ?? '[Veri sorumlusunun resmî unvanı / adı soyadı]';
   const address = formatAddress(s.contact) ?? '[Açık adres]';
   const email = s.business.kvkkContactEmail ?? s.contact.email ?? '[KVKK başvuru e-posta adresi]';
+  const processor = `${DEVELOPER.name} (${DEVELOPER.url.replace('https://', '')})`;
+  // Başvuru adresi veri işleyene aitse, başvurunun kime ulaştığı açıkça yazılır.
+  const emailIsProcessor = email.toLowerCase() === DEVELOPER.contact;
+  const emailNote = emailIsProcessor ? ` Bu adrese gelen başvurular, veri sorumlusu adına ${DEVELOPER.name} tarafından alınır ve gecikmeksizin veri sorumlusuna iletilir.` : '';
 
   const rights: string[] = [
     'Kişisel verilerinizin işlenip işlenmediğini öğrenme,',
@@ -39,7 +44,15 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
         intro:
           'Bu aydınlatma metni, 6698 sayılı Kişisel Verilerin Korunması Kanunu’nun (“KVKK”) 10. maddesi ile Aydınlatma Yükümlülüğünün Yerine Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ kapsamında, web sitesi ve randevu talep süreçlerinde işlenen kişisel verileriniz hakkında sizi bilgilendirmek amacıyla hazırlanmıştır.',
         sections: [
-          { heading: '1. Veri sorumlusu', paragraphs: [`Veri sorumlusu: ${controller}`, `Adres: ${address}`, `İletişim: ${email}`] },
+          {
+            heading: '1. Veri sorumlusu ve veri işleyen',
+            paragraphs: [
+              `Veri sorumlusu: ${controller}`,
+              `Adres: ${address}`,
+              `İletişim: ${email}`,
+              `Veri işleyen: ${processor}. ${DEVELOPER.name}, ${DEVELOPER.processorRole} hizmetini veri sorumlusunun talimatları doğrultusunda ve yalnızca bu amaçla yürütür; kişisel verileri kendi amaçları için işlemez.`,
+            ],
+          },
           {
             heading: '2. İşlenen kişisel veriler',
             list: [
@@ -72,7 +85,7 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
           {
             heading: '5. Aktarım',
             paragraphs: [
-              'Kişisel verileriniz, yukarıdaki amaçlarla sınırlı olarak ve KVKK md. 8 ve 9’daki şartlara uygun şekilde; yetkili kamu kurum ve kuruluşlarına, hizmet alınan barındırma (hosting) ve teknik altyapı sağlayıcılarına aktarılabilir. [Kullanılan altyapı sağlayıcıları ve bulundukları ülkeler burada belirtilmelidir.]',
+              `Kişisel verileriniz, yukarıdaki amaçlarla sınırlı olarak ve KVKK md. 8 ve 9’daki şartlara uygun şekilde; yetkili kamu kurum ve kuruluşlarına, veri işleyen sıfatıyla web sitesi ve randevu sisteminin teknik hizmetlerini yürüten ${DEVELOPER.name}’e ve hizmet alınan barındırma (hosting) ve teknik altyapı sağlayıcılarına aktarılabilir. [Kullanılan altyapı sağlayıcıları ve bulundukları ülkeler burada belirtilmelidir.]`,
             ],
           },
           {
@@ -83,7 +96,7 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
           {
             heading: '8. Başvuru',
             paragraphs: [
-              `Haklarınıza ilişkin taleplerinizi, Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ’e uygun olarak ${email} adresine veya ${address} adresine yazılı olarak iletebilirsiniz. Başvurular en geç otuz gün içinde ücretsiz olarak sonuçlandırılır.`,
+              `Haklarınıza ilişkin taleplerinizi, Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ’e uygun olarak ${email} adresine veya ${address} adresine yazılı olarak iletebilirsiniz. Başvurular en geç otuz gün içinde ücretsiz olarak sonuçlandırılır.${emailNote}`,
             ],
           },
         ],
