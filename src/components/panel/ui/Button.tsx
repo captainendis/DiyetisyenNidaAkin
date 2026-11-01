@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/format';

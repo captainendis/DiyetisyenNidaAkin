@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Soru: "Kaç randevu vardı?" — tek seri dikey çubuk grafik (renk = tek ton, anlam etiketlerde).
  * Her çubuk kendi hover/odak hedefi; ipucu kutusu sonuç kırılımını gösterir. Tablo görünümü ReportsPage'de.

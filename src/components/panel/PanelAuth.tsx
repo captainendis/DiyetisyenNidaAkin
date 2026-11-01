@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Panel kimlik doğrulama bağlamı: kullanıcı, izinler, CSRF token, okunmamış bildirim sayısı */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';

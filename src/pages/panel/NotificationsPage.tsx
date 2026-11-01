@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useMemo, useState, type ComponentType } from 'react';
 import { useNavigate } from 'react-router';
 import { BellOff, CalendarCheck2, CalendarClock, CalendarPlus, CalendarX2, CheckCheck, Circle, Mail, MessageCircle, Trash2, UserPlus } from 'lucide-react';

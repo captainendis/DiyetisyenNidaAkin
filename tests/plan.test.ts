@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { describe, expect, it } from 'vitest';
 import { genitive, planTitleFor, samplePlanTemplate, nutritionPlanDataSchema } from '../shared/plan';
 import { renderPlanHtml } from '../shared/plan-template';

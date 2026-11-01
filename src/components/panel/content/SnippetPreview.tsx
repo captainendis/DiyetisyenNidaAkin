@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Google arama sonucu önizlemesi (yaklaşık) */
 export function SnippetPreview({ title, description, path }: { title: string; description: string; path: string }) {
   const host = typeof window !== 'undefined' ? window.location.host : 'alanadi.com';

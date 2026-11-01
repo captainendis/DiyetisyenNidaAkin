@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
 import { Button, Card } from '@/components/panel/ui';

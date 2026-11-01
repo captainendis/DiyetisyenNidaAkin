@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Beslenme planı PDF üretimi (Chromium / playwright-core).
  * - Tarayıcı ilk istekte açılır, yeniden kullanılır; 5 dk boşta kalınca kapatılır.

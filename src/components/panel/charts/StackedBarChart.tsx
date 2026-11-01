@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Yığılmış sütun grafiği (SVG, bağımlılıksız).
  * Kurallar: sütun ≤24px, taban kare / üst uç 4px yuvarlak, segmentler arası 2px yüzey boşluğu,

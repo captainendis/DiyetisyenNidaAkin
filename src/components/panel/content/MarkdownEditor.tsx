@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Basit Markdown düzenleyici: araç çubuğu + yazma / önizleme / yan yana görünümler */
 import { useRef, useState } from 'react';
 import { Bold, Eye, Heading2, Italic, Link2, List, ListOrdered, PenLine, Columns2 } from 'lucide-react';

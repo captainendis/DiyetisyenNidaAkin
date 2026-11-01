@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import type { ContactInfo } from '@shared/site-config';
 
 /** "Açık adres, 34538 Esenyurt/İstanbul" biçiminde tam adres; eksikse null */

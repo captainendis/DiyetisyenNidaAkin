@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { ApiError } from '@/lib/api';
 import type { NutritionPlanData } from '@shared/plan';
 

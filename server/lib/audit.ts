@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Denetim kaydı (audit log). Hassas içerik (not metni, ölçüm değeri) ASLA metadata'ya yazılmaz. */
 import type { Request } from 'express';
 import { prisma, type Tx } from './db';

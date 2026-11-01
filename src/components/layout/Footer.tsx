@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Link } from 'react-router';
 import { Logo } from '@/components/icons/Logo';
 import { PaperAxisMark } from '@/components/icons/PaperAxisMark';

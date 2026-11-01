@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Beslenme planı veri modeli (panel düzenleyici, sunucu doğrulaması ve PDF şablonu ortak kullanır).
  * Düzen, diyetisyenin kullandığı tek sayfalık A4 plan örneğini temel alır.

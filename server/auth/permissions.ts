@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Rol tabanlı erişim. Hassas sağlık verilerine (klinik notlar, ölçümler, dosyalar)
  * yalnızca "clinical:*" iznine sahip roller erişebilir.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Bildirim servisi
  *  - Panel içi bildirim her zaman oluşturulur (kullanıcı tercihi kapatmadıysa).

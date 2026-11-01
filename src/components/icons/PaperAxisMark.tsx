@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * PaperAxis işareti (yapımcı künyesi için). Tek renk, currentColor.
  * Copyright (c) 2026 PaperAxis. All rights reserved.

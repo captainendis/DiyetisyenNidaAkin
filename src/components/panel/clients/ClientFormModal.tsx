@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Yeni danışan / danışan düzenleme formu */
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';

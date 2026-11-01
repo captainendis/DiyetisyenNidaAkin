@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * "Siteyi tamamlayın" — yayın öncesi panelden doldurulması gereken bilgiler.
  * Her madde sunucuda gerçek veriden hesaplanır (GET /api/dashboard/setup); tamamlandıkça işaretlenir.

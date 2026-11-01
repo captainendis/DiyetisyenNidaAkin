@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Takvim görünümleri
  *  - TimeGrid: gün/hafta. Çalışma dışı saatler taranmış, randevular duruma göre renkli bloklar.

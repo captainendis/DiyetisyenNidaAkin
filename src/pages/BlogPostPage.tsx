@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { api } from '@/lib/api';

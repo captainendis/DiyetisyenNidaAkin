@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Saat dilimi yardımcıları — tüm iş kuralları Europe/Istanbul'da hesaplanır.
  * Veritabanında UTC (timestamptz) saklanır; ekranda ve kurallarda yerel saat kullanılır.

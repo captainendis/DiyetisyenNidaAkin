@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Web sitesi içerik & ayar şemaları.
  * - Sunucu: PATCH /api/settings/:key gövdesini bu şemalarla doğrular.

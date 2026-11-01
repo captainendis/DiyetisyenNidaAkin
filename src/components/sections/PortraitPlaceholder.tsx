@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useSiteImages } from '@/config/media';
 import { Picture } from './Picture';
 import { cn } from '@/lib/text';

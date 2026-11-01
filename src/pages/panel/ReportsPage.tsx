@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useMemo, useState } from 'react';
 import { BarChart3, Download, Table2 } from 'lucide-react';
 import { DateTime } from 'luxon';

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** website_settings okuma/yazma — varsayılanlarla birleştirerek döner */
 import { prisma } from '../lib/db';
 import { defaultSettings, settingsSchemas, type Settings, type SettingsKey } from '../../shared/settings';

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Randevu çakışma entegrasyon testi — geliştirme veritabanına karşı çalışır.
  * Test kendi oluşturduğu kayıtları siler ve çalışma kurallarını eski haline getirir.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** İşletme bilgileri, randevu ayarları ve KVKK ayarları (website_settings anahtarları) */
 import { Link } from 'react-router';
 import { Input, Switch, Textarea } from '@/components/panel/ui';

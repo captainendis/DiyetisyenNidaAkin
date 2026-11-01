@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Beslenme planı — tek sayfa A4 HTML şablonu.
  * Aynı şablon paneldeki canlı önizlemede (iframe srcdoc) ve sunucudaki PDF üretiminde (Chromium) kullanılır.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Sosyal paylaşım görseli (og-image.jpg, 1200×630) ve apple-touch-icon.png (180×180) üretir.
  * Gerçek mekân fotoğrafını ve marka tipografisini kullanır. Kullanım: node scripts/generate-og.cjs

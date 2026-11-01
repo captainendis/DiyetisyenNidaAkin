@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Hero } from '@/components/sections/Hero';
 import { Intro } from '@/components/sections/Intro';
 import { AboutTeaser } from '@/components/sections/AboutTeaser';

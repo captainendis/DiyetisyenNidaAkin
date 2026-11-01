@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** İçerik/ayar formları için ortak yerleşim parçaları */
 import type { ReactNode } from 'react';
 import { ExternalLink } from 'lucide-react';

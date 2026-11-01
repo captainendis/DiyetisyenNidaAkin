@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { api, ApiError } from '@/lib/api';

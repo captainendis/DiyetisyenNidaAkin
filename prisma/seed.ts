@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * İlk kurulum verileri (idempotent — tekrar çalıştırmak mevcut içeriği EZMEZ).
  *  - Roller ve izinler

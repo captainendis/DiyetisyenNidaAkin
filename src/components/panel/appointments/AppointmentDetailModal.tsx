@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Randevu detay modalı — durum işlemleri, yeniden planlama, dahili not, durum geçmişi.
  * Diğer modüller /panel/randevular?id=<id> bağlantısıyla da açabilir.

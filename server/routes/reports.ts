@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Raporlar — yalnızca randevu ve danışan sayıları. Finansal rapor yoktur
  * (ödeme takibi modülü olmadan gelir gösterilmez).

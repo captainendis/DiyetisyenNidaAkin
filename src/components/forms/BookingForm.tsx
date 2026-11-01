@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Randevu talep formu — 3 adım + sonuç.
  *  1) Görüşme: hizmet (isteğe bağlı) + görüşme tercihi

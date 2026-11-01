@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * /panel/randevular — Liste | Gün | Hafta | Ay
  * URL parametreleri: view, d (görünüm tarihi), id (detay modalı), new=1 (&clientId, date, time)

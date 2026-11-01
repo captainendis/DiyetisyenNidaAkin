@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Dashboard — tüm sayılar canlı veritabanından hesaplanır. Karşılaştırma dönemleri yanıtta adıyla döner.
  */

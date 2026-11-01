@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Link } from 'react-router';
 import type { PostCard as Post } from '@/data/types';
 import { formatDateIntl as formatDate } from '@/lib/text';

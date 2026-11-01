@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Hizmetler için özel çizgi-ikonlar (Lucide değil — marka diline özgü, ince ve organik).
  * 48×48 ızgara, 1.25 kontur, yuvarlak uçlar. Anahtarlar: shared/constants.ts → SERVICE_ICONS

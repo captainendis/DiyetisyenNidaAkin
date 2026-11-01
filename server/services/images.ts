@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Görsel işleme (sharp)
  *  - EXIF yönlendirmesi uygulanır, ardından TÜM meta veriler (konum/GPS, cihaz bilgisi) silinir.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Yapımcı künyesi — sitede tek bir yerden okunur (footer).
  * Kaldırmak ya da değiştirmek için yalnızca bu dosya ve Footer'daki satır yeterlidir.

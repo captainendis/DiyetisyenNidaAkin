@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Varsayılan site içeriği (zod içermez — herkese açık sitenin ana paketine girer) */
 import type { Settings } from './settings';
 import { siteConfig } from './site-config';

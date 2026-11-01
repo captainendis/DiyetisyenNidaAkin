@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import type { ImgHTMLAttributes } from 'react';
 
 /** AVIF + WebP kaynaklı, boyutları belirtilmiş (CLS önleyici) görsel */

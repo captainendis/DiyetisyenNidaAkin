@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Global randevu modalı. Sitedeki tüm "Randevu Al" düğmeleri useBooking().open() çağırır.
  * Masaüstü: sol koyu bilgi şeridi + sağ form. Mobil: tam yükseklikte alt sayfa.

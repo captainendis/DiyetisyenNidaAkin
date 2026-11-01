@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Yasal metin TASLAKLARI. Bu metinler hukuki görüş değildir; yayın öncesinde bir hukuk uzmanınca
  * gözden geçirilmeli ve işletmenin gerçek veri işleme faaliyetlerine göre güncellenmelidir.

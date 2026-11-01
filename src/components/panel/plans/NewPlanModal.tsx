@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Yeni beslenme planı: danışan (isteğe bağlı) + kaynak (şablon / boş) */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';

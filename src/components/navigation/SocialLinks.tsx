@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import type { SocialLinks as Social } from '@shared/site-config';
 import { InstagramIcon, LinkedinIcon, XIcon, YoutubeIcon } from '@/components/icons/SocialIcons';
 import { cn } from '@/lib/text';

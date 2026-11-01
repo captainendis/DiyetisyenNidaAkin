@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** /panel/planlar — beslenme planları ve şablonlar */
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';

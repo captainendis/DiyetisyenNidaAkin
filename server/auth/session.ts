@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Oturum yönetimi
  *  - Cookie: "na_sid" (HttpOnly, SameSite=Strict, üretimde Secure). Ham token yalnızca cookie'de; DB'de SHA-256 özeti.

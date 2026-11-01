@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Danışan detayı → Beslenme Planları sekmesi */
 import { useState } from 'react';
 import { Link } from 'react-router';

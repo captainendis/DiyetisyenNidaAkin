@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Link } from 'react-router';
 import { useSite } from '@/data/SiteContext';
 import { PageHeader } from '@/components/sections/PageHeader';

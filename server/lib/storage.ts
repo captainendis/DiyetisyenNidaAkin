@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Dosya depolama yolları ve güvenli yükleme yardımcıları.
  *  - public/  : herkese açık blog görselleri (/uploads/public/...)

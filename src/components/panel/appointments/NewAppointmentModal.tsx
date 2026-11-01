@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Yeni randevu: mevcut danışan seçimi veya yeni kişi, hizmet, gün + saat, tür, durum, not */
 import { useEffect, useRef, useState } from 'react';
 import { Search, UserPlus, X } from 'lucide-react';

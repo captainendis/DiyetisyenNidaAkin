@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Denetim kaydı eylemlerinin Türkçe karşılıkları. Bilinmeyen eylemler ham haliyle gösterilir. */
 export const AUDIT_ACTION_LABEL: Record<string, string> = {
   'auth.login': 'Giriş yapıldı',

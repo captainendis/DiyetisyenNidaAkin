@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Danışan yönetimi
  *  - Temel kayıt: clients:read / clients:write / clients:delete

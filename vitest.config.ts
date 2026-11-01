@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { defineConfig } from 'vitest/config';
 import path from 'node:path';
 import { config } from 'dotenv';

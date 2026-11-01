@@ -375,6 +375,12 @@ Bunlar yalnızca yerleşik yedek görsellerdir; gerçek fotoğraflar **panelden*
 - [ ] SMTP yapılandırıldı (şifre sıfırlama ve e-posta bildirimleri için) — isteğe bağlı
 - [ ] Yedekleme ve saklama-imha işleri zamanlandı
 
+## Telif ve lisans
+
+Telif Hakkı (c) 2026 Nida Akın. Tüm hakları saklıdır. Kapalı kaynak yazılımdır;
+koşullar için [LICENSE](LICENSE), kullanılan açık kaynak bileşenler için
+[THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES) dosyasına bakın (`npm run notices` ile yenilenir).
+
 ## Geliştirici
 
 Bu yazılım [PaperAxis](https://paperaxis.com) tarafından geliştirilmiştir.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Hizmet yönetimi — ana sayfadaki hizmet kartları buradan yönetilir. */
 import { Router } from 'express';
 import { z } from 'zod';

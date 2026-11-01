@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Canlı A4 önizleme — PDF ile aynı şablon (shared/plan-template.ts).
  * iframe srcdoc betik çalıştırmaz; sayfaya sığdırma ölçümü üst pencereden yapılır.

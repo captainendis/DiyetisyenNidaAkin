@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Doğrudan etiketli yatay oran çubukları — her satır adını ve değerini metinle taşır (renk tek başına anlam taşımaz). */
 export interface ProportionRow { key: string; label: string; value: number; hint?: string; tone?: 'base' | 'muted' }
 

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Genel Bakış — günün kararı: "Sıradaki kim, neyi onaylamam gerekiyor?"
  * Ajanda ve onay bekleyen talepler en üstte; istatistikler ve haftalık grafik destekleyici.

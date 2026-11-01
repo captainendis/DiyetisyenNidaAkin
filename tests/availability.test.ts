@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Müsaitlik kuralları — saf fonksiyon testleri (veritabanı gerekmez) */
 import { describe, expect, it } from 'vitest';
 import { buildDayPlan } from '../server/services/availability';

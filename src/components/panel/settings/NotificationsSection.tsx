@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';

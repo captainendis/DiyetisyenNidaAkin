@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Site görselleri: ana sayfa kapak fotoğrafı, görüşme alanı fotoğrafı, portre.
  * Fotoğraf sunucuda işlenir (döndürme düzeltmesi, konum/EXIF bilgisinin silinmesi, AVIF + WebP varyantlar).

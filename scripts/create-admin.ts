@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * İlk yönetici hesabını güvenli şekilde oluşturur. Herkese açık kayıt yoktur.
  *

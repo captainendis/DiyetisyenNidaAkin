@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Web sitesi içerik yönetimi: site ayarları, blog, SSS, medya */
 import fs from 'node:fs/promises';
 import path from 'node:path';

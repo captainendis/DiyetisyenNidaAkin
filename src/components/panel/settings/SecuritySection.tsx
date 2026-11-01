@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useState } from 'react';
 import { Check, Laptop, Smartphone } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';

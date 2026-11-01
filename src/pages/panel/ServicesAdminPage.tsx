@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Hizmet yönetimi — sıralama (sürükle-bırak + klavye), yayın durumu, düzenleme */
 import { useState, type DragEvent } from 'react';
 import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Leaf, Pencil, Plus, Trash2 } from 'lucide-react';

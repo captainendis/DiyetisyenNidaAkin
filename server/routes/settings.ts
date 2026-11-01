@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Kullanıcı profili, bildirim tercihleri, oturumlar ve kullanıcı yönetimi */
 import { Router } from 'express';
 import { z } from 'zod';

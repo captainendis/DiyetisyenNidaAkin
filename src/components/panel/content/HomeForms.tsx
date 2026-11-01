@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Ana sayfa içerik formları: Hero, Tanıtım, Yaklaşım, Süreç, Randevu çağrısı */
 import { Input, Textarea } from '@/components/panel/ui';
 import { CharCount, FormCard, FormSection, SaveBar } from './FormBits';
