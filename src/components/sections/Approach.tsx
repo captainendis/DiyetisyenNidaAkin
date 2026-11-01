@@ -17,7 +17,7 @@ export function Approach() {
       <OliveBranch className="absolute top-10 right-[5%] -z-[5] hidden h-[50%] text-gold/45 lg:block" />
       <div className="container-edge py-24 sm:py-32 lg:py-44">
         <Reveal>
-          <SectionLabel index="04">Beslenme yaklaşımı</SectionLabel>
+          <SectionLabel>Beslenme yaklaşımı</SectionLabel>
         </Reveal>
         <Reveal delay={0.05}>
           <h2 id="approach-title" className="mt-10 max-w-4xl font-display text-[clamp(3rem,1.8rem+5vw,7rem)] leading-[0.95] font-medium tracking-[-0.015em]">

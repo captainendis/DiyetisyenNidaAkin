@@ -66,7 +66,7 @@ export function MapBlock({ className = '' }: { className?: string }) {
 }
 
 /** İletişim bölümü — gerçek mekân fotoğrafı + bilgiler + harita. Boş alanlar "Yakında eklenecek". */
-export function ContactSection({ index = '06', heading = true }: { index?: string; heading?: boolean }) {
+export function ContactSection({ heading = true }: { heading?: boolean }) {
   const images = useSiteImages();
   const { site } = useSite();
   const c = site.settings.contact;
@@ -88,7 +88,7 @@ export function ContactSection({ index = '06', heading = true }: { index?: strin
         <div className="lg:col-span-7 lg:col-start-6">
           {heading && (
             <Reveal>
-              <SectionLabel index={index}>İletişim</SectionLabel>
+              <SectionLabel>İletişim</SectionLabel>
               <h2 id="contact-title" className="mt-8 font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
                 Tanışmak için<br /><em className="font-normal text-rose-deep">bir mesaj yeter.</em>
               </h2>

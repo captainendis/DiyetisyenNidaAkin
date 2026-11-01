@@ -4,7 +4,6 @@ import { useSite } from '@/data/SiteContext';
 import { useBooking } from '@/components/forms/BookingProvider';
 import { CtaButton, TextLink } from '@/components/forms/Button';
 import { FadeIn, StaggerLines } from '@/components/motion/Reveal';
-import { FEATURE_ICONS } from '@/components/icons/FeatureIcons';
 import { AppleOutline } from '@/components/icons/Botanical';
 import { useSiteImages } from '@/config/media';
 import { Picture } from './Picture';
@@ -38,8 +37,8 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-t from-espresso from-25% via-espresso/45 to-espresso/0 lg:from-espresso/70 lg:from-0% lg:via-transparent lg:via-30% lg:to-espresso/80" aria-hidden />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-espresso/90 to-transparent" aria-hidden />
         {contact.venueName && (
-          <p className="absolute right-6 bottom-8 z-[1] hidden text-right text-[0.68rem] tracking-[0.2em] text-cream/55 uppercase lg:block xl:right-10">
-            {contact.venueName}{shortPlace(contact) ? <span className="text-cream/40"> — {contact.district ?? contact.city}</span> : null}
+          <p className="absolute right-6 bottom-8 z-[1] hidden text-right text-[0.68rem] tracking-[0.2em] text-cream/75 uppercase lg:block xl:right-10">
+            {contact.venueName}{shortPlace(contact) ? <span className="text-cream/60"> — {contact.district ?? contact.city}</span> : null}
           </p>
         )}
         <div className="absolute inset-0 lg:shadow-[inset_0_0_180px_60px_rgba(33,23,16,0.75)]" aria-hidden />
@@ -72,15 +71,11 @@ export function Hero() {
 
         <FadeIn delay={1.05} className="mt-14 lg:absolute lg:bottom-14 lg:mt-0">
           <ul className="grid max-w-[580px] grid-cols-3 border-t border-cream/15 pt-6 lg:border-0 lg:pt-0">
-            {hero.features.map((f, i) => {
-              const Icon = FEATURE_ICONS[i] ?? FEATURE_ICONS[0];
-              return (
-                <li key={f} className={`flex flex-col items-start gap-3 px-3 first:pl-0 sm:px-6 ${i > 0 ? 'border-l border-cream/15' : ''}`}>
-                  <Icon className="h-8 w-8 text-rose sm:h-9 sm:w-9" />
-                  <span className="text-[0.78rem] leading-snug text-cream/80 sm:text-[0.88rem]">{f}</span>
-                </li>
-              );
-            })}
+            {hero.features.map((f, i) => (
+              <li key={f} className={`px-3 text-[0.78rem] leading-snug text-cream/80 first:pl-0 sm:px-6 sm:text-[0.88rem] ${i > 0 ? 'border-l border-cream/15' : ''}`}>
+                {f}
+              </li>
+            ))}
           </ul>
         </FadeIn>
       </motion.div>

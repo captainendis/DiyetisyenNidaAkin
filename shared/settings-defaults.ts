@@ -4,33 +4,34 @@ import { siteConfig } from './site-config';
 
 export const defaultSettings: Settings = {
   hero: {
-    eyebrow: 'Sağlıklı yaşam, doğru beslenme ile başlar',
+    eyebrow: 'Esenyurt · Bahçekent',
     titleLine1: 'Nida Akın',
     titleLine2: 'Diyetisyen',
-    description: 'Daha sağlıklı, dengeli ve enerjik bir yaşam için size özel beslenme danışmanlığı.',
+    description:
+      "Pelin Tek Studio Bahçekent'in üst katında beslenme danışmanlığı. İlk görüşmede gününüzü ve sevdiğiniz yemekleri konuşup size uyan planı birlikte hazırlıyoruz.",
     primaryCta: 'Randevu Al',
     secondaryCta: 'Yakından Tanıyın',
-    features: ['Kişiye Özel Beslenme Planı', 'Sağlıklı Yaşam Danışmanlığı', 'Sürdürülebilir Beslenme'],
+    features: ['Görüşmeler stüdyonun üst katında', 'Tek sayfa A4 beslenme planı', 'Her öğün için seçenekli liste'],
   },
   intro: {
-    heading: 'İyi hissetmek, kendin için attığın küçük bir adımla başlar.',
+    heading: 'Her görüşme sizi dinlemekle başlar.',
     body:
-      'Beslenme; listelerden, yasaklardan ve kısa süreli kararlardan çok daha fazlası. Günlük ritminizi, sevdiğiniz tatları ve hayatınızın gerçek koşullarını anlamadan kalıcı bir değişim planlanamaz. Bu yüzden her görüşme, sizi dinlemekle başlar.',
-    aside: 'Sizin hayatınıza uyan bir plan — tersi değil.',
+      'Hazır bir liste vermeden önce gününüzün nasıl geçtiğini, hangi yemekleri sevdiğinizi ve hangi saatlerde zorlandığınızı konuşuyoruz. Plan bu cevaplardan çıkar: mesai saatleriniz, hafta sonlarınız ve sofranız hesaba katılır.',
+    aside: 'Plan, sizin gününüze göre yazılır.',
   },
   about: {
     eyebrow: 'Hakkımda',
-    heading: 'Dinleyen, birlikte planlayan, süreç boyunca yanınızda olan bir danışmanlık.',
+    heading: 'Önce sizi tanıyan, planı sizinle birlikte yazan bir danışmanlık.',
     lead:
-      'Beslenmeyi bir disiplin cezası olarak değil, kendinize gösterdiğiniz özenin bir parçası olarak görüyorum. Amacım, sizin için işleyen ve uzun vadede sürdürebileceğiniz alışkanlıkları birlikte bulmak.',
+      'Beslenmeyi kendinize gösterdiğiniz özenin bir parçası olarak görüyorum. Amacım, uzun vadede sürdürebileceğiniz alışkanlıkları sizinle birlikte bulmak.',
     paragraphs: [
       'Danışmanlık sürecinde önce sizi tanımaya odaklanıyorum: gününüz nasıl geçiyor, neleri seviyorsunuz, nerede zorlanıyorsunuz? Bu sorulara verdiğiniz cevaplar, planın kendisi kadar önemli.',
-      'Hazır listeler yerine; yaşam tempounuza, alışkanlıklarınıza ve hedeflerinize göre şekillenen, gerektiğinde birlikte güncellediğimiz bir yol haritası hazırlıyoruz.',
+      'Hazır listeler yerine yaşam temponuza ve hedeflerinize göre şekillenen, gerektiğinde birlikte güncellediğimiz bir plan hazırlıyoruz.',
     ],
     pillars: [
-      { title: 'Önce dinlemek', body: 'Her plan, sizin hikâyenizi ve günlük ritminizi anlamakla başlar.' },
-      { title: 'Gerçekçi hedefler', body: 'Küçük ama kalıcı adımlar; kısa süreli değil, sürdürülebilir değişim.' },
-      { title: 'Yargısız yaklaşım', body: 'Mükemmel bir beslenme değil, size iyi gelen bir denge arıyoruz.' },
+      { title: 'Önce dinlemek', body: 'Plan yazılmadan önce gününüzü ve sofranızı konuşuyoruz.' },
+      { title: 'Ulaşılabilir hedefler', body: 'Her takip görüşmesinde bir sonraki görüşmeye kadar yapılabilecek küçük adımlar belirliyoruz.' },
+      { title: 'Yargısız görüşme', body: 'Ne yediğinizi suçluluk duymadan anlatabileceğiniz bir ortam.' },
     ],
     // Gerçek eğitim, sertifika ve deneyim bilgileri doğrulandıktan sonra panelden eklenmelidir.
     credentials: [],
@@ -38,27 +39,27 @@ export const defaultSettings: Settings = {
   },
   approach: {
     heading: 'Yasaklarla değil, dengeyle.',
-    subheading: 'Beslenme, hayatından vazgeçmek değil; hayatına iyi gelecek alışkanlıklar kazanmaktır.',
+    subheading: 'Sevdiğiniz yemekleri plandan çıkarmadan, size iyi gelen seçimleri artırıyoruz.',
     pillars: [
-      { title: 'Sürdürülebilirlik', body: 'Birkaç hafta değil, yıllar boyunca uygulanabilecek alışkanlıklar üzerine kurulu bir yaklaşım.' },
-      { title: 'Kişiye özel planlama', body: 'Yaşam tarzınız, tercihleriniz ve hedefleriniz doğrultusunda size özel hazırlanan bir plan.' },
-      { title: 'Dengeli yaşam', body: 'Sofradaki keyfi korurken bedeninize iyi gelecek seçimleri birlikte keşfetmek.' },
+      { title: 'Sevdiğiniz yemekler planda', body: 'Vazgeçemediğiniz yemekler listeden silinmez; porsiyonu ve sıklığı birlikte belirlenir.' },
+      { title: 'Gerçek gününüze göre', body: 'Mesai saatleri, hafta sonları ve davetler plan yazılırken hesaba katılır.' },
+      { title: 'Birlikte güncellenen plan', body: 'Takip görüşmelerinde işlemeyen kısımları birlikte değiştiriyoruz.' },
     ],
   },
   process: {
     heading: 'Süreç nasıl işliyor?',
-    intro: 'İlk görüşmeden takip sürecine kadar her adım, sizin ihtiyaçlarınıza göre şekillenir.',
+    intro: 'İlk görüşmeden takip görüşmelerine kadar dört adım.',
     steps: [
-      { title: 'Tanışma', body: 'İhtiyaçların ve hedeflerin belirlenmesi.' },
-      { title: 'Değerlendirme', body: 'Kişiye özel beslenme ihtiyaçlarının değerlendirilmesi.' },
-      { title: 'Planlama', body: 'Bireysel ihtiyaçlara uygun beslenme planının hazırlanması.' },
-      { title: 'Takip', body: 'Sürecin değerlendirilmesi ve gerektiğinde güncellenmesi.' },
+      { title: 'Tanışma', body: 'Gününüzü, sevdiğiniz yemekleri ve zorlandığınız saatleri konuşuyoruz.' },
+      { title: 'Değerlendirme', body: 'Hedefinizi ve mevcut alışkanlıklarınızı birlikte değerlendiriyoruz.' },
+      { title: 'Planlama', body: 'Öğün seçenekleri, su ve hareket hedefiyle tek sayfalık planınızı hazırlıyoruz.' },
+      { title: 'Takip', body: 'Takip görüşmelerinde planı işleyen ve zorlanan kısımlara göre güncelliyoruz.' },
     ],
   },
   cta: {
-    heading: 'Değişim, kendine ayırdığın zamanla başlar.',
-    body: 'Sağlıklı yaşam yolculuğuna ilk adımını at.',
-    button: 'Randevu Oluştur',
+    heading: 'İlk görüşme için bir saat seçin.',
+    body: 'Takvimden uygun bir saat seçebilir ya da saat seçmeden iletişim talebi bırakabilirsiniz. Talebiniz incelenip size dönüş yapılır.',
+    button: 'Randevu Al',
   },
   contact: { ...siteConfig.contact },
   social: { ...siteConfig.social },
@@ -67,7 +68,7 @@ export const defaultSettings: Settings = {
     defaultTitle: 'Nida Akın — Diyetisyen',
     titleSuffix: ' | Nida Akın Diyetisyen',
     defaultDescription:
-      'Diyetisyen Nida Akın ile kişiye özel, sürdürülebilir beslenme danışmanlığı. Yasaklarla değil, dengeyle. Randevu talebinizi çevrim içi oluşturun.',
+      "Esenyurt Bahçekent'te diyetisyen Nida Akın ile beslenme danışmanlığı. Görüşmeler Pelin Tek Studio'nun üst katında; randevu talebinizi çevrim içi oluşturabilirsiniz.",
   },
   appointment: {
     leadTimeHours: 12,

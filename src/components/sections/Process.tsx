@@ -11,7 +11,7 @@ export function Process() {
       <div className="container-edge py-24 sm:py-32 lg:py-40">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
           <Reveal className="lg:col-span-7">
-            <SectionLabel index="05">Danışan yolculuğu</SectionLabel>
+            <SectionLabel>Görüşme süreci</SectionLabel>
             <h2 id="process-title" className="mt-8 font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">{p.heading}</h2>
           </Reveal>
           <Reveal delay={0.1} className="lg:col-span-4 lg:col-start-9">

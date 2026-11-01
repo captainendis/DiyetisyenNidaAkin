@@ -17,7 +17,7 @@ export function ServicesSection() {
         <div className="lg:col-span-4">
           <div className="lg:sticky lg:top-32">
             <Reveal>
-              <SectionLabel index="03" tone="light">Hizmetler</SectionLabel>
+              <SectionLabel tone="light">Hizmetler</SectionLabel>
               <h2 id="services-title" className="mt-8 font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">
                 Size özel,<br /><em className="font-normal text-rose">adım adım.</em>
               </h2>
@@ -28,14 +28,13 @@ export function ServicesSection() {
             </Reveal>
           </div>
         </div>
-        <ol className="lg:col-span-8">
+        <ul className="lg:col-span-8">
           {site.services.map((s, i) => (
             <Reveal as="li" key={s.id} delay={Math.min(i * 0.05, 0.2)} amount={0.4}>
               <Link
                 to={`/hizmetler/${s.slug}`}
-                className="group grid grid-cols-[auto_1fr_auto] items-start gap-x-5 border-t border-cream/12 py-8 transition-colors duration-500 last:border-b hover:bg-cream/[0.025] sm:gap-x-8 sm:py-10"
+                className="group grid grid-cols-[1fr_auto] items-start gap-x-5 border-t border-cream/12 py-8 transition-colors duration-500 last:border-b hover:bg-cream/[0.025] sm:gap-x-8 sm:py-10"
               >
-                <span className="pt-2 font-display text-[1rem] text-gold italic tabular-nums">{String(i + 1).padStart(2, '0')}</span>
                 <div className="min-w-0">
                   <div className="flex items-center gap-5">
                     <ServiceIcon name={s.icon} className="hidden h-11 w-11 shrink-0 text-mist transition-colors duration-500 group-hover:text-rose sm:block" />
@@ -51,7 +50,7 @@ export function ServicesSection() {
               </Link>
             </Reveal>
           ))}
-        </ol>
+        </ul>
       </div>
     </section>
   );

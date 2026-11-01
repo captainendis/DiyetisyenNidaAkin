@@ -15,7 +15,7 @@ export function AboutTeaser() {
         </Reveal>
         <div className="lg:col-span-6 lg:col-start-7">
           <Reveal>
-            <SectionLabel index="02">{about.eyebrow}</SectionLabel>
+            <SectionLabel>{about.eyebrow}</SectionLabel>
             <h2 className="mt-8 font-display text-[clamp(2.1rem,1.4rem+2.2vw,3.5rem)] leading-[1.08] font-medium">{about.heading}</h2>
           </Reveal>
           <Reveal delay={0.1}>

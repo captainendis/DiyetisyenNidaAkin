@@ -15,7 +15,7 @@ export function Intro() {
     <section id="tanisin" className="relative overflow-hidden bg-ivory text-espresso">
       <div className="container-edge grid gap-y-14 py-24 sm:py-32 lg:grid-cols-12 lg:gap-x-10 lg:py-44">
         <Reveal className="lg:col-span-12">
-          <SectionLabel index="01">Yaklaşım</SectionLabel>
+          <SectionLabel>Yaklaşım</SectionLabel>
         </Reveal>
         <Reveal className="lg:col-span-9 lg:col-start-1">
           <h2 className="font-display text-[clamp(2.4rem,1.4rem+3.6vw,5rem)] leading-[1.04] font-medium tracking-[-0.01em]">
