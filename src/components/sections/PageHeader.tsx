@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { FadeIn, StaggerLines } from '@/components/motion/Reveal';

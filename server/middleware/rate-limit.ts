@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { rateLimit } from 'express-rate-limit';
 
 const message = (msg: string) => ({ error: { code: 'RATE_LIMITED', message: msg } });

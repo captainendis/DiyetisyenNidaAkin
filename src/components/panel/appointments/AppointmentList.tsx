@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Liste görünümü: filtreler + tablo (mobilde kart) + sayfalama */
 import { useEffect, useState } from 'react';
 import { CalendarX2, Check, Eye, Search, SlidersHorizontal, X } from 'lucide-react';

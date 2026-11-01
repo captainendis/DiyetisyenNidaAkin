@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Beslenme Rehberi yazı düzenleyici — /panel/icerikler/blog/:id ('yeni' = oluştur) */
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useBlocker, useNavigate, useParams } from 'react-router';

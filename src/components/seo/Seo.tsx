@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Sayfa başına SEO: title, description, canonical, Open Graph, Twitter Card, robots ve JSON-LD.
  * Sunucu (server/seo.ts) aynı etiketleri üretim HTML'ine enjekte eder; bu bileşen istemci gezintisinde günceller.

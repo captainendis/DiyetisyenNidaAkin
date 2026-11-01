@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Input, Textarea } from '@/components/panel/ui';
 import { Badge } from '@/components/panel/ui';
 import { FormCard, FormSection, Notice, SaveBar } from './FormBits';

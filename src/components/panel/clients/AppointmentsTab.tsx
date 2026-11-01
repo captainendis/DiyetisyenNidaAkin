@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Link, useNavigate } from 'react-router';
 import { CalendarPlus, CalendarX2 } from 'lucide-react';
 import { api } from '@/lib/api';

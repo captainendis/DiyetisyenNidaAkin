@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { Button, Input, Modal, useFeedback } from '@/components/panel/ui';

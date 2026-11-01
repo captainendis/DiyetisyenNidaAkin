@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Web sitesindeki hizmet kartının sadeleştirilmiş önizlemesi */
 import { ServiceIcon } from '@/components/icons/ServiceIcon';
 import { formatMoney } from '@/lib/format';

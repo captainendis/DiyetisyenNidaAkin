@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** İstemci ve sunucu tarafından paylaşılan sabitler ve Türkçe etiketler. */
 
 export const TIME_ZONE = 'Europe/Istanbul';

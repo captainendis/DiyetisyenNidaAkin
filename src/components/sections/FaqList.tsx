@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useId, useState } from 'react';
 import type { PublicFaq } from '@/data/types';
 import { cn } from '@/lib/text';

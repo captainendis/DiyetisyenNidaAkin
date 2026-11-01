@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useEffect } from 'react';
 import { CtaLink, TextLink } from '@/components/forms/Button';
 import { AppleOutline } from '@/components/icons/Botanical';

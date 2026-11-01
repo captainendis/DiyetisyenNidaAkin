@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Herkese açık site düğmeleri.
  * Birincil CTA: rose, hap biçimli (sitede hap biçimini taşıyan TEK öğe — bilinçli vurgu).

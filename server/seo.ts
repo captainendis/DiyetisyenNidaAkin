@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * SEO uçları ve üretimde SPA servisi
  *  - GET /robots.txt   : /panel ve /api taranmaz

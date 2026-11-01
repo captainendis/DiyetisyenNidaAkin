@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useRef, useState, type DragEvent } from 'react';
 import { Download, FileText, ImageIcon, Lock, Trash2, UploadCloud } from 'lucide-react';
 import { api } from '@/lib/api';

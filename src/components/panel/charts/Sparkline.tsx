@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Küçük eğilim çizgisi: 2px çizgi, son noktada ≥8px işaret + 2px yüzey halkası. Tek seri → lejant yok. */
 export function Sparkline({ values, color = '#302219', width = 96, height = 32, label }: { values: number[]; color?: string; width?: number; height?: number; label: string }) {
   if (!values.length) return null;

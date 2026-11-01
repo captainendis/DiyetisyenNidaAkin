@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Kriptografi yardımcıları
  *  - Parola: scrypt (N=2^15, r=8, p=1) + rastgele tuz, sabit zamanlı karşılaştırma

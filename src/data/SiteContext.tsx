@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Herkese açık site içeriği. Panelden yönetilen içerik /api/public/site'tan gelir.
  * API'ye ulaşılamazsa (ör. yalnızca statik önizleme) shared/ varsayılanlarıyla çizilir — site asla boş görünmez.

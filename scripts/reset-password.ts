@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Sunucu erişimi olan yöneticinin bir kullanıcının şifresini sıfırlaması (SMTP yapılandırılmamışsa).
  *  npm run admin:reset-password

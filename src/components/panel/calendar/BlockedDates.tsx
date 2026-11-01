@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Tarihe özel istisnalar: tatil, izin, takvim kapatma, özel saatler */
 import { useState } from 'react';
 import { CalendarOff, Plus, Trash2 } from 'lucide-react';

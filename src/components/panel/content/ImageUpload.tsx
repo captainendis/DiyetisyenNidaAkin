@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Görsel yükleme: /api/content/media → herkese açık URL. Dosya türü sunucuda içerikten doğrulanır. */
 import { useRef, useState } from 'react';
 import { ImagePlus, Trash2 } from 'lucide-react';

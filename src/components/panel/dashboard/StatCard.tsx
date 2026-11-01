@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import type { ReactNode } from 'react';
 import { Info } from 'lucide-react';
 import { Sparkline } from '../charts/Sparkline';

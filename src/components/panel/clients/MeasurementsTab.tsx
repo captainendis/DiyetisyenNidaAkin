@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useState, type FormEvent } from 'react';
 import { Ruler, Trash2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';

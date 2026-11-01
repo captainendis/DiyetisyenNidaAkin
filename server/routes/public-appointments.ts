@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Web sitesi randevu talebi uçları (oturum gerektirmez).
  * Yanıtlarda hiçbir kişisel veri / diğer randevuların detayları dönmez — yalnızca boş/dolu bilgisi.

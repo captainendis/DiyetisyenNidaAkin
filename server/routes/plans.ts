@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Beslenme planları (/api/plans) — klinik veri: clinical:read / clinical:write gerekir.
  * İçerik şifreli saklanır; PDF sunucuda üretilir ve diske yazılmaz.

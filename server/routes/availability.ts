@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Çalışma takvimi: haftalık kurallar ve tarihe özel istisnalar */
 import { Router } from 'express';
 import { z } from 'zod';

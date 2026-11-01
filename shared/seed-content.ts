@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** İlk kurulum içerikleri. Hizmet metinleri TASLAKTIR — sunulan hizmetler doğrulandıktan sonra panelden düzenlenmelidir. */
 export const seedServices = [
   {

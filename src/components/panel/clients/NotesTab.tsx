@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Görüşme notları — yalnızca clinical:read; içerik sunucuda şifreli saklanır */
 import { useState } from 'react';
 import { Lock, NotebookPen, Pencil, Trash2 } from 'lucide-react';

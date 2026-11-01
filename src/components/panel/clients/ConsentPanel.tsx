@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** KVKK durumu: aydınlatma metni ve sağlık verisi açık rızası */
 import { useState } from 'react';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';

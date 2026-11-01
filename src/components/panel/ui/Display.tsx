@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Sunum bileşenleri: Card, Badge, StatusBadge, Skeleton, EmptyState, ErrorState, PageHeader, Tabs, Pagination */
 import type { ReactNode } from 'react';
 import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';

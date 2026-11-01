@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Web sitesi içerik & ayar şemaları.
  * - Sunucu: PATCH /api/settings/:key gövdesini bu şemalarla doğrular.
@@ -41,7 +44,6 @@ export const aboutSchema = z.object({
   pillars: z.array(z.object({ title: text(60), body: text(300) })).max(6),
   /** Doğrulanmış eğitim/sertifika bilgileri — boşsa sitede gösterilmez */
   credentials: z.array(z.object({ label: text(80), value: text(200) })).max(10),
-  signature: text(60),
 });
 
 export const approachSchema = z.object({

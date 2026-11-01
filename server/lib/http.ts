@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** HTTP hata modeli ve yardımcıları */
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { ZodError, type ZodType, type z } from 'zod';

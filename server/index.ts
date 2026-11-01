@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { createApp } from './app';
 import { env } from './lib/env';
 import { prisma } from './lib/db';

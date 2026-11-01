@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Site ayarları için ortak form deposu.
  * Tüm ayarlar tek seferde yüklenir; her anahtar (hero, about, contact…) bağımsız bir form olarak düzenlenir,

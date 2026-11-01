@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import type { AppointmentStatus, ClientStatus, MeetingType } from '@shared/constants';
 
 export interface ClientListItem {

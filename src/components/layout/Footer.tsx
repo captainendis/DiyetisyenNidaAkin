@@ -1,5 +1,10 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Link } from 'react-router';
 import { Logo } from '@/components/icons/Logo';
+import { PaperAxisMark } from '@/components/icons/PaperAxisMark';
+import { DEVELOPER } from '@shared/credits';
 import { SocialLinks } from '@/components/navigation/SocialLinks';
 import { NAV_LINKS } from '@/components/navigation/Navbar';
 import { useSite } from '@/data/SiteContext';
@@ -71,6 +76,15 @@ export function Footer() {
             ))}
           </ul>
         </div>
+        <a
+          href={DEVELOPER.url}
+          target="_blank"
+          rel="noopener"
+          className="mt-6 inline-flex items-center gap-2 text-[0.72rem] text-mist/80 transition-colors hover:text-cream"
+        >
+          <PaperAxisMark className="h-3 w-3" />
+          {DEVELOPER.credit}
+        </a>
       </div>
     </footer>
   );

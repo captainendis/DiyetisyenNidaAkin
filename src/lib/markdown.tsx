@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Güvenli, minimal Markdown → React dönüştürücü (HTML enjeksiyonu yok; dangerouslySetInnerHTML kullanılmaz).
  * Desteklenen: ## / ### başlıklar, paragraflar, - / * listeler, 1. numaralı listeler, > alıntı,

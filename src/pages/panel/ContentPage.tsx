@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useSearchParams } from 'react-router';
 import { RequirePermission } from '@/components/panel/PanelAuth';
 import { ErrorState, PageHeader, Skeleton, Tabs } from '@/components/panel/ui';

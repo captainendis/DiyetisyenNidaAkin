@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Terminalden güvenli girdi (şifre girişinde karakterler ekrana yazılmaz) */
 import readline from 'node:readline';
 

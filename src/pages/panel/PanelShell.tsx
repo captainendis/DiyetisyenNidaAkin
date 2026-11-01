@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { RequireAuth } from '@/components/panel/PanelAuth';
 import { PanelLayout } from '@/components/panel/PanelLayout';
 

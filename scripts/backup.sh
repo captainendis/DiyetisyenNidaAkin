@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Nida Akın. All rights reserved.
+# Developed by PaperAxis · paperaxis.com
 # Veritabanı + şifreli dosya yedeği
 #   ./scripts/backup.sh [hedef_klasör]
 # Gereksinim: pg_dump (PostgreSQL istemcisi). DATABASE_URL .env'den okunur.

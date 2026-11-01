@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Seçilen gün için boş/dolu zaman dilimleri (panel). Çalışma saatleri dışı modda serbest saat girişi. */
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';

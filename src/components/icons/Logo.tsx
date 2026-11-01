@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Nida Akın logo sembolü
  * Tek çizgiyle çizilmiş elma silueti; sağ omuzda bilinçli bir "nefes" boşluğu bırakır.

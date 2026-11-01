@@ -1,6 +1,8 @@
 {
   "name": "nida-akin-diyetisyen",
   "private": true,
+  "author": "PaperAxis <admin@paperaxis.com> (https://paperaxis.com)",
+  "license": "UNLICENSED",
   "version": "1.0.0",
   "type": "module",
   "engines": {
@@ -30,7 +32,8 @@
     "prod:admin:create": "node --env-file-if-exists=.env dist-server/create-admin.js",
     "prod:admin:reset-password": "node --env-file-if-exists=.env dist-server/reset-password.js",
     "prod:data:retention": "node --env-file-if-exists=.env dist-server/retention.js",
-    "backup": "bash scripts/backup.sh"
+    "backup": "bash scripts/backup.sh",
+    "notices": "node scripts/third-party-notices.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",

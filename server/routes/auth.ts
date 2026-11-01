@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { Router } from 'express';
 import { prisma } from '../lib/db';
 import { env } from '../lib/env';

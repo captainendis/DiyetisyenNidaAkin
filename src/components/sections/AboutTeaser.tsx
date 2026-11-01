@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 import { useSite } from '@/data/SiteContext';
 import { Reveal } from '@/components/motion/Reveal';
 import { TextLink } from '@/components/forms/Button';
@@ -31,8 +34,7 @@ export function AboutTeaser() {
               ))}
             </ul>
           </Reveal>
-          <Reveal delay={0.2} className="mt-12 flex flex-wrap items-end justify-between gap-6">
-            <p className="font-display text-[2.4rem] leading-none italic text-cocoa/80" aria-label={`İmza: ${about.signature}`}>{about.signature}</p>
+          <Reveal delay={0.2} className="mt-12">
             <TextLink to="/hakkimda" tone="dark">Hakkımda daha fazlası</TextLink>
           </Reveal>
         </div>

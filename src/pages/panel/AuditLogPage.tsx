@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Denetim kayıtları — kim, ne zaman, hangi işlemi yaptı. Hassas içerik (not metni vb.) kaydedilmez. */
 import { useState } from 'react';
 import { Link } from 'react-router';

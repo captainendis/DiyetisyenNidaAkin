@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Hero özellik ikonları — özel ince çizgi (Lucide değil) */
 import type { SVGProps } from 'react';
 

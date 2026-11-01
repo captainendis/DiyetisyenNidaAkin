@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Express uygulaması — API, statik dosyalar ve SPA servisi */
 import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';

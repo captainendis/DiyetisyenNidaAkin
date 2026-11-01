@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Botanik çizgi-sanat. Dekorasyon dozu düşük tutulur: ince kontur, düşük opaklık, yalnızca boş alanlarda.
  * Tümü currentColor ile boyanır; aria-hidden.

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Ortam değişkenleri — uygulama açılışında doğrulanır. */
 import { z } from 'zod';
 

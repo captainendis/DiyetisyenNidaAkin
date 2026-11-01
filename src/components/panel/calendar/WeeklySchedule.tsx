@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /** Haftalık çalışma saatleri düzenleyici */
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarCog, Copy } from 'lucide-react';

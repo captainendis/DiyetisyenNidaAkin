@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Nida Akın. All rights reserved.
+// Developed by PaperAxis · paperaxis.com
+
 /**
  * Navigasyon: hero üzerinde şeffaf; kaydırınca bulanık koyu yarı saydam zemin + ince alt çizgi.
  * Sitede cam efekti (backdrop-blur) taşıyan tek öğe budur.
