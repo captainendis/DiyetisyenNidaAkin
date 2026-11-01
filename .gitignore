@@ -10,3 +10,4 @@ server/generated
 .DS_Store
 coverage
 /tmp
+__pycache__/
