@@ -4,11 +4,11 @@ import { siteConfig } from './site-config';
 
 export const defaultSettings: Settings = {
   hero: {
-    eyebrow: 'Esenyurt · Bahçekent',
+    eyebrow: '',
     titleLine1: 'Nida Akın',
     titleLine2: 'Diyetisyen',
     description:
-      "Pelin Tek Studio Bahçekent'in üst katında beslenme danışmanlığı. İlk görüşmede gününüzü ve sevdiğiniz yemekleri konuşup size uyan planı birlikte hazırlıyoruz.",
+      "Esenyurt Bahçekent'te, Pelin Tek Studio'nun üst katında beslenme danışmanlığı. İlk görüşmede gününüzü ve sevdiğiniz yemekleri konuşup size uyan planı birlikte hazırlıyoruz.",
     primaryCta: 'Randevu Al',
     secondaryCta: 'Yakından Tanıyın',
     features: ['Görüşmeler stüdyonun üst katında', 'Tek sayfa A4 beslenme planı', 'Her öğün için seçenekli liste'],

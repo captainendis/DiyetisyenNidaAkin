@@ -11,7 +11,7 @@ export function HeroForm() {
   return (
     <FormCard>
       <FormSection title="Karşılama alanı (Hero)" description="Ziyaretçinin siteye girdiğinde ilk gördüğü başlık ve açıklama. Kısa ve net tutun.">
-        <Input label="Üst satır" hint="Başlığın üzerindeki küçük, büyük harfli metin" value={d.eyebrow} maxLength={80} error={f.errors.eyebrow} onChange={(e) => f.set('eyebrow', e.target.value)} />
+        <Input label="Üst satır" hint="İsteğe bağlı; boş bırakılırsa gösterilmez. Açıklamadaki bilgiyi tekrarlamayın." value={d.eyebrow} maxLength={80} error={f.errors.eyebrow} onChange={(e) => f.set('eyebrow', e.target.value)} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Başlık — 1. satır" value={d.titleLine1} maxLength={40} error={f.errors.titleLine1} onChange={(e) => f.set('titleLine1', e.target.value)} />
           <Input label="Başlık — 2. satır" hint="Pudra renginde vurgulanır" value={d.titleLine2} maxLength={40} error={f.errors.titleLine2} onChange={(e) => f.set('titleLine2', e.target.value)} />
