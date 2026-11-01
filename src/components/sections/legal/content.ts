@@ -10,6 +10,9 @@ import type { PublicSettings } from '@/data/types';
 import { formatAddress } from '../address';
 import { DEVELOPER } from '@shared/credits';
 
+/** Barındırma sağlayıcısı (müşteri onayı, 2026-11-01) */
+const HOSTING = { name: 'Hosting Dünyam', country: 'Türkiye' } as const;
+
 export type LegalDoc = 'kvkk' | 'consent' | 'privacy' | 'cookies';
 export interface LegalSection { heading: string; paragraphs?: string[]; list?: string[] }
 export interface LegalContent { title: string; accent?: string; description: string; intro: string; sections: LegalSection[] }
@@ -85,7 +88,7 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
           {
             heading: '5. Aktarım',
             paragraphs: [
-              `Kişisel verileriniz, yukarıdaki amaçlarla sınırlı olarak ve KVKK md. 8 ve 9’daki şartlara uygun şekilde; yetkili kamu kurum ve kuruluşlarına, veri işleyen sıfatıyla web sitesi ve randevu sisteminin teknik hizmetlerini yürüten ${DEVELOPER.name}’e ve hizmet alınan barındırma (hosting) ve teknik altyapı sağlayıcılarına aktarılabilir. [Kullanılan altyapı sağlayıcıları ve bulundukları ülkeler burada belirtilmelidir.]`,
+              `Kişisel verileriniz, yukarıdaki amaçlarla sınırlı olarak ve KVKK md. 8 ve 9’daki şartlara uygun şekilde; yetkili kamu kurum ve kuruluşlarına, veri işleyen sıfatıyla web sitesi ve randevu sisteminin teknik hizmetlerini yürüten ${DEVELOPER.name}’e ve barındırma (hosting) hizmeti alınan ${HOSTING.name}’a aktarılabilir. Web sitesi ve randevu sistemi, ${HOSTING.name}’ın ${HOSTING.country}’deki sunucularında barındırılır.`,
             ],
           },
           {
