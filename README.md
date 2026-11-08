@@ -236,7 +236,8 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
 - Tarif formundaki **“Web sitesinde yayınla”** anahtarı açık olan tarifler sitede **/tarifler** (kategori süzgeçli liste)
   ve **/tarifler/&lt;adres&gt;** (malzemeler, adımlar, künye, ipucu, “genel öneridir” uyarısı) altında görünür.
   Diğerleri yalnızca panelde ve planlarda kalır.
-- Yayınlanmış en az bir tarif varsa üst menüye ve alt bilgiye **“Tarifler”** bağlantısı kendiliğinden eklenir.
+- Yayınlanmış en az bir tarif varsa üst menüye ve alt bilgiye **“Tarifler”** bağlantısı kendiliğinden eklenir; ana sayfada
+  “Süreç” bölümünden sonra son yayınlanan 3 tarifin yer aldığı **“Mutfaktan”** şeridi görünür (tarif yoksa hiç çizilmez).
 - Adres (slug) ilk yayında başlıktan üretilir ve sonradan **değişmez**; başlık düzeltilse de paylaşılan bağlantılar kırılmaz.
   Yayından kaldırılan tarifin sayfası 404 döner ve site haritasından çıkar.
 - SEO: site haritasında yer alır; sunucu tarafı meta + **Schema.org `Recipe`** (malzemeler, adımlar, süreler, porsiyon,
@@ -343,7 +344,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
 | Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/pdf` |
 | Tarifler | `GET/POST /api/recipes` (`?category`, `?q`, `?clientId`; POST'ta `parentId`, `copyImage`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` |
-| Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`) · `GET /api/public/recipes/:slug` |
+| Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/:slug` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 

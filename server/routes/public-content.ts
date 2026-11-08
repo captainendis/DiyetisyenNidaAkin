@@ -108,11 +108,11 @@ const toCard = (r: { slug: string | null; publishedAt: Date | null } & Omit<Publ
 });
 
 publicContentRouter.get('/recipes', async (req, res) => {
-  const q = parse(z.object({ category: z.enum(RECIPE_CATEGORIES).optional() }), req.query);
+  const q = parse(z.object({ category: z.enum(RECIPE_CATEGORIES).optional(), limit: z.coerce.number().int().min(1).max(200).default(200) }), req.query);
   const rows = await prisma.recipe.findMany({
     where: { ...PUBLISHED_RECIPE, ...(q.category ? { category: q.category } : {}) },
     orderBy: { publishedAt: 'desc' },
-    take: 200,
+    take: q.limit,
     select: recipeCard,
   });
   const counts = await prisma.recipe.groupBy({ by: ['category'], where: PUBLISHED_RECIPE, _count: true });
