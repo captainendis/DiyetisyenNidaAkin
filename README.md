@@ -229,8 +229,10 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
 - Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planların PDF'i güncel hâliyle basılır; silinen tarif
   planlarda “silinmiş” olarak işaretlenir ve PDF'e basılmaz.
 - **Varyasyon notları** (“Laktozsuz”, “glutensiz ekmekle” …) sağlık bilgisi içerebileceği için **AES-256-GCM ile şifreli**
-  saklanır (`recipes.variantNoteEnc`, `DATA_ENCRYPTION_KEY` ile). Eski sürümden kalan düz metin notlar uygulama açılışında
-  bir kez şifreli sütuna taşınır ve düz metin sütunu (`variantNote`) boşaltılır; bu sütun sonraki bir sürümde kaldırılacak.
+  saklanır (`recipes.variantNoteEnc`, `DATA_ENCRYPTION_KEY` ile). Eski düz metin sütunu (`variantNote`) kaldırıldı:
+  `20261108210000_drop_plain_variant_note` migration'ı sütunu yalnızca içinde taşınmamış not yoksa siler; sunucu notların
+  henüz şifrelenmediği bir sürümden doğrudan güncellenirse migration sütunu bırakır, uygulama açılışta notları şifreleyip
+  sütunu kendisi kaldırır (veri kaybı olmaz).
   Tarifin diğer alanları (ad, malzemeler, adımlar) şifrelenmez. Erişim planlarla aynı izinlerle (klinik yetkili roller)
   sınırlıdır; ekleme/düzenleme/silme, yayınlama/yayından kaldırma denetim kaydına yazılır.
 

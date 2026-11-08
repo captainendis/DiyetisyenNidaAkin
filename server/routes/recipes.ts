@@ -149,8 +149,8 @@ async function validateRelations(body: Pick<RecipeInput, 'clientId' | 'isPublish
 const fields = (b: RecipeInput) => ({
   title: b.title, category: b.category, summary: b.summary, servings: b.servings, prepMinutes: b.prepMinutes,
   cookMinutes: b.cookMinutes, kcal: b.kcal, ingredients: b.ingredients, steps: b.steps, tip: b.tip,
-  // Varyasyon notu yalnızca şifreli yazılır; eski düz metin sütunu her yazımda boşaltılır
-  variantNoteEnc: encryptNote(b.variantNote), variantNote: '', clientId: b.clientId, isPublished: b.isPublished,
+  // Varyasyon notu yalnızca şifreli yazılır
+  variantNoteEnc: encryptNote(b.variantNote), clientId: b.clientId, isPublished: b.isPublished,
 });
 
 recipesRouter.get('/', read, async (req, res) => {

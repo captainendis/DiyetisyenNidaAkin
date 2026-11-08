@@ -255,7 +255,6 @@ describe('tarifler', () => {
     expect(res.body.recipe.variantNote).toBe(note);
 
     const row = await prisma.recipe.findUniqueOrThrow({ where: { id: res.body.recipe.id } });
-    expect(row.variantNote).toBe('');
     expect(row.variantNoteEnc).toMatch(/^v1:/);
     expect(row.variantNoteEnc).not.toContain('glutensiz');
 
@@ -265,15 +264,28 @@ describe('tarifler', () => {
     expect((await prisma.recipe.findUniqueOrThrow({ where: { id: row.id } })).variantNoteEnc).toBeNull();
   });
 
-  it('eski düz metin notlar açılışta şifreli sütuna taşınır (idempotent)', async () => {
-    const legacy = await prisma.recipe.create({ data: { title: 'Test eski not', category: 'SOUP', ingredients: ['a'], steps: ['b'], variantNote: 'Laktozsuz' } });
-    recipeIds.push(legacy.id);
-    expect(await encryptLegacyVariantNotes()).toBeGreaterThanOrEqual(1);
-    const row = await prisma.recipe.findUniqueOrThrow({ where: { id: legacy.id } });
-    expect(row.variantNote).toBe('');
-    expect(row.variantNoteEnc).toMatch(/^v1:/);
-    expect((await agent.get(`/api/recipes/${legacy.id}`)).body.recipe.variantNote).toBe('Laktozsuz');
-    expect(await encryptLegacyVariantNotes()).toBe(0);
+  it('sürüm atlanmış kurulumda eski düz metin sütunu: notlar şifrelenir, sütun kaldırılır (idempotent)', async () => {
+    const hasColumn = async () =>
+      Number((await prisma.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM information_schema.columns
+        WHERE table_schema = current_schema() AND table_name = 'recipes' AND column_name = 'variantNote'`)[0]!.n) > 0;
+    // Normal kurulumda migration sütunu silmiş olmalı
+    expect(await hasColumn()).toBe(false);
+
+    // Notları henüz taşınmamış eski bir kurulumu taklit et
+    await prisma.$executeRawUnsafe(`ALTER TABLE "recipes" ADD COLUMN "variantNote" TEXT NOT NULL DEFAULT ''`);
+    try {
+      const legacy = await prisma.recipe.create({ data: { title: 'Test eski not', category: 'SOUP', ingredients: ['a'], steps: ['b'] } });
+      recipeIds.push(legacy.id);
+      await prisma.$executeRaw`UPDATE "recipes" SET "variantNote" = 'Laktozsuz' WHERE id = ${legacy.id}`;
+
+      expect(await encryptLegacyVariantNotes()).toBe(1);
+      expect(await hasColumn()).toBe(false);
+      const row = await prisma.recipe.findUniqueOrThrow({ where: { id: legacy.id } });
+      expect(row.variantNoteEnc).toMatch(/^v1:/);
+      expect((await agent.get(`/api/recipes/${legacy.id}`)).body.recipe.variantNote).toBe('Laktozsuz');
+      expect(await encryptLegacyVariantNotes()).toBe(0);
+    } finally {
+      await prisma.$executeRawUnsafe('ALTER TABLE "recipes" DROP COLUMN IF EXISTS "variantNote"');
+    }
   });
 });
-
