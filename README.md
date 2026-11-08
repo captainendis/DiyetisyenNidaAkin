@@ -376,6 +376,9 @@ npm run typecheck      # istemci + sunucu tip kontrolü
 
 ## Üretim derlemesi ve dağıtım
 
+> Çalışan bir siteyi **güncellemek** için adım adım kontrol listesi (yedek, migration, doğrulama, geri dönüş):
+> [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ```bash
 npm ci
 npx prisma generate
