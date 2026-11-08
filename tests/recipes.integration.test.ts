@@ -177,6 +177,27 @@ describe('tarifler', () => {
     expect(vv.body.recipe.parentId).toBe(baseId);
     expect((await agent.get(`/api/recipes/${baseId}`)).body.recipe.variantCount).toBe(2);
 
+    // Danışana plan: tarif bağlantısıyla
+    const planData = samplePlanTemplate();
+    planData.title = 'Test’in beslenme planı';
+    planData.recipes.items = [{ recipeId: variant.id, label: 'Kahvaltı için öneri' }];
+    await prisma.nutritionPlan.create({ data: { clientId: c.id, name: 'Test planı (dışa aktarma)', dataEnc: encryptJson(planData) } });
+
+    // KVKK dışa aktarma: kişiye özel tarif, çözülmüş varyasyon notu ve ana tarif adıyla yer alır
+    const exp = await agent.get(`/api/clients/${c.id}/export`);
+    expect(exp.status).toBe(200);
+    const data = JSON.parse(exp.text);
+    expect(data.personalRecipes).toHaveLength(1);
+    expect(data.personalRecipes[0]).toMatchObject({ title: body.title, variantNote: 'Laktozsuz', basedOn: base.title, ingredients: body.ingredients });
+    expect(data.personalRecipes[0].imageUrl).toMatch(/^\/uploads\/public\/recipes\/[a-f0-9]{20}-960\.webp$/);
+    expect(JSON.stringify(data)).not.toContain('v1:'); // şifreli ham veri sızmaz
+    // Beslenme planı çözülmüş içerikle ve okunur tarif adlarıyla yer alır
+    expect(data.nutritionPlans).toHaveLength(1);
+    expect(data.nutritionPlans[0]).toMatchObject({ name: 'Test planı (dışa aktarma)', content: { title: 'Test’in beslenme planı' } });
+    expect(data.nutritionPlans[0].content.meals.length).toBeGreaterThan(0);
+    expect(data.nutritionPlans[0].attachedRecipes).toEqual([{ title: body.title, label: 'Kahvaltı için öneri' }]);
+    expect(data).not.toHaveProperty('nutritionPlans.0.dataEnc');
+
     // Danışan silinince kişiye özel varyasyon ve fotoğrafı silinir
     await agent.delete(`/api/clients/${c.id}`).set('X-CSRF-Token', csrf).expect(200);
     clientId = '';

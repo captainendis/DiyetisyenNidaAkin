@@ -35,7 +35,7 @@ async function defaultSignature() {
   return [`Dyt. ${business.brandName}`, phone].filter(Boolean).join(', ');
 }
 
-function decode(enc: string): NutritionPlanData {
+export function decodePlan(enc: string): NutritionPlanData {
   const raw = decryptJson<unknown>(enc);
   const res = nutritionPlanDataSchema.safeParse(raw);
   return res.success ? res.data : (raw as NutritionPlanData);
@@ -77,7 +77,7 @@ plansRouter.get('/:id', read, async (req, res) => {
   const plan = await load(String(req.params.id));
   await audit(req, 'clinical.read', 'nutrition_plan', plan.id);
   const { dataEnc, ...rest } = plan;
-  res.json({ plan: { ...rest, data: decode(dataEnc) } });
+  res.json({ plan: { ...rest, data: decodePlan(dataEnc) } });
 });
 
 plansRouter.post('/', write, async (req, res) => {
@@ -89,7 +89,7 @@ plansRouter.post('/', write, async (req, res) => {
   if (body.data) data = body.data;
   else if (body.fromId) {
     const src = await load(body.fromId);
-    data = decode(src.dataEnc);
+    data = decodePlan(src.dataEnc);
   } else data = emptyPlan(await defaultSignature());
   if (client) data = { ...data, title: planTitleFor(client.firstName) };
   const sig = await defaultSignature();
@@ -132,7 +132,7 @@ plansRouter.delete('/:id', write, async (req, res) => {
 
 plansRouter.get('/:id/pdf', read, async (req, res) => {
   const plan = await load(String(req.params.id));
-  const data = decode(plan.dataEnc);
+  const data = decodePlan(plan.dataEnc);
   let out;
   try {
     out = await renderPlanPdf(data, data.title, await resolvePlanRecipes(data));
