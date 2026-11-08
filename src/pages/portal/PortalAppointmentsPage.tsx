@@ -21,7 +21,7 @@ const TONE: Partial<Record<PortalAppointment['status'], string>> = {
 
 function Row({ a }: { a: PortalAppointment }) {
   return (
-    <li className="flex items-center justify-between gap-4 rounded-2xl bg-white px-5 py-4 ring-1 ring-espresso/[0.07]">
+    <li className="flex items-center justify-between gap-4 rounded-lg bg-white px-5 py-4 ring-1 ring-espresso/[0.07]">
       <div className="min-w-0">
         <p className="font-display nums text-[1.4rem] leading-tight">{a.startsAt && formatDate(a.startsAt)}</p>
         <p className="mt-0.5 text-[0.92rem] text-cocoa">
@@ -54,18 +54,18 @@ export default function PortalAppointmentsPage() {
       ) : error ? (
         <LoadError message={error.message} onRetry={reload} />
       ) : !data?.items.length ? (
-        <Empty title="Henüz randevun yok." />
+        <Empty title="Henüz randevun yok.">İlk görüşmen için <Link to="/randevu" className="font-semibold text-espresso underline underline-offset-4">randevu talep et</Link>; onaylanınca burada görünür.</Empty>
       ) : (
         <div className="space-y-10">
           {upcoming.length > 0 && (
             <section aria-labelledby="yaklasan">
-              <h2 id="yaklasan" className="mb-3 text-[0.78rem] font-bold tracking-[0.14em] text-taupe uppercase">Yaklaşan</h2>
+              <h2 id="yaklasan" className="mb-3 text-[0.92rem] font-semibold text-taupe">Yaklaşan</h2>
               <ul className="space-y-3">{upcoming.map((a) => <Row key={a.id} a={a} />)}</ul>
             </section>
           )}
           {past.length > 0 && (
             <section aria-labelledby="gecmis">
-              <h2 id="gecmis" className="mb-3 text-[0.78rem] font-bold tracking-[0.14em] text-taupe uppercase">Geçmiş görüşmeler</h2>
+              <h2 id="gecmis" className="mb-3 text-[0.92rem] font-semibold text-taupe">Geçmiş görüşmeler</h2>
               <ul className="space-y-3">{past.map((a) => <Row key={a.id} a={a} />)}</ul>
             </section>
           )}

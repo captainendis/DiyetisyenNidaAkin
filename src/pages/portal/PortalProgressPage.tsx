@@ -21,7 +21,7 @@ export default function PortalProgressPage() {
 
   return (
     <>
-      <PortalPageHeader title="Ölçümler" lead="Görüşmelerde alınan ölçümlerin. Kilo zaman içinde dalgalanır; tek bir ölçüm değil, genel yön önemlidir." />
+      <PortalPageHeader title="Ölçümler" lead="Görüşmelerde alınan ölçümlerin. Kilo günden güne dalgalanır; tek tek sayılara değil, birkaç ölçümün gidişatına bak." />
       {loading && !data ? (
         <Loading />
       ) : error ? (
@@ -40,7 +40,7 @@ export default function PortalProgressPage() {
             <table className="w-full text-left text-[0.95rem]">
               <caption className="sr-only">Ölçüm geçmişi</caption>
               <thead>
-                <tr className="border-b border-espresso/10 text-[0.75rem] font-bold tracking-wide text-taupe uppercase">
+                <tr className="border-b border-espresso/10 text-[0.85rem] font-semibold text-taupe">
                   <th scope="col" className="px-5 py-3 font-bold">Tarih</th>
                   <th scope="col" className="px-3 py-3 text-right font-bold">Kilo</th>
                   <th scope="col" className="hidden px-3 py-3 text-right font-bold sm:table-cell">Boy</th>

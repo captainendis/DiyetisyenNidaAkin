@@ -7,20 +7,20 @@
  */
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { CalendarDays, FileText, Home, KeyRound, LineChart, ListChecks, LogOut, MessageSquareText, UtensilsCrossed } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
 import { RequirePortalAuth, usePortalAuth } from '@/components/portal/PortalAuth';
 import { cn } from '@/lib/text';
 
+/** Menü yalnızca metin: etiketler kısa ve açık, ikon aynı bilgiyi tekrar ederdi */
 const NAV = [
-  { to: '/hesabim', label: 'Özet', icon: Home, end: true },
-  { to: '/hesabim/listeler', label: 'Listelerim', icon: ListChecks },
-  { to: '/hesabim/tarifler', label: 'Tarifler', icon: UtensilsCrossed },
-  { to: '/hesabim/randevular', label: 'Randevular', icon: CalendarDays },
-  { to: '/hesabim/olcumler', label: 'Ölçümler', icon: LineChart },
-  { to: '/hesabim/mesajlar', label: 'Mesajlar', icon: MessageSquareText },
-  { to: '/hesabim/dosyalar', label: 'Dosyalar', icon: FileText },
-  { to: '/hesabim/hesap', label: 'Hesap', icon: KeyRound },
+  { to: '/hesabim', label: 'Özet', end: true },
+  { to: '/hesabim/listeler', label: 'Listelerim' },
+  { to: '/hesabim/tarifler', label: 'Tarifler' },
+  { to: '/hesabim/randevular', label: 'Randevular' },
+  { to: '/hesabim/olcumler', label: 'Ölçümler' },
+  { to: '/hesabim/mesajlar', label: 'Mesajlar' },
+  { to: '/hesabim/dosyalar', label: 'Dosyalar' },
+  { to: '/hesabim/hesap', label: 'Hesap' },
 ];
 
 function Layout() {
@@ -37,14 +37,14 @@ function Layout() {
   return (
     <div className="min-h-dvh bg-ivory text-espresso">
       <meta name="robots" content="noindex, nofollow" />
-      <a href="#hesap-icerik" className="sr-only z-[100] bg-rose px-4 py-2 text-espresso focus:not-sr-only focus:fixed focus:top-3 focus:left-3">İçeriğe geç</a>
+      <a href="#hesap-icerik" className="sr-only z-[100] bg-rose px-4 py-2 text-espresso focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus-visible:outline-ivory">İçeriğe geç</a>
       <header className="bg-espresso text-cream">
         <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link to="/" aria-label="Web sitesine git" className="shrink-0"><Logo compact /></Link>
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <p className="hidden min-w-0 truncate text-[0.88rem] text-cream sm:block">{me?.firstName} {me?.lastName}</p>
-            <button type="button" onClick={() => void logout()} className="inline-flex h-10 items-center gap-2 rounded-full px-3 text-[0.88rem] font-medium text-cream ring-1 ring-cream/25 ring-inset hover:bg-cream/10">
-              <LogOut className="h-4 w-4" aria-hidden /> Çıkış
+            <button type="button" onClick={() => void logout()} className="inline-flex h-10 items-center rounded-full px-4 text-[0.88rem] font-medium text-cream ring-1 ring-cream/25 ring-inset hover:bg-cream/10">
+              Çıkış
             </button>
           </div>
         </div>
@@ -55,9 +55,8 @@ function Layout() {
                 <NavLink
                   to={n.to}
                   end={n.end}
-                  className={({ isActive }) => cn('flex h-10 items-center gap-2 rounded-full px-3.5 text-[0.88rem] font-medium whitespace-nowrap transition-colors', isActive ? 'bg-cream text-espresso' : 'text-cream hover:bg-cream/10')}
+                  className={({ isActive }) => cn('flex h-10 items-center rounded-full px-4 text-[0.88rem] font-medium whitespace-nowrap transition-colors', isActive ? 'bg-cream text-espresso' : 'text-cream hover:bg-cream/10')}
                 >
-                  <n.icon className="h-4 w-4" aria-hidden />
                   {n.label}
                 </NavLink>
               </li>
@@ -74,9 +73,8 @@ function Layout() {
                 <NavLink
                   to={n.to}
                   end={n.end}
-                  className={({ isActive }) => cn('flex h-11 items-center gap-3 rounded-xl px-3.5 text-[0.95rem] transition-colors', isActive ? 'bg-espresso font-semibold text-ivory' : 'text-cocoa hover:bg-espresso/[0.06]')}
+                  className={({ isActive }) => cn('flex h-11 items-center rounded-lg px-3.5 text-[0.95rem] transition-colors', isActive ? 'bg-espresso font-semibold text-ivory' : 'text-cocoa hover:bg-espresso/[0.06]')}
                 >
-                  <n.icon className="h-[18px] w-[18px]" aria-hidden />
                   {n.label}
                 </NavLink>
               </li>
