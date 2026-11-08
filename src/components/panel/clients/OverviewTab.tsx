@@ -6,6 +6,8 @@ import { formatDate, formatDayStr, formatPhone, formatTime } from '@/lib/format'
 import { MEETING_TYPE_LABEL } from '@shared/constants';
 import { Card, CardHeader, StatusBadge } from '@/components/panel/ui';
 import { ConsentPanel } from './ConsentPanel';
+import { PortalAccountCard } from './PortalAccountCard';
+import { usePanelAuth } from '@/components/panel/PanelAuth';
 import type { Client, ClientStats } from './types';
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -19,6 +21,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 const none = <span className="text-panel-muted">—</span>;
 
 export function OverviewTab({ client, stats, onClientChanged }: { client: Client; stats: ClientStats; onClientChanged: (c: Client) => void }) {
+  const { can } = usePanelAuth();
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
       <div className="space-y-6">
@@ -61,6 +64,7 @@ export function OverviewTab({ client, stats, onClientChanged }: { client: Client
       </div>
       <div className="space-y-6">
         <ConsentPanel client={client} onChanged={onClientChanged} />
+        {can('portal:manage') && <PortalAccountCard client={client} />}
       </div>
     </div>
   );

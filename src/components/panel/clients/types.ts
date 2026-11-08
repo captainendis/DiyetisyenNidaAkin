@@ -82,6 +82,8 @@ export interface ClientFile {
   mimeType: string;
   sizeBytes: number;
   createdAt: string;
+  /** Danışan hesabında görünsün mü */
+  visibleToClient: boolean;
   uploadedBy: { firstName: string; lastName: string } | null;
 }
 

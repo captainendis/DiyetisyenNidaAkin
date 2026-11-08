@@ -411,7 +411,7 @@ function sanitizeName(name: string) {
 }
 
 const fileSelect = {
-  id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true,
+  id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true, visibleToClient: true,
   uploadedBy: { select: { firstName: true, lastName: true } },
 } as const;
 
@@ -494,7 +494,7 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
   parse(exportQuery, req.query);
   const client = await getClientOr404(id);
   const clinical = req.user!.permissions.includes('clinical:read');
-  const [appointments, notes, measurements, files, recipes, plans] = await Promise.all([
+  const [appointments, notes, measurements, files, recipes, plans, messages, account] = await Promise.all([
     prisma.appointment.findMany({
       where: { clientId: id },
       orderBy: { createdAt: 'asc' },
@@ -505,13 +505,16 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
     }),
     clinical ? prisma.consultationNote.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' }, include: noteInclude }) : [],
     clinical ? prisma.measurement.findMany({ where: { clientId: id }, orderBy: { measuredOn: 'asc' } }) : [],
-    prisma.clientFile.findMany({ where: { clientId: id }, select: { originalName: true, mimeType: true, sizeBytes: true, createdAt: true } }),
+    prisma.clientFile.findMany({ where: { clientId: id }, select: { originalName: true, mimeType: true, sizeBytes: true, createdAt: true, visibleToClient: true } }),
     // Kişiye özel tarif varyasyonları (tarifler planlarla aynı klinik yetkiye bağlıdır)
     clinical
       ? prisma.recipe.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' }, include: { parent: { select: { contentEnc: true } } } })
       : [],
     // Beslenme planları (şifreli saklanır; klinik yetki gerekir)
     clinical ? prisma.nutritionPlan.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' } }) : [],
+    // Danışana yazılan mesajlar (danışan zaten görür, ama içerik klinik bağlamlı olabilir)
+    clinical ? prisma.clientMessage.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' } }) : [],
+    prisma.clientAccount.findUnique({ where: { clientId: id }, select: { email: true, isActive: true, activatedAt: true, lastLoginAt: true, createdAt: true } }),
   ]);
   // Planlardaki tarif bağlantılarını okunur hâle getir (tarif adı; silinmiş tarif null)
   const decodedPlans = plans.map((p) => ({ plan: p, data: decodePlan(p.dataEnc) }));
@@ -528,6 +531,16 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
     consultationNotes: notes.map(serializeNote),
     measurements: measurements.map(serializeMeasurement),
     files,
+    clientAccount: account,
+    messagesToClient: messages.map((m) => {
+      let content = '';
+      try {
+        content = decryptString(m.contentEnc);
+      } catch {
+        content = '[Çözülemedi]';
+      }
+      return { createdAt: m.createdAt, updatedAt: m.updatedAt, content };
+    }),
     nutritionPlans: decodedPlans.map(({ plan, data }) => {
       const { recipes: attached, ...content } = data;
       return {

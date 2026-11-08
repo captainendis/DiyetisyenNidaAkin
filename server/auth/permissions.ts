@@ -21,12 +21,14 @@ export const PERMISSIONS = [
   'settings:write',
   'users:manage',
   'audit:read',
+  /** Danışan hesabı (Hesabım) açma, bağlantı üretme, kapatma — yalnızca yönetici */
+  'portal:manage',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const ROLE_PERMISSIONS: Record<'ADMIN' | 'DIETITIAN' | 'ASSISTANT', Permission[]> = {
   ADMIN: [...PERMISSIONS],
-  DIETITIAN: PERMISSIONS.filter((p) => p !== 'users:manage'),
+  DIETITIAN: PERMISSIONS.filter((p) => p !== 'users:manage' && p !== 'portal:manage'),
   // Asistan: randevu ve iletişim operasyonları; klinik verilere erişim yok
   ASSISTANT: ['dashboard:read', 'appointments:read', 'appointments:write', 'clients:read', 'clients:write'],
 };

@@ -124,7 +124,7 @@ export function NotesTab({ clientId }: { clientId: string }) {
       </div>
       <aside className="h-fit rounded-xl border border-panel-line bg-white/60 p-5 text-[0.8rem] leading-relaxed text-panel-muted">
         <p className="mb-1.5 flex items-center gap-2 font-semibold text-cocoa"><Lock className="h-4 w-4" /> Gizlilik</p>
-        Görüşme notları veritabanında AES-256 ile şifrelenir ve yalnızca klinik yetkisi olan kullanıcılar tarafından görüntülenebilir. Her görüntüleme denetim kaydına işlenir.
+        Görüşme notları veritabanında AES-256 ile şifrelenir ve yalnızca klinik yetkisi olan kullanıcılar tarafından görüntülenebilir; danışan hesabında gösterilmez. Danışanın görmesini istediğiniz öneriler için “Danışana Mesajlar” sekmesini kullanın.
       </aside>
     </div>
   );

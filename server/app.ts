@@ -26,6 +26,8 @@ import { settingsRouter } from './routes/settings';
 import { auditRouter } from './routes/audit';
 import { plansRouter } from './routes/plans';
 import { recipesRouter } from './routes/recipes';
+import { portalRouter } from './routes/portal';
+import { clientPortalAdminRouter } from './routes/client-portal-admin';
 import { registerSeo } from './seo';
 import { PUBLIC_UPLOADS } from './lib/storage';
 
@@ -72,11 +74,14 @@ export function createApp() {
   api.use('/auth', authRouter);
   api.use('/public', publicContentRouter);
   api.use('/public', publicAppointmentsRouter);
+  // Danışan hesabı (Hesabım): kendi oturumu (na_csid) ve CSRF'i var; personel oturumu gerektirmez, personel uçlarına da erişemez
+  api.use('/portal', portalRouter);
   // Bundan sonraki tüm uçlar oturum + CSRF gerektirir
   api.use(requireAuth);
   api.use('/dashboard', dashboardRouter);
   api.use('/appointments', appointmentsRouter);
   api.use('/availability', availabilityRouter);
+  api.use('/clients/:id', clientPortalAdminRouter);
   api.use('/clients', clientsRouter);
   api.use('/notifications', notificationsRouter);
   api.use('/reports', reportsRouter);
