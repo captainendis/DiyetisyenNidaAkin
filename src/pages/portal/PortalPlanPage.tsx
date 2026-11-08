@@ -45,14 +45,14 @@ export default function PortalPlanPage() {
       {(d.water.show && (d.water.liters || d.water.glasses > 0)) || (d.activity.show && d.activity.label) ? (
         <dl className="mb-8 flex flex-wrap gap-3">
           {d.water.show && (d.water.liters || d.water.glasses > 0) && (
-            <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-espresso/[0.07]">
-              <dt className="text-[0.75rem] font-bold tracking-wide text-taupe uppercase">Su</dt>
+            <div className="rounded-md bg-white px-4 py-3 ring-1 ring-espresso/[0.07]">
+              <dt className="text-[0.85rem] font-semibold text-taupe">Su</dt>
               <dd className="mt-0.5 font-semibold">{[d.water.liters && `${d.water.liters} litre`, d.water.glasses > 0 && `${d.water.glasses} bardak`].filter(Boolean).join(' · ')}</dd>
             </div>
           )}
           {d.activity.show && d.activity.label && (
-            <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-espresso/[0.07]">
-              <dt className="text-[0.75rem] font-bold tracking-wide text-taupe uppercase">Hareket</dt>
+            <div className="rounded-md bg-white px-4 py-3 ring-1 ring-espresso/[0.07]">
+              <dt className="text-[0.85rem] font-semibold text-taupe">Hareket</dt>
               <dd className="mt-0.5 font-semibold">{d.activity.label}</dd>
             </div>
           )}
@@ -63,7 +63,7 @@ export default function PortalPlanPage() {
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
         {d.habits.items.length > 0 && (
-          <section className="rounded-2xl bg-espresso p-6 text-cream sm:p-7">
+          <section className="rounded-lg bg-espresso p-6 text-cream sm:p-7">
             <h2 className="font-display text-[1.6rem] font-medium text-ivory">{d.habits.title}</h2>
             <ul className="mt-4 space-y-3">
               {d.habits.items.map((h, i) => (

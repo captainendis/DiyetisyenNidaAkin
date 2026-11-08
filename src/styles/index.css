@@ -99,6 +99,18 @@
   .panel-root :focus-visible {
     outline-color: var(--color-cocoa);
   }
+  /* Panel içindeki koyu bölgeler (yan menü, giriş ekranının sol paneli): koyu halka orada kayboluyordu (1,2:1) */
+  .panel-root :is(.bg-espresso, .bg-cocoa, .bg-umber) :focus-visible {
+    outline-color: var(--color-rose);
+  }
+  /* Gül odak halkası açık zeminde 1,8:1 kalıyordu (WCAG 2.2 için ≥ 3:1). Açık zeminlerde koyu halka.
+     Halka öğenin DIŞINA (üst zemine) çizilir; bu yüzden sınır koyu kutunun kendisi değil İÇİNDEKİLERDİR:
+     koyu buton açık zeminde koyu halka alır, koyu kutunun içindeki bağlantılar gül halkayı korur. */
+  @scope (.bg-ivory, .bg-cream, .bg-sand, .bg-white) to (:is(.bg-espresso, .bg-cocoa, .bg-umber) > *) {
+    :focus-visible {
+      outline-color: var(--color-espresso);
+    }
+  }
   /* Telefon numaraları: eski stil rakamlar yerine düz (lining) rakamlar — okunabilirlik için */
   a[href^="tel:"] {
     font-variant-numeric: lining-nums tabular-nums;

@@ -25,8 +25,8 @@ export function PlanTimeline({ data, compact = false }: { data: Pick<NutritionPl
             {!compact && (
               <div className={cn('mt-3 grid gap-3', options.length > 1 && 'sm:grid-cols-2 xl:grid-cols-3')}>
                 {options.map((o, oi) => (
-                  <div key={oi} className="rounded-xl bg-white p-4 ring-1 ring-espresso/[0.07]">
-                    {options.length > 1 && <p className="mb-1.5 text-[0.78rem] font-bold tracking-wide text-taupe uppercase">{oi + 1}. seçenek</p>}
+                  <div key={oi} className="rounded-md bg-white p-4 ring-1 ring-espresso/[0.07]">
+                    {options.length > 1 && <p className="mb-1.5 text-[0.85rem] font-semibold text-taupe">{oi + 1}. seçenek</p>}
                     <ul className="space-y-1">
                       {o.map((line, li) => (
                         <li key={li} className="text-[1rem] leading-snug">{line}</li>

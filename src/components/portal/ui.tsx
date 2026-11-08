@@ -30,13 +30,13 @@ export function PortalPageHeader({ title, lead, back, actions }: { title: ReactN
 
 /** Beyaz kart; içerik bölümleri için */
 export function Panel({ children, className, as: As = 'section' }: { children: ReactNode; className?: string; as?: 'section' | 'article' | 'div' | 'li' }) {
-  return <As className={cn('rounded-2xl bg-white p-5 ring-1 ring-espresso/[0.07] sm:p-6', className)}>{children}</As>;
+  return <As className={cn('rounded-lg bg-white p-5 ring-1 ring-espresso/[0.07] sm:p-6', className)}>{children}</As>;
 }
 
 export function PanelTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-4 flex items-baseline justify-between gap-3">
-      <h2 className="text-[0.78rem] font-bold tracking-[0.14em] text-taupe uppercase">{children}</h2>
+      <h2 className="text-[0.92rem] font-semibold text-taupe">{children}</h2>
       {action}
     </div>
   );
@@ -44,7 +44,7 @@ export function PanelTitle({ children, action }: { children: ReactNode; action?:
 
 export function Empty({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-espresso/15 px-6 py-12 text-center">
+    <div className="rounded-lg border border-dashed border-espresso/15 px-6 py-12 text-center">
       <p className="font-display text-[1.5rem] text-espresso">{title}</p>
       {children && <div className="mx-auto mt-2 max-w-md text-[0.95rem] leading-relaxed text-taupe">{children}</div>}
     </div>
@@ -53,7 +53,7 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
 
 export function LoadError({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
-    <div role="alert" className="rounded-2xl border border-danger/30 bg-danger/[0.06] px-6 py-8 text-center">
+    <div role="alert" className="rounded-lg border border-danger/30 bg-danger/[0.06] px-6 py-8 text-center">
       <p className="font-semibold text-danger-ink">{message || 'Bilgiler yüklenemedi.'}</p>
       {onRetry && (
         <button type="button" onClick={onRetry} className="mt-3 text-[0.9rem] font-semibold text-espresso underline underline-offset-4">
@@ -68,7 +68,7 @@ export function Loading({ rows = 3 }: { rows?: number }) {
   return (
     <div className="space-y-3" aria-busy="true" aria-label="Yükleniyor">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="h-20 animate-pulse rounded-2xl bg-espresso/[0.06]" />
+        <div key={i} className="h-20 animate-pulse rounded-lg bg-espresso/[0.06]" />
       ))}
     </div>
   );

@@ -37,19 +37,19 @@ export default function PortalRecipePage() {
         title={r.title}
         lead={
           <>
-            <span className="block text-[0.85rem] font-semibold tracking-wide text-taupe uppercase">{RECIPE_CATEGORY_LABEL[r.category]}{r.personal ? ' · sana özel' : ''}</span>
+            <span className="block text-[0.9rem] font-semibold text-taupe">{RECIPE_CATEGORY_LABEL[r.category]}{r.personal ? ' · sana özel' : ''}</span>
             {r.variantNote && <span className="mt-2 block font-semibold text-rose-ink">{r.variantNote}</span>}
             {r.summary && <span className="mt-2 block">{r.summary}</span>}
           </>
         }
       />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-2xl"><RecipeImage recipe={r} eager /></div>
+        <div className="overflow-hidden rounded-lg"><RecipeImage recipe={r} eager /></div>
         {facts.length > 0 && (
           <dl className="grid h-fit grid-cols-2 gap-3 self-end">
             {facts.map(([k, v]) => (
-              <div key={k} className="rounded-xl bg-white px-4 py-3 ring-1 ring-espresso/[0.07]">
-                <dt className="text-[0.75rem] font-bold tracking-wide text-taupe uppercase">{k}</dt>
+              <div key={k} className="rounded-md bg-white px-4 py-3 ring-1 ring-espresso/[0.07]">
+                <dt className="text-[0.85rem] font-semibold text-taupe">{k}</dt>
                 <dd className="mt-1 font-display nums text-[1.6rem] leading-none">{v}</dd>
               </div>
             ))}
