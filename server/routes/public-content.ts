@@ -8,6 +8,7 @@ import { prisma } from '../lib/db';
 import { notFound, parse } from '../lib/http';
 import { getSettings } from '../services/settings';
 import { PUBLIC_SETTINGS_KEYS } from '../../shared/settings';
+import { decryptNote } from '../services/recipe-notes';
 import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, type PublicRecipe, type PublicRecipeCard } from '../../shared/recipe';
 
 export const publicContentRouter = Router();
@@ -96,13 +97,14 @@ publicContentRouter.get('/blog/:slug', async (req, res) => {
 const PUBLISHED_RECIPE = { isPublished: true, clientId: null, slug: { not: null } } as const;
 
 const recipeCard = {
-  slug: true, title: true, category: true, summary: true, variantNote: true, servings: true, prepMinutes: true,
+  slug: true, title: true, category: true, summary: true, variantNoteEnc: true, servings: true, prepMinutes: true,
   cookMinutes: true, kcal: true, imageBase: true, publishedAt: true,
 } as const;
 
 const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
-const toCard = (r: { slug: string | null; publishedAt: Date | null } & Omit<PublicRecipeCard, 'slug' | 'publishedAt'>): PublicRecipeCard => ({
+const toCard = ({ variantNoteEnc, ...r }: { slug: string | null; publishedAt: Date | null; variantNoteEnc: string | null } & Omit<PublicRecipeCard, 'slug' | 'publishedAt' | 'variantNote'>): PublicRecipeCard => ({
   ...r,
+  variantNote: decryptNote(variantNoteEnc),
   slug: r.slug!,
   publishedAt: r.publishedAt?.toISOString() ?? null,
 });

@@ -454,8 +454,11 @@ model Recipe {
   variants    Recipe[]       @relation("RecipeVariants")
   clientId    String?
   client      Client?        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  /// Varyasyonda neyin değiştiği (ör. "Laktozsuz, glutensiz ekmekle")
+  /// KULLANILMIYOR — eski düz metin varyasyon notu. Açılışta variantNoteEnc'e taşınıp boşaltılır;
+  /// sonraki bir sürümde sütun kaldırılacak. Yeni kod buraya yazmaz.
   variantNote String         @default("")
+  /// Varyasyonda neyin değiştiği (ör. "Laktozsuz, glutensiz ekmekle") — AES-256-GCM şifreli; sağlık bilgisi içerebilir
+  variantNoteEnc String?
   category    RecipeCategory
   summary     String         @default("")
   servings    Int?

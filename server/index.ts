@@ -6,6 +6,7 @@ import { env } from './lib/env';
 import { prisma } from './lib/db';
 import { purgeExpiredSessions } from './auth/session';
 import { generateUpcomingReminders } from './services/notifications';
+import { encryptLegacyVariantNotes } from './services/recipe-notes';
 
 const app = createApp();
 const server = app.listen(env.PORT, () => {
@@ -18,6 +19,11 @@ const jobs = setInterval(() => {
   generateUpcomingReminders().catch((e) => console.error('reminders', e));
 }, 5 * 60_000);
 setTimeout(() => generateUpcomingReminders().catch(() => {}), 5_000);
+
+// Tek seferlik veri taşıma: eski düz metin varyasyon notlarını şifrele (idempotent)
+encryptLegacyVariantNotes()
+  .then((n) => n && console.log(`✓ ${n} tarif varyasyon notu şifrelendi`))
+  .catch((e) => console.error('Varyasyon notları şifrelenemedi', e));
 
 async function shutdown() {
   clearInterval(jobs);

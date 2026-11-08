@@ -38,7 +38,7 @@ Diyetisyen Nida Akın için geliştirilmiş, **premium editorial tasarımlı her
 | Arka uç | Node.js (≥ 20.19) · Express 5 · Zod |
 | Veritabanı | PostgreSQL 16 · Prisma ORM 7 (`@prisma/adapter-pg`) |
 | Kimlik doğrulama | Sunucu taraflı oturum (HttpOnly + SameSite=Strict cookie) · CSRF token · scrypt parola özeti |
-| Şifreleme | AES-256-GCM (görüşme notları, ölçümler, danışan dosyaları) |
+| Şifreleme | AES-256-GCM (görüşme notları, ölçümler, danışan dosyaları, beslenme planları, tarif varyasyon notları) |
 | Saat dilimi | Tüm iş kuralları `Europe/Istanbul`; veritabanında `timestamptz` (UTC) |
 
 Tek bir Node süreci hem API'yi hem de derlenmiş siteyi sunar (üretimde). Geliştirmede Vite (5173) API'ye (4000) proxy yapar.
@@ -228,8 +228,11 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   tarif %70'e kadar küçültülür; yine sığmazsa önizlemede ve indirmede uyarı verilir. Canlı önizleme tüm sayfaları gösterir.
 - Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planların PDF'i güncel hâliyle basılır; silinen tarif
   planlarda “silinmiş” olarak işaretlenir ve PDF'e basılmaz.
-- Tarifler şifrelenmez; erişim planlarla aynı izinlerle (klinik yetkili roller) sınırlıdır ve ekleme/düzenleme/silme,
-  yayınlama/yayından kaldırma denetim kaydına yazılır.
+- **Varyasyon notları** (“Laktozsuz”, “glutensiz ekmekle” …) sağlık bilgisi içerebileceği için **AES-256-GCM ile şifreli**
+  saklanır (`recipes.variantNoteEnc`, `DATA_ENCRYPTION_KEY` ile). Eski sürümden kalan düz metin notlar uygulama açılışında
+  bir kez şifreli sütuna taşınır ve düz metin sütunu (`variantNote`) boşaltılır; bu sütun sonraki bir sürümde kaldırılacak.
+  Tarifin diğer alanları (ad, malzemeler, adımlar) şifrelenmez. Erişim planlarla aynı izinlerle (klinik yetkili roller)
+  sınırlıdır; ekleme/düzenleme/silme, yayınlama/yayından kaldırma denetim kaydına yazılır.
 
 ### Web sitesinde yayınlama
 
