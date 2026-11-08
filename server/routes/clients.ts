@@ -18,6 +18,8 @@ import { z } from 'zod';
 import { prisma, type Prisma } from '../lib/db';
 import { HttpError, badRequest, conflict, notFound, parse } from '../lib/http';
 import { deleteClientRecipeImages } from './recipes';
+import { decryptNote } from '../services/recipe-notes';
+import { recipeImageUrl } from '../../shared/recipe';
 import { audit } from '../lib/audit';
 import { decryptBuffer, decryptJson, decryptString, encryptBuffer, encryptJson, encryptString } from '../lib/crypto';
 import { PRIVATE_UPLOADS, sniffMime } from '../lib/storage';
@@ -490,7 +492,7 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
   parse(exportQuery, req.query);
   const client = await getClientOr404(id);
   const clinical = req.user!.permissions.includes('clinical:read');
-  const [appointments, notes, measurements, files] = await Promise.all([
+  const [appointments, notes, measurements, files, recipes] = await Promise.all([
     prisma.appointment.findMany({
       where: { clientId: id },
       orderBy: { createdAt: 'asc' },
@@ -502,6 +504,10 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
     clinical ? prisma.consultationNote.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' }, include: noteInclude }) : [],
     clinical ? prisma.measurement.findMany({ where: { clientId: id }, orderBy: { measuredOn: 'asc' } }) : [],
     prisma.clientFile.findMany({ where: { clientId: id }, select: { originalName: true, mimeType: true, sizeBytes: true, createdAt: true } }),
+    // Kişiye özel tarif varyasyonları (tarifler planlarla aynı klinik yetkiye bağlıdır)
+    clinical
+      ? prisma.recipe.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' }, include: { parent: { select: { title: true } } } })
+      : [],
   ]);
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -512,8 +518,25 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
     consultationNotes: notes.map(serializeNote),
     measurements: measurements.map(serializeMeasurement),
     files,
+    personalRecipes: recipes.map((r) => ({
+      title: r.title,
+      category: r.category,
+      basedOn: r.parent?.title ?? null,
+      variantNote: decryptNote(r.variantNoteEnc),
+      summary: r.summary,
+      servings: r.servings,
+      prepMinutes: r.prepMinutes,
+      cookMinutes: r.cookMinutes,
+      kcalPerServing: r.kcal,
+      ingredients: r.ingredients,
+      steps: r.steps,
+      tip: r.tip,
+      imageUrl: r.imageBase ? recipeImageUrl(r.imageBase, 960) : null,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+    })),
   };
-  await audit(req, 'client.exported', 'client', id, { clinical });
+  await audit(req, 'client.exported', 'client', id, { clinical, personalRecipes: recipes.length });
   res.set({
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Disposition': `attachment; filename="danisan-verileri-${client.id}.json"`,
