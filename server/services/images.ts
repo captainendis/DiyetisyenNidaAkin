@@ -99,3 +99,17 @@ export async function recipeImageDataUri(base: string | null | undefined) {
   const buf = await fs.readFile(path.join(RECIPE_DIR, `${id}-960.webp`)).catch(() => null);
   return buf ? `data:image/webp;base64,${buf.toString('base64')}` : null;
 }
+
+/** Varyasyon için fotoğrafı kopyalar (her tarif kendi dosyasına sahip olur; biri silinince diğeri etkilenmez) */
+export async function copyRecipeImage(base: string | null | undefined) {
+  const id = base ? RECIPE_BASE_RE.exec(base)?.[1] : undefined;
+  if (!id) return null;
+  const next = crypto.randomBytes(10).toString('hex');
+  try {
+    for (const w of [480, 960]) await fs.copyFile(path.join(RECIPE_DIR, `${id}-${w}.webp`), path.join(RECIPE_DIR, `${next}-${w}.webp`));
+  } catch {
+    await deleteRecipeImage(`/uploads/public/recipes/${next}`);
+    return null;
+  }
+  return `/uploads/public/recipes/${next}`;
+}

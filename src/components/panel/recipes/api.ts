@@ -11,7 +11,18 @@ export function printRecipesFor(plan: NutritionPlanData, library: Recipe[] | und
   return (plan.recipes?.items ?? []).flatMap((it) => {
     const r = byId.get(it.recipeId);
     if (!r) return [];
-    const { id: _id, imageBase, createdAt: _c, updatedAt: _u, ...rest } = r;
-    return [{ ...rest, label: it.label, image: imageBase ? recipeImageUrl(imageBase, 480) : null }];
+    return [{
+      title: r.title, category: r.category, summary: r.summary, servings: r.servings, prepMinutes: r.prepMinutes,
+      cookMinutes: r.cookMinutes, kcal: r.kcal, ingredients: r.ingredients, steps: r.steps, tip: r.tip,
+      variantNote: r.variantNote, personal: !!r.clientId, label: it.label,
+      image: r.imageBase ? recipeImageUrl(r.imageBase, 480) : null,
+    }];
   });
+}
+
+/** Plan editöründe ve kütüphanede gösterilecek tarifler: genel tarifler + (varsa) bu danışana özel olanlar */
+export function recipesVisibleFor(library: Recipe[], clientId: string | null | undefined) {
+  return library
+    .filter((r) => !r.clientId || r.clientId === clientId)
+    .sort((a, b) => Number(!!b.clientId) - Number(!!a.clientId));
 }

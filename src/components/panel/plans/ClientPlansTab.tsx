@@ -4,13 +4,51 @@
 /** Danışan detayı → Beslenme Planları sekmesi */
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Download, FileText, Plus } from 'lucide-react';
+import { CookingPot, Download, FileText, Plus } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { Button, Card, EmptyState, ErrorState, SkeletonRows, useFeedback } from '@/components/panel/ui';
 import { formatDateTime } from '@/lib/format';
 import { downloadPlanPdf, type PlanListItem } from './api';
 import { NewPlanModal } from './NewPlanModal';
+import { RecipeThumb } from '@/components/panel/recipes/RecipeCard';
+import { RECIPE_CATEGORY_LABEL, type Recipe } from '@shared/recipe';
+
+/** Danışana özel tarif varyasyonları (yalnızca listeleme; düzenleme Tarifler sayfasında) */
+function ClientRecipes({ clientId }: { clientId: string }) {
+  const { data } = useApi(() => api.get<{ items: Recipe[] }>('/recipes', { clientId }), [clientId]);
+  return (
+    <Card className="mt-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">
+        <div>
+          <h2 className="text-[0.95rem] font-bold text-espresso">Kişiye özel tarifler</h2>
+          <p className="mt-0.5 text-[0.8rem] text-panel-muted">Bu danışan için uyarlanmış tarif varyasyonları. Web sitesinde yayınlanmazlar.</p>
+        </div>
+        {!!data?.items.length && (
+          <Link to={`/panel/tarifler?danisan=${clientId}`} className="text-[0.8rem] font-semibold text-cocoa hover:underline">Tümünü yönet</Link>
+        )}
+      </div>
+      {!data?.items.length ? (
+        <p className="flex items-start gap-2.5 border-t border-panel-line px-5 py-4 text-[0.8rem] text-panel-muted">
+          <CookingPot className="mt-0.5 h-4 w-4 shrink-0" />
+          Henüz yok. Plan düzenleyicide bir tarifin yanındaki “uyarla” düğmesiyle ya da Tarifler sayfasında “Varyasyon oluştur” ile hazırlayabilirsiniz.
+        </p>
+      ) : (
+        <ul className="grid gap-2 border-t border-panel-line p-4 sm:grid-cols-2">
+          {data.items.map((r) => (
+            <li key={r.id} className="flex items-center gap-3 rounded-lg border border-panel-line p-2">
+              <RecipeThumb recipe={r} className="h-12 w-16 shrink-0 rounded-md" />
+              <div className="min-w-0">
+                <p className="truncate text-[0.85rem] font-bold text-espresso">{r.title}</p>
+                <p className="truncate text-[0.75rem] text-panel-muted">{r.variantNote || RECIPE_CATEGORY_LABEL[r.category]}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
 
 export function ClientPlansTab({ clientId, clientName }: { clientId: string; clientName: string }) {
   const { data, loading, error, reload } = useApi(() => api.get<{ items: PlanListItem[] }>('/plans', { clientId }), [clientId]);
@@ -31,6 +69,7 @@ export function ClientPlansTab({ clientId, clientName }: { clientId: string; cli
   };
 
   return (
+    <>
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">
         <div>
@@ -66,5 +105,7 @@ export function ClientPlansTab({ clientId, clientName }: { clientId: string; cli
       )}
       <NewPlanModal open={open} onClose={() => setOpen(false)} clientId={clientId} clientName={clientName} />
     </Card>
+    <ClientRecipes clientId={clientId} />
+    </>
   );
 }

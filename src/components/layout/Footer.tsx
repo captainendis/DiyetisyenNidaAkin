@@ -6,7 +6,7 @@ import { Logo } from '@/components/icons/Logo';
 import { PaperAxisMark } from '@/components/icons/PaperAxisMark';
 import { DEVELOPER } from '@shared/credits';
 import { SocialLinks } from '@/components/navigation/SocialLinks';
-import { NAV_LINKS } from '@/components/navigation/Navbar';
+import { useNavLinks } from '@/components/navigation/Navbar';
 import { useSite } from '@/data/SiteContext';
 import { formatPhone } from '@/lib/text';
 import { formatAddress } from '@/components/sections/address';
@@ -20,6 +20,7 @@ const LEGAL = [
 
 export function Footer() {
   const { site } = useSite();
+  const links = useNavLinks();
   const { contact, social, business, approach } = site.settings;
   const address = formatAddress(contact);
   const contactItems = [
@@ -40,7 +41,7 @@ export function Footer() {
           </div>
           <nav aria-label="Alt menü" className="lg:col-span-3">
             <ul className="space-y-3">
-              {NAV_LINKS.map((l) => (
+              {links.map((l) => (
                 <li key={l.to}>
                   <Link to={l.to} className="text-[0.95rem] text-cream/70 transition-colors hover:text-rose">{l.label}</Link>
                 </li>

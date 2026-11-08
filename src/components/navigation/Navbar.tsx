@@ -23,6 +23,14 @@ export const NAV_LINKS = [
   { to: '/iletisim', label: 'İletişim' },
 ];
 
+/** Menü bağlantıları: yayınlanmış tarif varsa "Tarifler" Beslenme Rehberi'nden sonra eklenir */
+export function useNavLinks() {
+  const { site } = useSite();
+  if (!site.recipeCount) return NAV_LINKS;
+  const i = NAV_LINKS.findIndex((l) => l.to === '/beslenme-rehberi') + 1;
+  return [...NAV_LINKS.slice(0, i), { to: '/tarifler', label: 'Tarifler' }, ...NAV_LINKS.slice(i)];
+}
+
 function MenuToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} aria-label={open ? 'Menüyü kapat' : 'Menüyü aç'} aria-expanded={open} aria-controls="mobile-menu" className="relative z-[61] -mr-2 flex h-11 w-11 items-center justify-center xl:hidden">
@@ -41,6 +49,7 @@ export function Navbar() {
   const booking = useBooking();
   const reduce = useReducedMotion();
   const { site } = useSite();
+  const links = useNavLinks();
 
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 24);
@@ -72,7 +81,7 @@ export function Navbar() {
           </Link>
           <nav aria-label="Ana menü" className="hidden xl:block">
             <ul className="flex items-center gap-8 xl:gap-12">
-              {NAV_LINKS.map((l) => (
+              {links.map((l) => (
                 <li key={l.to}>
                   <NavLink to={l.to} end={l.end} className={({ isActive }) => cn('group relative py-2 text-[0.92rem] transition-colors', isActive ? 'text-ivory' : 'text-cream/75 hover:text-ivory')}>
                     {({ isActive }) => (
@@ -105,7 +114,7 @@ export function Navbar() {
           >
             <nav aria-label="Mobil menü" className="container-edge relative z-[2] flex flex-1 flex-col justify-center pt-24">
               <ul className="space-y-1">
-                {NAV_LINKS.map((l, i) => (
+                {links.map((l, i) => (
                   <motion.li key={l.to} initial={{ opacity: 0, y: reduce ? 0 : 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.06, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}>
                     <NavLink to={l.to} end={l.end} className={({ isActive }) => cn('flex items-baseline gap-5 py-2 font-display text-[2.6rem] leading-tight sm:text-[3.2rem]', isActive ? 'text-rose' : 'text-cream')}>
                       <span className="font-sans text-[0.72rem] tracking-[0.2em] text-mist tabular-nums">0{i + 1}</span>

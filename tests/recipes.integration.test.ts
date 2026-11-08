@@ -33,7 +33,10 @@ beforeAll(async () => {
   csrf = (await agent.get('/api/auth/me')).body.user.csrfToken;
 });
 
+let clientId = '';
+
 afterAll(async () => {
+  if (clientId) await prisma.client.deleteMany({ where: { id: clientId } });
   const rows = await prisma.recipe.findMany({ where: { id: { in: recipeIds } } });
   for (const r of rows) {
     const id = r.imageBase?.split('/').pop();
@@ -115,4 +118,68 @@ describe('tarifler', () => {
     expect(pdf.headers['x-plan-recipes-fit']).toBe('true');
     expect((pdf.body as Buffer).subarray(0, 5).toString()).toBe('%PDF-');
   }, 60_000);
+
+  it('yalnızca işaretli ve kişiye özel olmayan tarifler sitede yayınlanır; adres sabit kalır', async () => {
+    const pub = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, title: 'Test Yayın Çorbası', category: 'SOUP', isPublished: true });
+    expect(pub.status).toBe(201);
+    recipeIds.push(pub.body.recipe.id);
+    const slug = pub.body.recipe.slug as string;
+    expect(slug).toMatch(/^test-yayin-corbasi/);
+
+    const draft = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, title: 'Test Taslak Çorbası', category: 'SOUP' });
+    recipeIds.push(draft.body.recipe.id);
+    expect(draft.body.recipe.slug).toBeNull();
+
+    const list = await request(app).get('/api/public/recipes');
+    const slugs = list.body.recipes.map((r: { slug: string }) => r.slug);
+    expect(slugs).toContain(slug);
+    expect(slugs).not.toContain(draft.body.recipe.slug);
+    // İç alanlar dışarı sızmaz
+    expect(Object.keys(list.body.recipes[0])).not.toEqual(expect.arrayContaining(['clientId', 'id', 'parentId']));
+
+    // Başlık değişse de adres değişmez
+    await agent.patch(`/api/recipes/${pub.body.recipe.id}`).set('X-CSRF-Token', csrf).send({ ...body, title: 'Yeni Ad', category: 'SOUP', isPublished: true }).expect(200);
+    const detail = await request(app).get(`/api/public/recipes/${slug}`);
+    expect(detail.status).toBe(200);
+    expect(detail.body.recipe.title).toBe('Yeni Ad');
+
+    // Yayından kaldırılınca 404
+    await agent.patch(`/api/recipes/${pub.body.recipe.id}`).set('X-CSRF-Token', csrf).send({ ...body, title: 'Yeni Ad', category: 'SOUP', isPublished: false }).expect(200);
+    expect((await request(app).get(`/api/public/recipes/${slug}`)).status).toBe(404);
+
+    const sitemap = await request(app).get('/sitemap.xml');
+    expect(sitemap.text).not.toContain(`/tarifler/${slug}`);
+  });
+
+  it('kişiye özel varyasyon: fotoğraf kopyalanır, yayınlanamaz, danışan silinince silinir', async () => {
+    const c = await prisma.client.create({ data: { firstName: 'Test', lastName: 'Varyasyon', phone: '+905559990011' } });
+    clientId = c.id;
+    const baseId = recipeIds[0]!;
+    const base = (await agent.get(`/api/recipes/${baseId}`)).body.recipe as Recipe;
+
+    const bad = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, parentId: baseId, clientId: c.id, isPublished: true });
+    expect(bad.status).toBe(422);
+    expect(bad.body.error.details.fields.isPublished).toBeTruthy();
+
+    const v = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, parentId: baseId, clientId: c.id, variantNote: 'Laktozsuz', copyImage: true });
+    expect(v.status).toBe(201);
+    const variant = v.body.recipe as Recipe;
+    expect(variant).toMatchObject({ parentId: baseId, variantNote: 'Laktozsuz', isPublished: false, client: { id: c.id } });
+    expect(variant.imageBase).toBeTruthy();
+    expect(variant.imageBase).not.toBe(base.imageBase);
+    const variantFile = path.join(PUBLIC_UPLOADS, 'recipes', `${variant.imageBase!.split('/').pop()}-960.webp`);
+    expect(fs.existsSync(variantFile)).toBe(true);
+
+    // Varyasyonun varyasyonu kök tarife bağlanır
+    const vv = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, parentId: variant.id, variantNote: 'Vegan' });
+    recipeIds.push(vv.body.recipe.id);
+    expect(vv.body.recipe.parentId).toBe(baseId);
+    expect((await agent.get(`/api/recipes/${baseId}`)).body.recipe.variantCount).toBe(2);
+
+    // Danışan silinince kişiye özel varyasyon ve fotoğrafı silinir
+    await agent.delete(`/api/clients/${c.id}`).set('X-CSRF-Token', csrf).expect(200);
+    clientId = '';
+    expect(await prisma.recipe.findUnique({ where: { id: variant.id } })).toBeNull();
+    expect(fs.existsSync(variantFile)).toBe(false);
+  });
 });

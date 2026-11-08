@@ -2,13 +2,16 @@
 // Developed by PaperAxis · paperaxis.com
 
 /**
- * Tarif ekle / düzenle. Fotoğraf seçilince yerelde önizlenir; tarif kaydedildikten sonra yüklenir
- * (yeni tarifte önce kayıt oluşur, ardından fotoğraf ona bağlanır).
+ * Tarif ekle / düzenle / varyasyon oluştur.
+ *  - Fotoğraf seçilince yerelde önizlenir; tarif kaydedildikten sonra yüklenir.
+ *  - Varyasyon: ana tarifin kopyasıyla başlar (fotoğraf sunucuda kopyalanır); bir danışana bağlanabilir.
+ *  - "Web sitesinde yayınla": yalnızca danışana bağlı olmayan tarifler için.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ExternalLink, GitBranch, ImagePlus, Plus, Trash2, X } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
-import { Button, Input, Modal, Select, Textarea, useFeedback } from '@/components/panel/ui';
+import { Button, Input, Modal, Select, Switch, Textarea, useFeedback } from '@/components/panel/ui';
+import { ClientPicker, type ClientRef } from './ClientPicker';
 import { cn } from '@/lib/format';
 import {
   RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, recipeImageUrl, type Recipe, type RecipeCategory, type RecipeInput,
@@ -27,9 +30,15 @@ interface Draft {
   ingredients: string;
   steps: string[];
   tip: string;
+  isPublished: boolean;
+  variantNote: string;
+  client: ClientRef | null;
 }
 
 const toDraft = (r?: Recipe | null, category?: RecipeCategory): Draft => ({
+  isPublished: r?.isPublished ?? false,
+  variantNote: r?.variantNote ?? '',
+  client: r?.client ?? null,
   title: r?.title ?? '',
   category: r?.category ?? category ?? '',
   summary: r?.summary ?? '',
@@ -47,18 +56,34 @@ const num = (v: string) => {
   return v.trim() && Number.isFinite(n) ? Math.round(n) : null;
 };
 
+type Mode = { kind: 'new' } | { kind: 'edit'; recipe: Recipe } | { kind: 'variant'; base: Recipe };
+
+/** Varyasyon taslağı: ana tarifin içeriği, yayın kapalı, isteğe bağlı danışan */
+const variantDraft = (base: Recipe, client: ClientRef | null): Draft => ({
+  ...toDraft(base),
+  isPublished: false,
+  variantNote: '',
+  client,
+});
+
 export function RecipeFormModal({
-  open, onClose, recipe, defaultCategory, onSaved, onDeleted,
+  open, onClose, recipe, variantOf, defaultClient = null, defaultCategory, onSaved, onDeleted,
 }: {
   open: boolean;
   onClose: () => void;
   recipe?: Recipe | null;
+  /** Verilirse bu tarifin varyasyonu oluşturulur */
+  variantOf?: Recipe | null;
+  /** Varyasyon için önceden seçili danışan (ör. plan düzenleyiciden) */
+  defaultClient?: ClientRef | null;
   defaultCategory?: RecipeCategory;
   onSaved: (r: Recipe) => void;
   onDeleted?: (id: string) => void;
 }) {
   const fb = useFeedback();
-  const [d, setD] = useState<Draft>(() => toDraft(recipe, defaultCategory));
+  const initialMode = (): Mode => (variantOf ? { kind: 'variant', base: variantOf } : recipe ? { kind: 'edit', recipe } : { kind: 'new' });
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [d, setD] = useState<Draft>(() => (variantOf ? variantDraft(variantOf, defaultClient) : toDraft(recipe, defaultCategory)));
   const [err, setErr] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -67,15 +92,31 @@ export function RecipeFormModal({
 
   useEffect(() => {
     if (!open) return;
-    setD(toDraft(recipe, defaultCategory));
+    setMode(initialMode());
+    setD(variantOf ? variantDraft(variantOf, defaultClient) : toDraft(recipe, defaultCategory));
     setErr({});
     setFile(null);
     setRemoveImage(false);
-  }, [open, recipe, defaultCategory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, recipe, variantOf, defaultClient, defaultCategory]);
+
+  const editing = mode.kind === 'edit' ? mode.recipe : null;
+  const base = mode.kind === 'variant' ? mode.base : null;
+  const imageOwner = editing ?? base;
+  const isVariant = !!base || !!editing?.parentId || !!d.client || !!d.variantNote;
 
   const localUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   useEffect(() => () => { if (localUrl) URL.revokeObjectURL(localUrl); }, [localUrl]);
-  const shownImage = localUrl ?? (!removeImage && recipe?.imageBase ? recipeImageUrl(recipe.imageBase, 960) : null);
+  const shownImage = localUrl ?? (!removeImage && imageOwner?.imageBase ? recipeImageUrl(imageOwner.imageBase, 960) : null);
+
+  const startVariant = () => {
+    if (!editing) return;
+    setMode({ kind: 'variant', base: editing });
+    setD(variantDraft(editing, defaultClient));
+    setErr({});
+    setFile(null);
+    setRemoveImage(false);
+  };
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }));
   const setStep = (i: number, v: string) => setD((p) => ({ ...p, steps: p.steps.map((s, j) => (j === i ? v : s)) }));
@@ -106,6 +147,9 @@ export function RecipeFormModal({
       ingredients: d.ingredients.split('\n').map((l) => l.replace(/^\s*[-•*]\s*/, '').trim()).filter(Boolean),
       steps: d.steps.map((s) => s.trim()).filter(Boolean),
       tip: d.tip.trim(),
+      isPublished: d.client ? false : d.isPublished,
+      variantNote: d.variantNote.trim(),
+      clientId: d.client?.id ?? null,
     };
     const local: Record<string, string> = {};
     if (!body.title) local.title = 'Tarif adı gerekli';
@@ -117,9 +161,14 @@ export function RecipeFormModal({
 
     setPending(true);
     try {
-      let saved = recipe
-        ? (await api.patch<{ recipe: Recipe }>(`/recipes/${recipe.id}`, body)).recipe
-        : (await api.post<{ recipe: Recipe }>('/recipes', body)).recipe;
+      let saved = editing
+        ? (await api.patch<{ recipe: Recipe }>(`/recipes/${editing.id}`, body)).recipe
+        : (await api.post<{ recipe: Recipe }>('/recipes', {
+            ...body,
+            parentId: base?.id ?? null,
+            // Yeni fotoğraf seçilmediyse ve kaldırılmadıysa ana tarifin fotoğrafı kopyalanır
+            copyImage: !!base?.imageBase && !file && !removeImage,
+          })).recipe;
       try {
         if (file) {
           const form = new FormData();
@@ -134,7 +183,7 @@ export function RecipeFormModal({
         return onClose();
       }
       onSaved(saved);
-      fb.success(recipe ? 'Tarif güncellendi' : 'Tarif eklendi');
+      fb.success(editing ? 'Tarif güncellendi' : base ? 'Varyasyon oluşturuldu' : 'Tarif eklendi');
       onClose();
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) setErr(e.fields);
@@ -145,10 +194,11 @@ export function RecipeFormModal({
   };
 
   const remove = async () => {
+    const recipe = editing;
     if (!recipe) return;
     const ok = await fb.confirm({
       title: 'Tarif silinsin mi?',
-      description: 'Bu tarifi ek sayfasında kullanan planlardan da kaldırılır. İşlem geri alınamaz.',
+      description: `Bu tarifi ek sayfasında kullanan planlardan da kaldırılır${recipe.isPublished ? ' ve web sitesinden kalkar' : ''}.${recipe.variantCount ? ` ${recipe.variantCount} varyasyonu bağımsız tarif olarak kalır.` : ''} İşlem geri alınamaz.`,
       confirmLabel: 'Sil',
       tone: 'danger',
     });
@@ -169,20 +219,35 @@ export function RecipeFormModal({
       onClose={onClose}
       size="xl"
       closeOnBackdrop={false}
-      title={recipe ? 'Tarifi düzenle' : 'Yeni tarif'}
-      description="Tarifler beslenme planlarının arkasına ek sayfa olarak eklenebilir."
+      title={editing ? 'Tarifi düzenle' : base ? 'Varyasyon oluştur' : 'Yeni tarif'}
+      description={
+        base
+          ? `“${base.title}” tarifinden başlar. Değiştirdiğiniz yerler yalnızca bu varyasyona uygulanır; ana tarif aynı kalır.`
+          : 'Tarifler beslenme planlarının arkasına ek sayfa olarak eklenebilir.'
+      }
       footer={
         <>
-          {recipe && onDeleted && (
-            <Button variant="ghost" className="mr-auto" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove()}>
+          {editing && onDeleted && (
+            <Button variant="ghost" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove()}>
               Sil
             </Button>
           )}
+          {editing && (
+            <Button variant="ghost" className="mr-auto" icon={<GitBranch className="h-4 w-4" />} onClick={startVariant}>
+              Varyasyon oluştur
+            </Button>
+          )}
           <Button variant="secondary" onClick={onClose}>Vazgeç</Button>
-          <Button loading={pending} onClick={() => void save()}>{recipe ? 'Kaydet' : 'Tarifi ekle'}</Button>
+          <Button loading={pending} onClick={() => void save()}>{editing ? 'Kaydet' : base ? 'Varyasyonu kaydet' : 'Tarifi ekle'}</Button>
         </>
       }
     >
+      {editing && (editing.parent || editing.variantCount > 0) && (
+        <p className="mb-5 rounded-lg bg-panel-bg px-3.5 py-2.5 text-[0.8rem] text-cocoa">
+          {editing.parent ? <>Bu tarif <b>“{editing.parent.title}”</b> tarifinin varyasyonudur. </> : null}
+          {editing.variantCount > 0 ? <>Bu tarifin <b>{editing.variantCount} varyasyonu</b> var; buradaki değişiklikler onları etkilemez.</> : null}
+        </p>
+      )}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
         {/* Sol: fotoğraf ve künye */}
         <div className="space-y-4">
@@ -223,6 +288,46 @@ export function RecipeFormModal({
             onChange={(e) => set('category', e.target.value as RecipeCategory)}
           />
           <Textarea label="Kısa açıklama" rows={2} value={d.summary} maxLength={200} error={err.summary} placeholder="Tok tutan, 10 dakikada hazır bir kahvaltı." onChange={(e) => set('summary', e.target.value)} />
+          {isVariant && (
+            <div className="space-y-4 rounded-xl border border-panel-line bg-panel-bg/40 p-3.5">
+              <Input
+                label="Varyasyon notu"
+                value={d.variantNote}
+                maxLength={120}
+                error={err.variantNote}
+                placeholder="Laktozsuz, glutensiz ekmekle"
+                hint="Neyin değiştiğini kısaca yazın; PDF'te tarif adının altında görünür."
+                onChange={(e) => set('variantNote', e.target.value)}
+              />
+              <ClientPicker
+                label="Kişiye özel (isteğe bağlı)"
+                value={d.client}
+                onChange={(c) => setD((p) => ({ ...p, client: c, isPublished: c ? false : p.isPublished }))}
+                hint={d.client ? 'Yalnızca bu danışanın planlarında önerilir, PDF’te “Sana özel” olarak basılır. Danışan silinirse bu tarif de silinir.' : 'Boş bırakılırsa genel bir varyasyon olur (ör. vegan versiyon).'}
+              />
+            </div>
+          )}
+          <div className="rounded-xl border border-panel-line p-3.5">
+            <Switch
+              label="Web sitesinde yayınla"
+              description={
+                d.client
+                  ? 'Kişiye özel tarifler yayınlanamaz.'
+                  : d.isPublished
+                    ? 'Sitedeki “Tarifler” bölümünde herkes görebilir.'
+                    : 'Kapalıyken yalnızca panelde ve planlarda kullanılır.'
+              }
+              checked={!d.client && d.isPublished}
+              disabled={!!d.client}
+              onChange={(v) => set('isPublished', v)}
+            />
+            {err.isPublished && <p className="mt-1.5 text-[0.78rem] text-danger" role="alert">{err.isPublished}</p>}
+            {editing?.isPublished && editing.slug && d.isPublished && (
+              <a href={`/tarifler/${editing.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[0.78rem] font-semibold text-cocoa hover:underline">
+                Sitede görüntüle <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
             <Input label="Porsiyon" inputMode="numeric" value={d.servings} error={err.servings} placeholder="1" onChange={(e) => set('servings', e.target.value.replace(/\D/g, '').slice(0, 2))} />
             <Input label="Kalori (porsiyon)" inputMode="numeric" value={d.kcal} error={err.kcal} placeholder="kcal" onChange={(e) => set('kcal', e.target.value.replace(/\D/g, '').slice(0, 4))} />

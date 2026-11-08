@@ -228,8 +228,33 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   tarif %70'e kadar küçültülür; yine sığmazsa önizlemede ve indirmede uyarı verilir. Canlı önizleme tüm sayfaları gösterir.
 - Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planların PDF'i güncel hâliyle basılır; silinen tarif
   planlarda “silinmiş” olarak işaretlenir ve PDF'e basılmaz.
-- Tarifler danışana ait olmadığından şifrelenmez; erişim planlarla aynı izinlerle (klinik yetkili roller) sınırlıdır ve
-  ekleme/düzenleme/silme denetim kaydına yazılır.
+- Tarifler şifrelenmez; erişim planlarla aynı izinlerle (klinik yetkili roller) sınırlıdır ve ekleme/düzenleme/silme,
+  yayınlama/yayından kaldırma denetim kaydına yazılır.
+
+### Web sitesinde yayınlama
+
+- Tarif formundaki **“Web sitesinde yayınla”** anahtarı açık olan tarifler sitede **/tarifler** (kategori süzgeçli liste)
+  ve **/tarifler/&lt;adres&gt;** (malzemeler, adımlar, künye, ipucu, “genel öneridir” uyarısı) altında görünür.
+  Diğerleri yalnızca panelde ve planlarda kalır.
+- Yayınlanmış en az bir tarif varsa üst menüye ve alt bilgiye **“Tarifler”** bağlantısı kendiliğinden eklenir.
+- Adres (slug) ilk yayında başlıktan üretilir ve sonradan **değişmez**; başlık düzeltilse de paylaşılan bağlantılar kırılmaz.
+  Yayından kaldırılan tarifin sayfası 404 döner ve site haritasından çıkar.
+- SEO: site haritasında yer alır; sunucu tarafı meta + **Schema.org `Recipe`** (malzemeler, adımlar, süreler, porsiyon,
+  kalori, görsel) yazılır. Herkese açık uç danışan, ana tarif veya yazar bilgisi döndürmez.
+
+### Varyasyonlar ve kişiye özel tarifler
+
+- Bir tarifi açıp **“Varyasyon oluştur”** ile kopyasından yeni bir tarif hazırlanır (fotoğraf da kopyalanır); kısa bir
+  **varyasyon notu** (“Laktozsuz süt ve peynirle”) yazılır. Ana tarif değişmez; varyasyonun varyasyonu da kök tarife bağlanır.
+- Varyasyon bir **danışana bağlanabilir** (kişiye özel). Kişiye özel tarifler:
+  - **asla yayınlanamaz** (sunucu reddeder),
+  - yalnızca o danışanın planlarında tarif seçicide görünür, PDF'te tarif adının altında **“Sana özel.”** notuyla basılır,
+  - danışan profilinde (Beslenme Planları sekmesi) listelenir,
+  - danışan silindiğinde (panelden veya saklama süresi betiğiyle) fotoğraflarıyla birlikte **silinir**.
+- **Plan düzenleyiciden hızlı uyarlama:** danışan planındaki bir tarifin yanındaki dal simgesi (“Ayşe için uyarla”)
+  varyasyon formunu o danışan seçili olarak açar; kaydedilince plandaki tarif bu kişiye özel versiyonla değiştirilir.
+- Panel → Tarifler'de **Tümü / Genel / Sitede yayında / Kişiye özel** sekmeleri ve kartlarda rozetler vardır;
+  `?danisan=<id>` bir danışanın, `?ana=<id>` bir tarifin varyasyonlarını süzer.
 
 ## Randevu sistemi nasıl çalışır
 
@@ -317,7 +342,8 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `POST /site-images` (görsel işleme) · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
 | Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/pdf` |
-| Tarifler | `GET/POST /api/recipes` (`?category`, `?q`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` |
+| Tarifler | `GET/POST /api/recipes` (`?category`, `?q`, `?clientId`; POST'ta `parentId`, `copyImage`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` |
+| Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`) · `GET /api/public/recipes/:slug` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 

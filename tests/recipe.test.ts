@@ -19,6 +19,8 @@ const recipe = (over: Partial<PrintRecipe> = {}): PrintRecipe => ({
   tip: '',
   image: null,
   label: 'Kahvaltı için öneri',
+  variantNote: '',
+  personal: false,
   ...over,
 });
 
@@ -72,5 +74,11 @@ describe('plan + tarif ek sayfası', () => {
     // Etiket boşsa kategori adı gösterilir
     expect(html).toContain('<p class="r-label">Ara öğün</p>');
     expect(html.match(/<article class="recipe/g)).toHaveLength(2);
+  });
+  it('kişiye özel varyasyonu "Sana özel" notuyla basar', () => {
+    const html = renderPlanHtml(samplePlanTemplate(), { fontCss: '', recipes: [recipe({ personal: true, variantNote: 'Laktozsuz <süt>' })] });
+    expect(html).toContain('<p class="r-var"><b>Sana özel.</b> Laktozsuz &lt;süt&gt;</p>');
+    const plain = renderPlanHtml(samplePlanTemplate(), { fontCss: '', recipes: [recipe()] });
+    expect(plain).not.toContain('class="r-var"');
   });
 });

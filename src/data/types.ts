@@ -47,4 +47,6 @@ export interface SiteData {
   services: PublicService[];
   faqs: PublicFaq[];
   categories: BlogCategory[];
+  /** Yayınlanmış tarif sayısı — 0 ise menüde "Tarifler" gösterilmez */
+  recipeCount?: number;
 }

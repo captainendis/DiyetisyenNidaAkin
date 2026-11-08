@@ -45,15 +45,59 @@ export const recipeInputSchema = z.object({
   ingredients: z.array(z.string().trim().min(1).max(120)).min(1, 'En az bir malzeme ekleyin').max(30, 'En fazla 30 malzeme'),
   steps: z.array(z.string().trim().min(1).max(500)).min(1, 'En az bir adım ekleyin').max(15, 'En fazla 15 adım'),
   tip: z.string().trim().max(300).default(''),
+  /** Web sitesinde /tarifler altında yayınlansın mı (kişiye özel varyasyonlarda her zaman false) */
+  isPublished: z.boolean().default(false),
+  /** Varyasyonda neyin değiştiği; danışanın PDF'inde "Sana özel" notu olarak görünür */
+  variantNote: z.string().trim().max(120).default(''),
+  /** Kişiye özel varyasyon: bağlı danışan */
+  clientId: z.string().max(40).nullable().default(null),
 });
 export type RecipeInput = z.infer<typeof recipeInputSchema>;
+
+/** Yeni tarif: isteğe bağlı olarak bir tarifin varyasyonu olarak (fotoğrafı da kopyalanarak) oluşturulur */
+export const recipeCreateSchema = recipeInputSchema.extend({
+  parentId: z.string().max(40).nullable().default(null),
+  copyImage: z.boolean().default(false),
+});
 
 export interface Recipe extends RecipeInput {
   id: string;
   /** /uploads/public/recipes/<id> — dosyalar: <base>-480.webp, <base>-960.webp */
   imageBase: string | null;
+  slug: string | null;
+  publishedAt: string | null;
+  parentId: string | null;
+  parent: { id: string; title: string } | null;
+  client: { id: string; firstName: string; lastName: string } | null;
+  variantCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Sitede gösterilen tarif (kişisel/iç alanlar yok) */
+export interface PublicRecipeCard {
+  slug: string;
+  title: string;
+  category: RecipeCategory;
+  summary: string;
+  variantNote: string;
+  servings: number | null;
+  prepMinutes: number | null;
+  cookMinutes: number | null;
+  kcal: number | null;
+  imageBase: string | null;
+  publishedAt: string | null;
+}
+export interface PublicRecipe extends PublicRecipeCard {
+  ingredients: string[];
+  steps: string[];
+  tip: string;
+  updatedAt: string;
+}
+
+/** Panelde varyasyonun kısa adı: "Yulaflı tost · Ayşe Y. için · Laktozsuz" */
+export function recipeDisplayName(r: Pick<Recipe, 'title' | 'variantNote' | 'client'>) {
+  return [r.title, r.client ? `${r.client.firstName} ${r.client.lastName.charAt(0)}. için` : '', r.variantNote].filter(Boolean).join(' · ');
 }
 
 /** Plan ek sayfasında çizilecek tarif (görsel: önizlemede URL, PDF'te data URI) */
@@ -71,6 +115,10 @@ export interface PrintRecipe {
   image: string | null;
   /** Plandaki etiket, ör. "Kahvaltı için öneri" */
   label: string;
+  /** Varyasyon notu (ör. "Laktozsuz") */
+  variantNote: string;
+  /** Danışana özel varyasyon mu ("Sana özel" olarak basılır) */
+  personal: boolean;
 }
 
 export const recipeImageUrl = (base: string, size: 480 | 960 = 480) => `${base}-${size}.webp`;

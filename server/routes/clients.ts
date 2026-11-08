@@ -17,6 +17,7 @@ import multer from 'multer';
 import { z } from 'zod';
 import { prisma, type Prisma } from '../lib/db';
 import { HttpError, badRequest, conflict, notFound, parse } from '../lib/http';
+import { deleteClientRecipeImages } from './recipes';
 import { audit } from '../lib/audit';
 import { decryptBuffer, decryptJson, decryptString, encryptBuffer, encryptJson, encryptString } from '../lib/crypto';
 import { PRIVATE_UPLOADS, sniffMime } from '../lib/storage';
@@ -230,6 +231,8 @@ clientsRouter.delete('/:id', canDelete, async (req, res) => {
   const id = idParam(req);
   await getClientOr404(id);
   const files = await prisma.clientFile.findMany({ where: { clientId: id }, select: { storedName: true } });
+  // Kişiye özel tarif varyasyonları cascade ile silinir; fotoğraf dosyaları önceden kaldırılır
+  const recipesRemoved = await deleteClientRecipeImages(id);
   await prisma.$transaction([
     prisma.appointment.updateMany({
       where: { clientId: id },
@@ -239,7 +242,7 @@ clientsRouter.delete('/:id', canDelete, async (req, res) => {
     prisma.client.delete({ where: { id } }), // notlar, ölçümler, dosya kayıtları cascade ile silinir
   ]);
   await Promise.all(files.map((f) => fs.rm(path.join(PRIVATE_UPLOADS, path.basename(f.storedName)), { force: true })));
-  await audit(req, 'client.deleted', 'client', id, { filesRemoved: files.length });
+  await audit(req, 'client.deleted', 'client', id, { filesRemoved: files.length, recipesRemoved });
   res.json({ ok: true });
 });
 

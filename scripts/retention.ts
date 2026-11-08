@@ -25,6 +25,7 @@ import { DateTime } from 'luxon';
 import { prisma } from '../server/lib/db';
 import { PRIVATE_UPLOADS } from '../server/lib/storage';
 import { getSetting } from '../server/services/settings';
+import { deleteClientRecipeImages } from '../server/routes/recipes';
 
 const dryRun = process.argv.includes('--dry-run');
 const purgeAudit = process.argv.includes('--purge-audit-logs');
@@ -73,6 +74,8 @@ async function main() {
   if (dryRun) return;
 
   for (const c of due) {
+    // Kişiye özel tarif varyasyonları danışanla birlikte (cascade) silinir; önce fotoğraf dosyaları
+    await deleteClientRecipeImages(c.id);
     await prisma.$transaction(async (tx) => {
       const appts = await tx.appointment.findMany({ where: { clientId: c.id }, select: { id: true } });
       const apptIds = appts.map((a) => a.id);

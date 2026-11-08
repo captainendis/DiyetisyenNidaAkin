@@ -12,6 +12,8 @@ const ServicesPage = lazy(() => import('@/pages/ServicesPage'));
 const ServiceDetailPage = lazy(() => import('@/pages/ServiceDetailPage'));
 const BlogListPage = lazy(() => import('@/pages/BlogListPage'));
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'));
+const RecipesListPage = lazy(() => import('@/pages/RecipesListPage'));
+const RecipePage = lazy(() => import('@/pages/RecipePage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AppointmentPage = lazy(() => import('@/pages/AppointmentPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
@@ -62,6 +64,8 @@ export const router = createBrowserRouter([
       { path: 'beslenme-rehberi', element: s(<BlogListPage />) },
       { path: 'beslenme-rehberi/kategori/:category', element: s(<BlogListPage />) },
       { path: 'beslenme-rehberi/:slug', element: s(<BlogPostPage />) },
+      { path: 'tarifler', element: s(<RecipesListPage />) },
+      { path: 'tarifler/:slug', element: s(<RecipePage />) },
       { path: 'iletisim', element: s(<ContactPage />) },
       { path: 'randevu', element: s(<AppointmentPage />) },
       { path: 'kvkk-aydinlatma-metni', element: s(<LegalPage doc="kvkk" />) },

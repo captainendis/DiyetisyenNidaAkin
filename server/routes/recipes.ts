@@ -3,20 +3,24 @@
 
 /**
  * Tarif kütüphanesi (/api/recipes). Tarifler beslenme planlarına ek sayfa olarak eklendiği için
- * planlarla aynı izinleri kullanır (clinical:read / clinical:write); kendileri sağlık verisi içermez.
+ * planlarla aynı izinleri kullanır (clinical:read / clinical:write).
+ *  - Yayın: yalnızca "isPublished" işaretli ve danışana bağlı OLMAYAN tarifler sitede görünür (/api/public/recipes).
+ *  - Varyasyon: parentId ana tarifi gösterir (her zaman kök tarife bağlanır); clientId doluysa kişiye özeldir,
+ *    yayınlanamaz ve danışan silinince birlikte silinir.
  * Fotoğraflar meta verisi silinerek /uploads/public/recipes altına WebP olarak yazılır.
  */
 import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
-import { prisma, type Recipe as RecipeRow } from '../lib/db';
+import { prisma, type Prisma } from '../lib/db';
 import { audit } from '../lib/audit';
 import { badRequest, HttpError, notFound, parse } from '../lib/http';
 import { sniffMime } from '../lib/storage';
 import { requirePermission } from '../auth/session';
-import { deleteRecipeImage, processRecipeImage, recipeImageDataUri } from '../services/images';
-import { RECIPE_CATEGORIES, recipeInputSchema, type PrintRecipe, type Recipe } from '../../shared/recipe';
+import { copyRecipeImage, deleteRecipeImage, processRecipeImage, recipeImageDataUri } from '../services/images';
+import { RECIPE_CATEGORIES, recipeCreateSchema, recipeInputSchema, type PrintRecipe, type Recipe, type RecipeInput } from '../../shared/recipe';
 import type { NutritionPlanData } from '../../shared/plan';
+import { slugify } from '../../shared/text';
 
 export const recipesRouter = Router();
 const read = requirePermission('clinical:read');
@@ -24,7 +28,14 @@ const write = requirePermission('clinical:write');
 
 const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
 
-export function toRecipe(r: RecipeRow): Recipe {
+const include = {
+  parent: { select: { id: true, title: true } },
+  client: { select: { id: true, firstName: true, lastName: true } },
+  _count: { select: { variants: true } },
+} satisfies Prisma.RecipeInclude;
+type Row = Prisma.RecipeGetPayload<{ include: typeof include }>;
+
+export function toRecipe(r: Row): Recipe {
   return {
     id: r.id,
     title: r.title,
@@ -37,7 +48,16 @@ export function toRecipe(r: RecipeRow): Recipe {
     ingredients: strings(r.ingredients),
     steps: strings(r.steps),
     tip: r.tip,
+    isPublished: r.isPublished,
+    variantNote: r.variantNote,
+    clientId: r.clientId,
     imageBase: r.imageBase,
+    slug: r.slug,
+    publishedAt: r.publishedAt?.toISOString() ?? null,
+    parentId: r.parentId,
+    parent: r.parent,
+    client: r.client,
+    variantCount: r._count.variants,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
   };
@@ -48,32 +68,86 @@ export async function resolvePlanRecipes(plan: NutritionPlanData): Promise<Print
   const items = plan.recipes?.items ?? [];
   if (!items.length) return [];
   const rows = await prisma.recipe.findMany({ where: { id: { in: items.map((i) => i.recipeId) } } });
-  const byId = new Map(rows.map((r) => [r.id, toRecipe(r)]));
+  const byId = new Map(rows.map((r) => [r.id, r]));
   const out: PrintRecipe[] = [];
   for (const it of items) {
     const r = byId.get(it.recipeId);
     if (!r) continue;
-    const { id: _id, imageBase, createdAt: _c, updatedAt: _u, ...rest } = r;
-    out.push({ ...rest, label: it.label, image: await recipeImageDataUri(imageBase) });
+    out.push({
+      title: r.title,
+      category: r.category,
+      summary: r.summary,
+      servings: r.servings,
+      prepMinutes: r.prepMinutes,
+      cookMinutes: r.cookMinutes,
+      kcal: r.kcal,
+      ingredients: strings(r.ingredients),
+      steps: strings(r.steps),
+      tip: r.tip,
+      variantNote: r.variantNote,
+      personal: !!r.clientId,
+      label: it.label,
+      image: await recipeImageDataUri(r.imageBase),
+    });
   }
   return out;
 }
 
+/** Danışan silinmeden önce: kişiye özel tariflerin fotoğraf dosyalarını kaldırır (kayıtlar cascade ile silinir) */
+export async function deleteClientRecipeImages(clientId: string) {
+  const rows = await prisma.recipe.findMany({ where: { clientId }, select: { imageBase: true } });
+  await Promise.all(rows.map((r) => deleteRecipeImage(r.imageBase)));
+  return rows.length;
+}
+
 async function load(id: string) {
-  const r = await prisma.recipe.findUnique({ where: { id } });
+  const r = await prisma.recipe.findUnique({ where: { id }, include });
   if (!r) throw notFound('Tarif bulunamadı');
   return r;
 }
 
+async function uniqueSlug(title: string, ignoreId?: string) {
+  const base = slugify(title).slice(0, 70) || 'tarif';
+  for (let i = 1; ; i++) {
+    const slug = i === 1 ? base : `${base}-${i}`;
+    const hit = await prisma.recipe.findUnique({ where: { slug }, select: { id: true } });
+    if (!hit || hit.id === ignoreId) return slug;
+  }
+}
+
+/** Ortak kurallar: danışan var mı, kişiye özel tarif yayınlanamaz */
+async function validateRelations(body: Pick<RecipeInput, 'clientId' | 'isPublished'>) {
+  if (body.clientId) {
+    const c = await prisma.client.findUnique({ where: { id: body.clientId }, select: { id: true } });
+    if (!c) throw notFound('Danışan bulunamadı');
+    if (body.isPublished) {
+      throw new HttpError(422, 'VALIDATION_ERROR', 'Kişiye özel tarifler web sitesinde yayınlanamaz', {
+        fields: { isPublished: 'Kişiye özel tarifler web sitesinde yayınlanamaz. Önce danışan bağlantısını kaldırın.' },
+      });
+    }
+  }
+}
+
+const fields = (b: RecipeInput) => ({
+  title: b.title, category: b.category, summary: b.summary, servings: b.servings, prepMinutes: b.prepMinutes,
+  cookMinutes: b.cookMinutes, kcal: b.kcal, ingredients: b.ingredients, steps: b.steps, tip: b.tip,
+  variantNote: b.variantNote, clientId: b.clientId, isPublished: b.isPublished,
+});
+
 recipesRouter.get('/', read, async (req, res) => {
-  const q = parse(z.object({ q: z.string().trim().max(80).optional(), category: z.enum(RECIPE_CATEGORIES).optional() }), req.query);
+  const q = parse(
+    z.object({ q: z.string().trim().max(80).optional(), category: z.enum(RECIPE_CATEGORIES).optional(), clientId: z.string().max(40).optional() }),
+    req.query,
+  );
   const rows = await prisma.recipe.findMany({
     where: {
       ...(q.category ? { category: q.category } : {}),
+      ...(q.clientId ? { clientId: q.clientId } : {}),
       ...(q.q ? { OR: [{ title: { contains: q.q, mode: 'insensitive' as const } }, { summary: { contains: q.q, mode: 'insensitive' as const } }] } : {}),
     },
     orderBy: [{ updatedAt: 'desc' }],
     take: 500,
+    include,
   });
   res.json({ items: rows.map(toRecipe) });
 });
@@ -83,25 +157,56 @@ recipesRouter.get('/:id', read, async (req, res) => {
 });
 
 recipesRouter.post('/', write, async (req, res) => {
-  const body = parse(recipeInputSchema, req.body);
-  const r = await prisma.recipe.create({ data: { ...body, createdById: req.user!.id } });
-  await audit(req, 'recipe.created', 'recipe', r.id);
+  const body = parse(recipeCreateSchema, req.body);
+  await validateRelations(body);
+  let parentId: string | null = null;
+  let imageBase: string | null = null;
+  if (body.parentId) {
+    const parent = await prisma.recipe.findUnique({ where: { id: body.parentId }, select: { id: true, parentId: true, imageBase: true } });
+    if (!parent) throw notFound('Ana tarif bulunamadı');
+    parentId = parent.parentId ?? parent.id; // varyasyonun varyasyonu da kök tarife bağlanır
+    if (body.copyImage) imageBase = await copyRecipeImage(parent.imageBase);
+  }
+  const r = await prisma.recipe.create({
+    data: {
+      ...fields(body),
+      parentId,
+      imageBase,
+      createdById: req.user!.id,
+      ...(body.isPublished ? { slug: await uniqueSlug(body.title), publishedAt: new Date() } : {}),
+    },
+    include,
+  });
+  await audit(req, parentId ? 'recipe.variant_created' : 'recipe.created', 'recipe', r.id, { parentId, personal: !!r.clientId });
+  if (r.isPublished) await audit(req, 'recipe.published', 'recipe', r.id);
   res.status(201).json({ recipe: toRecipe(r) });
 });
 
 recipesRouter.patch('/:id', write, async (req, res) => {
   const body = parse(recipeInputSchema, req.body);
   const existing = await load(String(req.params.id));
-  const r = await prisma.recipe.update({ where: { id: existing.id }, data: body });
+  await validateRelations(body);
+  const publishing = body.isPublished && !existing.isPublished;
+  const r = await prisma.recipe.update({
+    where: { id: existing.id },
+    data: {
+      ...fields(body),
+      // Adres ilk yayında atanır ve sonra değişmez (paylaşılan bağlantılar kırılmasın)
+      ...(publishing ? { slug: existing.slug ?? (await uniqueSlug(body.title, existing.id)), publishedAt: existing.publishedAt ?? new Date() } : {}),
+    },
+    include,
+  });
   await audit(req, 'recipe.updated', 'recipe', r.id);
+  if (publishing) await audit(req, 'recipe.published', 'recipe', r.id);
+  if (!body.isPublished && existing.isPublished) await audit(req, 'recipe.unpublished', 'recipe', r.id);
   res.json({ recipe: toRecipe(r) });
 });
 
 recipesRouter.delete('/:id', write, async (req, res) => {
   const existing = await load(String(req.params.id));
-  await prisma.recipe.delete({ where: { id: existing.id } });
+  await prisma.recipe.delete({ where: { id: existing.id } }); // varyasyonlar kalır, ana tarif bağlantısı boşalır
   await deleteRecipeImage(existing.imageBase);
-  await audit(req, 'recipe.deleted', 'recipe', existing.id);
+  await audit(req, 'recipe.deleted', 'recipe', existing.id, { variants: existing._count.variants });
   res.json({ ok: true });
 });
 
@@ -130,7 +235,7 @@ recipesRouter.post('/:id/image', write, (req, res, next) => {
     if ((e as Error).message === 'TOO_SMALL') throw badRequest('Fotoğraf çok küçük. En az 300×225 piksel olmalı; mümkünse 1200 piksel ve üzeri yükleyin.');
     throw badRequest('Fotoğraf işlenemedi. Farklı bir dosya deneyin.');
   }
-  const r = await prisma.recipe.update({ where: { id: existing.id }, data: { imageBase: base } });
+  const r = await prisma.recipe.update({ where: { id: existing.id }, data: { imageBase: base }, include });
   await deleteRecipeImage(existing.imageBase);
   await audit(req, 'recipe.image_uploaded', 'recipe', r.id);
   res.status(201).json({ recipe: toRecipe(r) });
@@ -138,7 +243,7 @@ recipesRouter.post('/:id/image', write, (req, res, next) => {
 
 recipesRouter.delete('/:id/image', write, async (req, res) => {
   const existing = await load(String(req.params.id));
-  const r = await prisma.recipe.update({ where: { id: existing.id }, data: { imageBase: null } });
+  const r = await prisma.recipe.update({ where: { id: existing.id }, data: { imageBase: null }, include });
   await deleteRecipeImage(existing.imageBase);
   await audit(req, 'recipe.image_removed', 'recipe', r.id);
   res.json({ recipe: toRecipe(r) });

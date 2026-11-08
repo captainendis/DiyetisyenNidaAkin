@@ -8,6 +8,7 @@ import { prisma } from '../lib/db';
 import { notFound, parse } from '../lib/http';
 import { getSettings } from '../services/settings';
 import { PUBLIC_SETTINGS_KEYS } from '../../shared/settings';
+import { RECIPE_CATEGORIES, type PublicRecipe, type PublicRecipeCard } from '../../shared/recipe';
 
 export const publicContentRouter = Router();
 
@@ -22,15 +23,16 @@ function serializeService<T extends { priceCents: number | null; showPrice: bool
 }
 
 publicContentRouter.get('/site', async (_req, res) => {
-  const [settings, services, faqs, categories] = await Promise.all([
+  const [settings, services, faqs, categories, recipeCount] = await Promise.all([
     getSettings(PUBLIC_SETTINGS_KEYS),
     prisma.service.findMany({ where: { isPublished: true }, orderBy: { sortOrder: 'asc' }, select: publicService }),
     prisma.faq.findMany({ where: { isPublished: true }, orderBy: { sortOrder: 'asc' }, select: { id: true, question: true, answer: true } }),
     prisma.blogCategory.findMany({ orderBy: { sortOrder: 'asc' }, select: { id: true, slug: true, name: true } }),
+    prisma.recipe.count({ where: PUBLISHED_RECIPE }),
   ]);
   // Panelde yapılan değişiklikler yenilemede hemen görünsün
   res.set('Cache-Control', 'no-cache');
-  res.json({ settings, services: services.map(serializeService), faqs, categories });
+  res.json({ settings, services: services.map(serializeService), faqs, categories, recipeCount });
 });
 
 publicContentRouter.get('/services/:slug', async (req, res) => {
@@ -86,4 +88,55 @@ publicContentRouter.get('/blog/:slug', async (req, res) => {
     select: postCard,
   });
   res.json({ post, related });
+});
+
+// ───────────── Tarifler ─────────────
+// Yalnızca yayınlanmış ve danışana bağlı OLMAYAN tarifler; iç alanlar (danışan, ana tarif, yazar) asla dönmez.
+
+const PUBLISHED_RECIPE = { isPublished: true, clientId: null, slug: { not: null } } as const;
+
+const recipeCard = {
+  slug: true, title: true, category: true, summary: true, variantNote: true, servings: true, prepMinutes: true,
+  cookMinutes: true, kcal: true, imageBase: true, publishedAt: true,
+} as const;
+
+const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+const toCard = (r: { slug: string | null; publishedAt: Date | null } & Omit<PublicRecipeCard, 'slug' | 'publishedAt'>): PublicRecipeCard => ({
+  ...r,
+  slug: r.slug!,
+  publishedAt: r.publishedAt?.toISOString() ?? null,
+});
+
+publicContentRouter.get('/recipes', async (req, res) => {
+  const q = parse(z.object({ category: z.enum(RECIPE_CATEGORIES).optional() }), req.query);
+  const rows = await prisma.recipe.findMany({
+    where: { ...PUBLISHED_RECIPE, ...(q.category ? { category: q.category } : {}) },
+    orderBy: { publishedAt: 'desc' },
+    take: 200,
+    select: recipeCard,
+  });
+  const counts = await prisma.recipe.groupBy({ by: ['category'], where: PUBLISHED_RECIPE, _count: true });
+  res.json({ recipes: rows.map(toCard), counts: Object.fromEntries(counts.map((c) => [c.category, c._count])) });
+});
+
+publicContentRouter.get('/recipes/:slug', async (req, res) => {
+  const r = await prisma.recipe.findFirst({
+    where: { ...PUBLISHED_RECIPE, slug: req.params.slug },
+    select: { ...recipeCard, ingredients: true, steps: true, tip: true, updatedAt: true },
+  });
+  if (!r) throw notFound('Tarif bulunamadı');
+  const related = await prisma.recipe.findMany({
+    where: { ...PUBLISHED_RECIPE, slug: { not: r.slug }, category: r.category },
+    orderBy: { publishedAt: 'desc' },
+    take: 3,
+    select: recipeCard,
+  });
+  const recipe: PublicRecipe = {
+    ...toCard(r),
+    ingredients: strings(r.ingredients),
+    steps: strings(r.steps),
+    tip: r.tip,
+    updatedAt: r.updatedAt.toISOString(),
+  };
+  res.json({ recipe, related: related.map(toCard) });
 });

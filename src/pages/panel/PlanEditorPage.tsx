@@ -147,7 +147,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
         <Card className={cn(mobileView === 'preview' && 'hidden lg:block')}>
           <fieldset disabled={!editable} className="min-w-0">
-            <PlanEditorForm data={data} set={set} library={library.data?.items} onLibraryChange={addToLibrary} />
+            <PlanEditorForm data={data} set={set} library={library.data?.items} onLibraryChange={addToLibrary} client={plan.client} />
           </fieldset>
         </Card>
         <div className={cn('lg:sticky lg:top-24 lg:self-start', mobileView === 'form' && 'hidden lg:block')}>

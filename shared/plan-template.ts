@@ -37,6 +37,7 @@ function renderRecipe(r: PrintRecipe) {
         <div class="r-head">
           <p class="r-label">${esc(r.label || RECIPE_CATEGORY_LABEL[r.category] || '')}</p>
           <h2 class="r-title">${esc(r.title)}</h2>
+          ${r.variantNote || r.personal ? `<p class="r-var">${r.personal ? '<b>Sana özel.</b> ' : ''}${esc(r.variantNote)}</p>` : ''}
           ${meta.length ? `<p class="r-meta">${meta.map((m) => `<span>${esc(m)}</span>`).join('')}</p>` : ''}
           ${r.summary ? `<p class="r-sum">${esc(r.summary)}</p>` : ''}
         </div>
@@ -182,6 +183,8 @@ h1 { font-size: calc(30pt * var(--s)); line-height: 1.02; font-weight: 800; lett
 .r-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .r-label { display: inline-block; background: ${t.accent}; color: ${t.dark}; border-radius: 99px; padding: calc(0.7mm * var(--s)) calc(2.6mm * var(--s)); font-size: calc(8pt * var(--s)); font-weight: 800; letter-spacing: 0.02em; }
 .r-title { font-size: calc(17pt * var(--s)); font-weight: 800; line-height: 1.12; letter-spacing: -0.01em; margin-top: calc(2mm * var(--s)); }
+.r-var { font-size: calc(9.4pt * var(--s)); font-weight: 600; color: ${t.ink}; margin-top: calc(1.2mm * var(--s)); }
+.r-var b { font-weight: 800; color: ${t.dark}; background: ${t.chip}; border-radius: 1.2mm; padding: 0 1.4mm; }
 .r-meta { display: flex; flex-wrap: wrap; gap: calc(1.2mm * var(--s)) calc(1.6mm * var(--s)); margin-top: calc(2.2mm * var(--s)); }
 .r-meta span { background: ${t.chip}; border-radius: 1.5mm; padding: calc(0.6mm * var(--s)) calc(2mm * var(--s)); font-size: calc(8.4pt * var(--s)); font-weight: 600; color: ${t.muted}; }
 .r-sum { font-size: calc(9.8pt * var(--s)); line-height: 1.45; color: ${t.muted}; font-weight: 500; margin-top: calc(2.4mm * var(--s)); }
