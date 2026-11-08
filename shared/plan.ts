@@ -9,6 +9,8 @@ import { z } from 'zod';
 
 const line = z.string().trim().max(120);
 
+export const MAX_PLAN_RECIPES = 8;
+
 export const planMealSchema = z.object({
   /** "06.30" gibi serbest saat metni */
   time: z.string().trim().max(12),
@@ -43,6 +45,13 @@ export const nutritionPlanDataSchema = z.object({
   footerNote: z.string().trim().max(160),
   /** İmza satırı (ör. "Dyt. Nida Akın, 05xx xxx xx xx") */
   signature: z.string().trim().max(80),
+  /** Tarif kütüphanesinden eklenen tarifler — planın arkasına ek sayfa(lar) olarak basılır */
+  recipes: z
+    .object({
+      title: z.string().trim().max(60),
+      items: z.array(z.object({ recipeId: z.string().min(1).max(40), label: z.string().trim().max(60) })).max(MAX_PLAN_RECIPES, `En fazla ${MAX_PLAN_RECIPES} tarif eklenebilir`),
+    })
+    .default({ title: 'Tarif önerileri', items: [] }),
 });
 
 export type NutritionPlanData = z.infer<typeof nutritionPlanDataSchema>;
@@ -97,6 +106,7 @@ export function emptyPlan(signature = 'Dyt. Nida Akın'): NutritionPlanData {
     portions: { title: '1 porsiyon meyve', items: [] },
     footerNote: 'Bir öğün kaçarsa gün bozulmaz. Hedef kısa süreli değil, sürdürülebilir bir değişim.',
     signature,
+    recipes: { title: 'Tarif önerileri', items: [] },
   };
 }
 
@@ -161,5 +171,6 @@ export function samplePlanTemplate(signature = 'Dyt. Nida Akın'): NutritionPlan
     },
     footerNote: 'Bir öğün kaçarsa gün bozulmaz. Hedef kısa süreli değil, sürdürülebilir bir değişim.',
     signature,
+    recipes: { title: 'Tarif önerileri', items: [] },
   };
 }

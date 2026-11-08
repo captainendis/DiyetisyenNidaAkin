@@ -4,7 +4,7 @@
 /**
  * SEO uçları ve üretimde SPA servisi
  *  - GET /robots.txt   : /panel ve /api taranmaz
- *  - GET /sitemap.xml  : statik sayfalar + yayınlanmış hizmetler + yayınlanmış blog yazıları
+ *  - GET /sitemap.xml  : statik sayfalar + yayınlanmış hizmetler, blog yazıları ve tarifler
  *  - Üretimde (NODE_ENV=production): dist/ statik dosyaları + her rota için dist/index.html'e
  *    <!--seo:start--> … <!--seo:end--> arasına title/description/canonical/OG/Twitter/JSON-LD enjeksiyonu.
  *    Bilinmeyen rotalar 404 durum koduyla (SPA yine çizilir) döner; /panel rotaları noindex.
@@ -17,12 +17,14 @@ import { prisma } from './lib/db';
 import { env } from './lib/env';
 import { getSettings } from './services/settings';
 import { DEFAULT_BLOG_CATEGORIES } from '../shared/constants';
+import { RECIPE_CATEGORY_LABEL, recipeImageUrl } from '../shared/recipe';
 
 const STATIC_ROUTES: { path: string; priority: string; changefreq: string }[] = [
   { path: '/', priority: '1.0', changefreq: 'weekly' },
   { path: '/hakkimda', priority: '0.8', changefreq: 'monthly' },
   { path: '/hizmetler', priority: '0.9', changefreq: 'monthly' },
   { path: '/beslenme-rehberi', priority: '0.8', changefreq: 'weekly' },
+  { path: '/tarifler', priority: '0.8', changefreq: 'weekly' },
   { path: '/iletisim', priority: '0.7', changefreq: 'monthly' },
   { path: '/randevu', priority: '0.7', changefreq: 'monthly' },
   { path: '/kvkk-aydinlatma-metni', priority: '0.2', changefreq: 'yearly' },
@@ -35,6 +37,7 @@ const STATIC_META: Record<string, { title?: string; description?: string }> = {
   '/hakkimda': { title: 'Hakkımda', description: 'Diyetisyen Nida Akın’ın danışmanlık yaklaşımı ve beslenme felsefesi.' },
   '/hizmetler': { title: 'Hizmetler', description: 'Kişiye özel beslenme danışmanlığı, kilo yönetimi, sağlıklı yaşam beslenmesi ve beslenme takibi.' },
   '/beslenme-rehberi': { title: 'Beslenme Rehberi', description: 'Sağlıklı beslenme ve günlük alışkanlıklar üzerine genel bilgilendirme yazıları. İçerikler tıbbi tavsiye yerine geçmez.' },
+  '/tarifler': { title: 'Tarifler', description: 'Diyetisyen Nida Akın’ın önerdiği pratik ve dengeli tarifler. Genel öneridir; kişiye özel planın yerine geçmez.' },
   '/iletisim': { title: 'İletişim', description: 'Diyetisyen Nida Akın ile iletişime geçin ya da çevrim içi randevu talebi oluşturun.' },
   '/randevu': { title: 'Randevu Talebi', description: 'Diyetisyen Nida Akın ile görüşmek için çevrim içi randevu talebi oluşturun.' },
   '/kvkk-aydinlatma-metni': { title: 'KVKK Aydınlatma Metni', description: 'Kişisel verilerin işlenmesine ilişkin aydınlatma metni (taslak).' },
@@ -182,6 +185,46 @@ export async function resolveMeta(pathname: string): Promise<PageMeta> {
       };
     }
   }
+  if ((m = clean.match(/^\/tarifler\/([a-z0-9-]+)$/))) {
+    const r = await prisma.recipe.findFirst({ where: { slug: m[1], isPublished: true, clientId: null } });
+    if (r) {
+      const ingredients = Array.isArray(r.ingredients) ? (r.ingredients as unknown[]).filter((x): x is string => typeof x === 'string') : [];
+      const steps = Array.isArray(r.steps) ? (r.steps as unknown[]).filter((x): x is string => typeof x === 'string') : [];
+      const image = r.imageBase ? `${env.publicSiteUrl}${recipeImageUrl(r.imageBase, 960)}` : null;
+      const description = r.summary || `${r.title} tarifi: ${ingredients.slice(0, 4).join(', ')}.`;
+      const iso = (min: number | null) => (min ? `PT${min}M` : undefined);
+      const total = (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0);
+      return {
+        title: t(`${r.title} tarifi`),
+        description,
+        canonicalPath: clean,
+        image,
+        type: 'article',
+        jsonLd: [
+          breadcrumb([{ name: 'Tarifler', path: '/tarifler' }, { name: r.title, path: clean }]),
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Recipe',
+            name: r.title,
+            description,
+            inLanguage: 'tr-TR',
+            recipeCategory: RECIPE_CATEGORY_LABEL[r.category],
+            recipeCuisine: 'Türk',
+            ...(image ? { image: [image] } : {}),
+            ...(r.servings ? { recipeYield: `${r.servings} porsiyon` } : {}),
+            ...(iso(r.prepMinutes) ? { prepTime: iso(r.prepMinutes) } : {}),
+            ...(iso(r.cookMinutes) ? { cookTime: iso(r.cookMinutes) } : {}),
+            ...(total ? { totalTime: `PT${total}M` } : {}),
+            ...(r.kcal ? { nutrition: { '@type': 'NutritionInformation', calories: `${r.kcal} kcal` } } : {}),
+            recipeIngredient: ingredients,
+            recipeInstructions: steps.map((text, i) => ({ '@type': 'HowToStep', position: i + 1, text })),
+            ...(r.publishedAt ? { datePublished: r.publishedAt.toISOString() } : {}),
+            author: { '@type': 'Person', name: 'Nida Akın' },
+          },
+        ],
+      };
+    }
+  }
   return { title: t('Sayfa bulunamadı'), description: seo.defaultDescription, canonicalPath: clean, noindex: true, status: 404 };
 }
 
@@ -212,14 +255,16 @@ export function renderHead(meta: PageMeta) {
 }
 
 async function buildSitemap() {
-  const [services, posts] = await Promise.all([
+  const [services, posts, recipes] = await Promise.all([
     prisma.service.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true }, orderBy: { sortOrder: 'asc' } }),
     prisma.blogPost.findMany({ where: { status: 'PUBLISHED' }, select: { slug: true, updatedAt: true }, orderBy: { publishedAt: 'desc' } }),
+    prisma.recipe.findMany({ where: { isPublished: true, clientId: null, slug: { not: null } }, select: { slug: true, updatedAt: true }, orderBy: { publishedAt: 'desc' } }),
   ]);
   const entries = [
     ...STATIC_ROUTES.map((r) => ({ loc: r.path, priority: r.priority, changefreq: r.changefreq, lastmod: null as Date | null })),
     ...services.map((s) => ({ loc: `/hizmetler/${s.slug}`, priority: '0.7', changefreq: 'monthly', lastmod: s.updatedAt })),
     ...posts.map((p) => ({ loc: `/beslenme-rehberi/${p.slug}`, priority: '0.6', changefreq: 'monthly', lastmod: p.updatedAt })),
+    ...recipes.map((r) => ({ loc: `/tarifler/${r.slug}`, priority: '0.6', changefreq: 'monthly', lastmod: r.updatedAt })),
   ];
   const body = entries
     .map(

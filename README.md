@@ -133,7 +133,7 @@ npm run db:seed        # temel verileri yazar; mevcut içeriği EZMEZ, tekrar ç
 Tablolar: `users`, `roles`, `sessions`, `password_reset_tokens`, `clients`, `appointments`,
 `appointment_status_history`, `services`, `availability_rules`, `blocked_dates`, `notifications`,
 `notification_deliveries`, `consultation_notes`, `measurements`, `client_files`, `blog_categories`,
-`blog_posts`, `faqs`, `media_assets`, `website_settings`, `nutrition_plans`, `audit_logs`.
+`blog_posts`, `faqs`, `media_assets`, `website_settings`, `nutrition_plans`, `recipes`, `audit_logs`.
 
 `appointments_no_overlap_confirmed` adlı PostgreSQL **exclusion constraint**, onaylanmış/tamamlanmış randevuların
 zaman aralıklarının çakışmasını veritabanı seviyesinde de engeller (uygulama katmanındaki kilitli kontrolün yedeği).
@@ -209,6 +209,57 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   görüntüleme ve PDF indirme denetim kaydına yazılır.
 - Sunucuda Chromium gerekir: Docker imajında otomatik kurulur; diğer ortamlarda `CHROMIUM_PATH` ile yolu verin
   (boşsa Playwright'ın kurulu tarayıcısı aranır).
+
+## Tarifler ve plan ek sayfası
+
+**Panel → Tarifler** — diyetisyenin fotoğraflı tarif kütüphanesi.
+
+- Tarif; ad, kategori (Kahvaltı, Ara öğün, Ana yemek, Çorba, Salata, Tatlı, İçecek), kısa açıklama, porsiyon,
+  hazırlık/pişirme süresi, porsiyon başına yaklaşık kalori, malzemeler (satır satır), adım adım hazırlanış ve isteğe bağlı
+  ipucundan oluşur. Kategori süzgeci ve ad/malzeme araması vardır.
+- **Fotoğraf:** sunucuda döndürülür, **konum (GPS) ve cihaz bilgileri silinir**, 4:3 olarak (dikkat çeken bölge korunarak)
+  kırpılır ve 480 px (panel/önizleme) + 960 px (baskı) WebP olarak `storage/public/recipes/` altına yazılır.
+- **Plana ekleme:** Plan düzenleyicideki **“Tarif önerileri (ek sayfa)”** bölümünden kütüphaneden çoklu seçimle en fazla
+  8 tarif eklenir (seçim penceresinden yeni tarif de oluşturulabilir). Her tarifin danışanın göreceği bir etiketi vardır;
+  plandaki öğün adına göre otomatik önerilir (“Kahvaltı için öneri”, “Ara öğün için öneri” …) ve değiştirilebilir. Sıra
+  değiştirilebilir, ek sayfa başlığı düzenlenebilir.
+- **PDF:** 1. sayfa plan olarak kalır (altyazıda “Tarif önerileri sonraki sayfada.” notu çıkar); tarifler fotoğraflarıyla
+  ek A4 sayfalara **otomatik dağıtılır** (sığdığı kadar sayfa başına, genelde 2 tarif). Tek başına sayfayı aşan uzun bir
+  tarif %70'e kadar küçültülür; yine sığmazsa önizlemede ve indirmede uyarı verilir. Canlı önizleme tüm sayfaları gösterir.
+- Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planların PDF'i güncel hâliyle basılır; silinen tarif
+  planlarda “silinmiş” olarak işaretlenir ve PDF'e basılmaz.
+- Tarifler şifrelenmez; erişim planlarla aynı izinlerle (klinik yetkili roller) sınırlıdır ve ekleme/düzenleme/silme,
+  yayınlama/yayından kaldırma denetim kaydına yazılır.
+
+### Web sitesinde yayınlama
+
+- Tarif formundaki **“Web sitesinde yayınla”** anahtarı açık olan tarifler sitede **/tarifler** (kategori süzgeçli liste)
+  ve **/tarifler/&lt;adres&gt;** (malzemeler, adımlar, künye, ipucu, “genel öneridir” uyarısı) altında görünür.
+  Diğerleri yalnızca panelde ve planlarda kalır.
+- Yayınlanmış en az bir tarif varsa üst menüye ve alt bilgiye **“Tarifler”** bağlantısı kendiliğinden eklenir; ana sayfada
+  “Süreç” bölümünden sonra **“Mutfaktan”** şeridi görünür (yayınlanmış tarif yoksa hiç çizilmez).
+- **Ana sayfada hangi tariflerin görüneceği panelden seçilir:** Panel → Tarifler'in üstündeki **“Ana sayfada gösterilenler”**
+  kutusundan (ekle / çıkar) ya da tarif formundaki **“Ana sayfada göster”** anahtarıyla. En fazla 3 tarif, eklenme sırasıyla
+  görünür; yalnızca yayındaki ve kişiye özel olmayan tarifler seçilebilir, yayından kaldırılan tarif ana sayfadan da çıkar.
+  Hiç seçim yoksa son yayınlanan 3 tarif otomatik gösterilir.
+- Adres (slug) ilk yayında başlıktan üretilir ve sonradan **değişmez**; başlık düzeltilse de paylaşılan bağlantılar kırılmaz.
+  Yayından kaldırılan tarifin sayfası 404 döner ve site haritasından çıkar.
+- SEO: site haritasında yer alır; sunucu tarafı meta + **Schema.org `Recipe`** (malzemeler, adımlar, süreler, porsiyon,
+  kalori, görsel) yazılır. Herkese açık uç danışan, ana tarif veya yazar bilgisi döndürmez.
+
+### Varyasyonlar ve kişiye özel tarifler
+
+- Bir tarifi açıp **“Varyasyon oluştur”** ile kopyasından yeni bir tarif hazırlanır (fotoğraf da kopyalanır); kısa bir
+  **varyasyon notu** (“Laktozsuz süt ve peynirle”) yazılır. Ana tarif değişmez; varyasyonun varyasyonu da kök tarife bağlanır.
+- Varyasyon bir **danışana bağlanabilir** (kişiye özel). Kişiye özel tarifler:
+  - **asla yayınlanamaz** (sunucu reddeder),
+  - yalnızca o danışanın planlarında tarif seçicide görünür, PDF'te tarif adının altında **“Sana özel.”** notuyla basılır,
+  - danışan profilinde (Beslenme Planları sekmesi) listelenir,
+  - danışan silindiğinde (panelden veya saklama süresi betiğiyle) fotoğraflarıyla birlikte **silinir**.
+- **Plan düzenleyiciden hızlı uyarlama:** danışan planındaki bir tarifin yanındaki dal simgesi (“Ayşe için uyarla”)
+  varyasyon formunu o danışan seçili olarak açar; kaydedilince plandaki tarif bu kişiye özel versiyonla değiştirilir.
+- Panel → Tarifler'de **Tümü / Genel / Sitede yayında / Kişiye özel** sekmeleri ve kartlarda rozetler vardır;
+  `?danisan=<id>` bir danışanın, `?ana=<id>` bir tarifin varyasyonlarını süzer.
 
 ## Randevu sistemi nasıl çalışır
 
@@ -296,6 +347,8 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `POST /site-images` (görsel işleme) · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
 | Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/pdf` |
+| Tarifler | `GET/POST /api/recipes` (`?category`, `?q`, `?clientId`; POST'ta `parentId`, `copyImage`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` · `PUT /:id/featured` |
+| Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/home` · `GET /api/public/recipes/:slug` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 

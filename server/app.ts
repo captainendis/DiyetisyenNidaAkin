@@ -25,6 +25,7 @@ import { contentRouter } from './routes/content';
 import { settingsRouter } from './routes/settings';
 import { auditRouter } from './routes/audit';
 import { plansRouter } from './routes/plans';
+import { recipesRouter } from './routes/recipes';
 import { registerSeo } from './seo';
 import { PUBLIC_UPLOADS } from './lib/storage';
 
@@ -84,6 +85,7 @@ export function createApp() {
   api.use('/settings', settingsRouter);
   api.use('/audit-logs', auditRouter);
   api.use('/plans', plansRouter);
+  api.use('/recipes', recipesRouter);
   api.use((_req, _res, next) => next(new HttpError(404, 'NOT_FOUND', 'Uç nokta bulunamadı')));
   app.use('/api', api);
 

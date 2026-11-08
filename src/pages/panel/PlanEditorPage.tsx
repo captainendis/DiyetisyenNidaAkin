@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** /panel/planlar/:id — plan düzenleyici + canlı A4 önizleme */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ArrowLeft, BookmarkPlus, Download, Save, Trash2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
@@ -12,6 +12,9 @@ import { Badge, Button, Card, ErrorState, Skeleton, Tabs, useFeedback } from '@/
 import { PlanEditorForm } from '@/components/panel/plans/PlanEditorForm';
 import { PlanPreview } from '@/components/panel/plans/PlanPreview';
 import { downloadPlanPdf, type PlanDetail } from '@/components/panel/plans/api';
+import { printRecipesFor } from '@/components/panel/recipes/api';
+import type { FitResult } from '@shared/plan-template';
+import type { Recipe } from '@shared/recipe';
 import { cn } from '@/lib/format';
 import type { NutritionPlanData } from '@shared/plan';
 
@@ -29,7 +32,11 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
   const [name, setName] = useState(plan.name);
   const [saving, setSaving] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
-  const [fit, setFit] = useState<{ scale: number; fits: boolean } | null>(null);
+  const [fit, setFit] = useState<FitResult | null>(null);
+  const library = useApi(() => api.get<{ items: Recipe[] }>('/recipes'), []);
+  const printRecipes = useMemo(() => printRecipesFor(data, library.data?.items), [data, library.data]);
+  const setLibrary = library.setData;
+  const addToLibrary = useCallback((r: Recipe) => setLibrary((d) => ({ items: [r, ...(d?.items ?? []).filter((x) => x.id !== r.id)] })), [setLibrary]);
   const [mobileView, setMobileView] = useState<'form' | 'preview'>('form');
   const { can } = usePanelAuth();
   const editable = can('clinical:write');
@@ -70,7 +77,8 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
     try {
       const r = await downloadPlanPdf(plan.id);
       if (!r.fits) fb.toast({ tone: 'warning', title: 'Plan sayfaya tam sığmadı', description: 'Bazı satırları kısaltın veya bir seçeneği çıkarın.' });
-      else fb.success('PDF indirildi');
+      else if (!r.recipesFit) fb.toast({ tone: 'warning', title: 'Bir tarif sayfaya tam sığmadı', description: 'Uzun tariflerde adımları kısaltmayı deneyin.' });
+      else fb.success('PDF indirildi', r.pages > 1 ? `${r.pages} sayfa (plan + tarif önerileri)` : undefined);
     } catch (e) {
       fb.error('PDF oluşturulamadı', e instanceof ApiError ? e.message : undefined);
     } finally {
@@ -138,12 +146,12 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
         <Card className={cn(mobileView === 'preview' && 'hidden lg:block')}>
-          <fieldset disabled={!editable}>
-            <PlanEditorForm data={data} set={set} />
+          <fieldset disabled={!editable} className="min-w-0">
+            <PlanEditorForm data={data} set={set} library={library.data?.items} onLibraryChange={addToLibrary} client={plan.client} />
           </fieldset>
         </Card>
         <div className={cn('lg:sticky lg:top-24 lg:self-start', mobileView === 'form' && 'hidden lg:block')}>
-          <PlanPreview data={data} onFit={setFit} />
+          <PlanPreview data={data} recipes={printRecipes} onFit={setFit} />
           <p className={cn('mt-3 text-[0.8rem]', fit && !fit.fits ? 'font-semibold text-danger' : fit && fit.scale < 0.85 ? 'font-semibold text-[#93682a]' : 'text-panel-muted')} role="status">
             {!fit
               ? 'Önizleme hazırlanıyor…'
@@ -155,6 +163,13 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
                   ? `Tek sayfaya sığdı · yazı boyutu %${Math.round(fit.scale * 100)} olarak ayarlandı.`
                   : 'Tek sayfaya sığıyor · tam boyut.'}
           </p>
+          {fit && fit.pages > 1 && (
+            <p className={cn('mt-1 text-[0.8rem]', fit.recipesFit ? 'text-panel-muted' : 'font-semibold text-[#93682a]')}>
+              {fit.recipesFit
+                ? `Tarif önerileri ${fit.pages - 1} ek sayfaya yerleşti · toplam ${fit.pages} sayfa.`
+                : 'Bir tarif tek sayfaya sığmıyor — adımlarını veya malzeme listesini kısaltın.'}
+            </p>
+          )}
           <p className="mt-1 text-[0.75rem] text-panel-muted">PDF bu önizlemeyle aynıdır; metin vektördür, telefonda yakınlaştırınca netliğini korur.</p>
         </div>
       </div>

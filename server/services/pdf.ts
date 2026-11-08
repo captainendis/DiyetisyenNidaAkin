@@ -12,8 +12,9 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { chromium, type Browser } from 'playwright-core';
 import { env } from '../lib/env';
-import { renderPlanHtml, fitPlanToPage, MIN_SCALE } from '../../shared/plan-template';
+import { renderPlanHtml, fitPlanToPage, MIN_SCALE, RECIPE_MIN_SCALE, type FitResult } from '../../shared/plan-template';
 import type { NutritionPlanData } from '../../shared/plan';
+import type { PrintRecipe } from '../../shared/recipe';
 
 const require = createRequire(import.meta.url);
 
@@ -55,7 +56,7 @@ function getBrowser() {
 
 export class PdfUnavailableError extends Error {}
 
-export async function renderPlanPdf(plan: NutritionPlanData, title: string) {
+export async function renderPlanPdf(plan: NutritionPlanData, title: string, recipes: PrintRecipe[] = []) {
   let browser: Browser;
   try {
     browser = await getBrowser();
@@ -67,13 +68,16 @@ export async function renderPlanPdf(plan: NutritionPlanData, title: string) {
   try {
     const page = await ctx.newPage();
     await page.route('**/*', (r) => r.abort());
-    await page.setContent(renderPlanHtml(plan, { fontCss: getFontCss(), title }), { waitUntil: 'load' });
+    await page.setContent(renderPlanHtml(plan, { fontCss: getFontCss(), title, recipes }), { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
+    // Ölçüm ekranda değil baskı düzeninde yapılmalı (sayfalar arası ekran boşluğu vb. devre dışı)
+    await page.emulateMedia({ media: 'print' });
     const fit = await page.evaluate(
-      ([fn, min]) => new Function('doc', 'min', `var __name = function (f) { return f; }; return (${fn})(doc, min)`)(document, min) as { scale: number; fits: boolean },
-      [fitPlanToPage.toString(), MIN_SCALE] as const,
+      ([fn, min, rmin]) =>
+        new Function('doc', 'min', 'rmin', `var __name = function (f) { return f; }; return (${fn})(doc, min, rmin)`)(document, min, rmin) as FitResult,
+      [fitPlanToPage.toString(), MIN_SCALE, RECIPE_MIN_SCALE] as const,
     );
-    const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true, tagged: true, pageRanges: '1' });
+    const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true, tagged: true, pageRanges: `1-${fit.pages}` });
     return { pdf, ...fit };
   } finally {
     await ctx.close();

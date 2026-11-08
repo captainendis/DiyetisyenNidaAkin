@@ -61,6 +61,7 @@ model User {
   measurements       Measurement[]
   clientFiles        ClientFile[]
   nutritionPlans     NutritionPlan[]
+  recipes            Recipe[]
   createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
 
   @@map("users")
@@ -146,6 +147,7 @@ model Client {
   files             ClientFile[]
   notifications     Notification[]
   nutritionPlans    NutritionPlan[]
+  recipes           Recipe[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -423,6 +425,61 @@ model NutritionPlan {
   @@index([clientId])
   @@index([isTemplate])
   @@map("nutrition_plans")
+}
+
+enum RecipeCategory {
+  BREAKFAST
+  SNACK
+  MAIN
+  SOUP
+  SALAD
+  DESSERT
+  DRINK
+}
+
+/// Diyetisyenin tarif kütüphanesi; planlara ek sayfa olarak eklenir.
+/// Varyasyon: parentId ana tarifi gösterir. clientId doluysa kişiye özel varyasyondur — asla yayınlanmaz,
+/// danışan silinince birlikte silinir.
+model Recipe {
+  id          String         @id @default(cuid())
+  title       String
+  /// Herkese açık adres (/tarifler/<slug>); ilk yayında atanır, sonra değişmez
+  slug        String?        @unique
+  isPublished Boolean        @default(false)
+  publishedAt DateTime?      @db.Timestamptz(3)
+  /// Ana sayfadaki "Mutfaktan" şeridinde gösterilsin mi (doluysa seçilme zamanı; sıralama bu alana göre). En fazla 3.
+  featuredAt  DateTime?      @db.Timestamptz(3)
+  parentId    String?
+  parent      Recipe?        @relation("RecipeVariants", fields: [parentId], references: [id], onDelete: SetNull)
+  variants    Recipe[]       @relation("RecipeVariants")
+  clientId    String?
+  client      Client?        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  /// Varyasyonda neyin değiştiği (ör. "Laktozsuz, glutensiz ekmekle")
+  variantNote String         @default("")
+  category    RecipeCategory
+  summary     String         @default("")
+  servings    Int?
+  prepMinutes Int?
+  cookMinutes Int?
+  /// Porsiyon başına yaklaşık kcal
+  kcal        Int?
+  /// string[]
+  ingredients Json           @default("[]")
+  /// string[]
+  steps       Json           @default("[]")
+  tip         String         @default("")
+  /// /uploads/public/recipes/<id> — <base>-480.webp ve <base>-960.webp
+  imageBase   String?
+  createdById String?
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([parentId])
+  @@index([clientId])
+  @@map("recipes")
 }
 
 // ───────────────────────────── İçerik ─────────────────────────────

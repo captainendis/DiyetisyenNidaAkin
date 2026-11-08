@@ -2,10 +2,17 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Beslenme planı düzenleyici formu (kontrollü bileşen) */
-import type { ReactNode } from 'react';
-import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
+import { useId, useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
+import { ArrowDown, ArrowUp, CookingPot, GitBranch, Plus, Trash2, X } from 'lucide-react';
 import { Button, Input, Select, Switch, Textarea } from '@/components/panel/ui';
-import type { NutritionPlanData, PlanMeal } from '@shared/plan';
+import { RecipePickerModal } from '@/components/panel/recipes/RecipePickerModal';
+import { RecipeThumb } from '@/components/panel/recipes/RecipeCard';
+import { RecipeFormModal } from '@/components/panel/recipes/RecipeFormModal';
+import { recipesVisibleFor } from '@/components/panel/recipes/api';
+import type { ClientRef } from '@/components/panel/recipes/ClientPicker';
+import { MAX_PLAN_RECIPES, type NutritionPlanData, type PlanMeal } from '@shared/plan';
+import { RECIPE_CATEGORY_LABEL, RECIPE_DEFAULT_LABEL, recipeMeta, type Recipe } from '@shared/recipe';
 
 type Setter = (fn: (d: NutritionPlanData) => void) => void;
 
@@ -68,7 +75,126 @@ function MealEditor({ meal, index, count, set }: { meal: PlanMeal; index: number
   );
 }
 
-export function PlanEditorForm({ data, set }: { data: NutritionPlanData; set: Setter }) {
+function RecipesSection({ data, set, library, onLibraryChange, client }: { data: NutritionPlanData; set: Setter; library?: Recipe[]; onLibraryChange: (r: Recipe) => void; client?: ClientRef | null }) {
+  const [picking, setPicking] = useState(false);
+  /** Plandaki bir tarifi bu danışana uyarlama (varyasyon) — kaydedilince plandaki tarifin yerini alır */
+  const [adapting, setAdapting] = useState<{ index: number; recipe: Recipe } | null>(null);
+  const listId = useId();
+  const items = data.recipes.items;
+  const byId = new Map((library ?? []).map((r) => [r.id, r]));
+  const mealNames = [...new Set(data.meals.map((m) => m.name.trim()).filter(Boolean))];
+  const suggestions = [...new Set([...mealNames.map((n) => `${n} için öneri`), ...Object.values(RECIPE_DEFAULT_LABEL)])];
+  /** Kategoriye uyan bir öğün varsa onun adıyla etiketle (ör. "Kahvaltı için öneri") */
+  const labelFor = (r: Recipe) => {
+    const cat = RECIPE_CATEGORY_LABEL[r.category].toLocaleLowerCase('tr-TR');
+    const meal = mealNames.find((n) => n.toLocaleLowerCase('tr-TR').includes(cat));
+    return meal ? `${meal} için öneri` : RECIPE_DEFAULT_LABEL[r.category];
+  };
+
+  return (
+    <Section
+      title="Tarif önerileri (ek sayfa)"
+      description={client
+        ? `Kütüphaneden seçin ya da ${client.firstName} için uyarlayın; PDF'te planın arkasına fotoğraflarıyla ek sayfa olarak basılır.`
+        : "Tarif kütüphanesinden seçin; PDF'te planın arkasına fotoğraflarıyla ek sayfa olarak basılır."}
+      action={
+        items.length < MAX_PLAN_RECIPES && (
+          <Button variant="secondary" size="sm" icon={<Plus className="h-4 w-4" />} disabled={!library} onClick={() => setPicking(true)}>
+            Tarif
+          </Button>
+        )
+      }
+    >
+      {items.length > 0 && (
+        <Input label="Ek sayfa başlığı" value={data.recipes.title} maxLength={60} placeholder="Tarif önerileri" onChange={(e) => set((d) => void (d.recipes.title = e.target.value))} />
+      )}
+      {!items.length ? (
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          disabled={!library}
+          className="flex w-full items-center gap-3 rounded-lg border border-dashed border-panel-line px-4 py-3.5 text-left text-panel-muted hover:border-cocoa/40 hover:text-cocoa"
+        >
+          <CookingPot className="h-5 w-5 shrink-0" />
+          <span className="text-[0.82rem]">
+            <span className="block font-semibold">Henüz tarif eklenmedi</span>
+            Ör. kahvaltı için yulaflı tost, ara öğün için kefirli smoothie. Tarifleri <Link to="/panel/tarifler" className="underline">Tarifler</Link> sayfasından yönetebilirsiniz.
+          </span>
+        </button>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((it, i) => {
+            const r = byId.get(it.recipeId);
+            return (
+              <li key={`${it.recipeId}-${i}`} className="flex items-center gap-3 rounded-lg border border-panel-line bg-panel-bg/40 p-2.5">
+                {r ? <RecipeThumb recipe={r} className="h-14 w-[4.6rem] shrink-0 rounded-md" /> : <div className="h-14 w-[4.6rem] shrink-0 rounded-md bg-panel-bg" />}
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  {r ? (
+                    <p className="truncate text-[0.85rem] font-bold text-espresso" title={r.title}>
+                      {r.clientId && <span className="mr-1.5 rounded-full bg-rose px-1.5 py-px text-[0.66rem] font-bold text-espresso">Sana özel</span>}
+                      {r.title}
+                      <span className="ml-1.5 font-medium text-panel-muted">· {[r.variantNote || RECIPE_CATEGORY_LABEL[r.category], ...recipeMeta(r).slice(0, 2)].join(' · ')}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[0.82rem] font-semibold text-danger">{library ? 'Bu tarif silinmiş — PDF’te gösterilmez.' : 'Yükleniyor…'}</p>
+                  )}
+                  <input
+                    aria-label="Tarif etiketi"
+                    list={listId}
+                    value={it.label}
+                    maxLength={60}
+                    placeholder="Kahvaltı için öneri"
+                    onChange={(e) => set((d) => void (d.recipes.items[i]!.label = e.target.value))}
+                    className="h-8 w-full rounded-md border border-panel-line bg-white px-2.5 text-[0.8rem] text-espresso focus:border-cocoa focus:outline-none"
+                  />
+                </div>
+                <div className="flex shrink-0 flex-col sm:flex-row">
+                  {r && !(client && r.clientId === client.id) && (
+                    <Button variant="ghost" size="sm" aria-label={client ? `${client.firstName} için uyarla` : 'Varyasyon oluştur'} title={client ? `${client.firstName} için uyarla` : 'Varyasyon oluştur'} onClick={() => setAdapting({ index: i, recipe: r })}>
+                      <GitBranch className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" aria-label="Yukarı taşı" disabled={i === 0} onClick={() => set((d) => void d.recipes.items.splice(i - 1, 0, d.recipes.items.splice(i, 1)[0]!))}><ArrowUp className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" aria-label="Aşağı taşı" disabled={i === items.length - 1} onClick={() => set((d) => void d.recipes.items.splice(i + 1, 0, d.recipes.items.splice(i, 1)[0]!))}><ArrowDown className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" aria-label="Tarifi plandan çıkar" onClick={() => set((d) => void d.recipes.items.splice(i, 1))}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <RecipeFormModal
+        open={!!adapting}
+        onClose={() => setAdapting(null)}
+        variantOf={adapting?.recipe ?? null}
+        defaultClient={client ?? null}
+        onSaved={(v) => {
+          onLibraryChange(v);
+          const idx = adapting?.index;
+          if (idx !== undefined) set((d) => { if (d.recipes.items[idx]) d.recipes.items[idx]!.recipeId = v.id; });
+        }}
+      />
+      <datalist id={listId}>
+        {suggestions.map((s) => <option key={s} value={s} />)}
+      </datalist>
+      {library && (
+        <RecipePickerModal
+          open={picking}
+          onClose={() => setPicking(false)}
+          library={recipesVisibleFor(library, client?.id)}
+          alreadyAdded={items.map((i) => i.recipeId)}
+          limit={MAX_PLAN_RECIPES - items.length}
+          onCreated={onLibraryChange}
+          onPick={(rs) => set((d) => {
+            for (const r of rs) if (d.recipes.items.length < MAX_PLAN_RECIPES) d.recipes.items.push({ recipeId: r.id, label: labelFor(r) });
+          })}
+        />
+      )}
+    </Section>
+  );
+}
+
+export function PlanEditorForm({ data, set, library, onLibraryChange, client }: { data: NutritionPlanData; set: Setter; library?: Recipe[]; onLibraryChange: (r: Recipe) => void; client?: ClientRef | null }) {
   return (
     <div>
       <Section title="Başlık">
@@ -179,6 +305,8 @@ export function PlanEditorForm({ data, set }: { data: NutritionPlanData; set: Se
           ))}
         </div>
       </Section>
+
+      <RecipesSection data={data} set={set} library={library} onLibraryChange={onLibraryChange} client={client} />
 
       <Section title="Alt bilgi">
         <Input label="Alt not" value={data.footerNote} maxLength={160} onChange={(e) => set((d) => void (d.footerNote = e.target.value))} />

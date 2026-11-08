@@ -8,8 +8,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import latinUrl from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url';
 import latinExtUrl from '@fontsource-variable/manrope/files/manrope-latin-ext-wght-normal.woff2?url';
-import { fitPlanToPage, MIN_SCALE, renderPlanHtml } from '@shared/plan-template';
+import { fitPlanToPage, MIN_SCALE, RECIPE_MIN_SCALE, renderPlanHtml, type FitResult } from '@shared/plan-template';
 import type { NutritionPlanData } from '@shared/plan';
+import type { PrintRecipe } from '@shared/recipe';
 
 const FONT_CSS =
   `@font-face{font-family:'Manrope Variable';font-weight:200 800;src:url(${latinUrl}) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212;}` +
@@ -17,18 +18,20 @@ const FONT_CSS =
 
 const PAGE_W = 794; // 210mm @96dpi
 const PAGE_H = 1123; // 297mm
+const GAP = 24; // sayfalar arası ekran boşluğu (şablondaki @media screen ile aynı)
 
-export function PlanPreview({ data, onFit }: { data: NutritionPlanData; onFit?: (r: { scale: number; fits: boolean }) => void }) {
+export function PlanPreview({ data, recipes = [], onFit }: { data: NutritionPlanData; recipes?: PrintRecipe[]; onFit?: (r: FitResult) => void }) {
   const box = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const [zoom, setZoom] = useState(0.5);
   const [html, setHtml] = useState('');
+  const [pages, setPages] = useState(1);
 
   // Yazarken her tuşta yeniden çizmemek için kısa gecikme
   useEffect(() => {
-    const t = setTimeout(() => setHtml(renderPlanHtml(data, { fontCss: FONT_CSS })), 180);
+    const t = setTimeout(() => setHtml(renderPlanHtml(data, { fontCss: FONT_CSS, recipes })), 180);
     return () => clearTimeout(t);
-  }, [data]);
+  }, [data, recipes]);
 
   useLayoutEffect(() => {
     const el = box.current;
@@ -41,21 +44,25 @@ export function PlanPreview({ data, onFit }: { data: NutritionPlanData; onFit?: 
   const measure = () => {
     const doc = frame.current?.contentDocument;
     if (!doc) return;
-    const run = () => onFit?.(fitPlanToPage(doc, MIN_SCALE));
+    const run = () => {
+      const r = fitPlanToPage(doc, MIN_SCALE, RECIPE_MIN_SCALE);
+      setPages(r.pages);
+      onFit?.(r);
+    };
     if (doc.fonts?.ready) void doc.fonts.ready.then(run);
     else run();
   };
 
   return (
-    <div ref={box} className="relative w-full overflow-hidden rounded-lg shadow-[0_12px_40px_-18px_rgba(33,23,16,0.45)] ring-1 ring-panel-line" style={{ height: PAGE_H * zoom }}>
+    <div ref={box} className="relative w-full overflow-hidden rounded-lg shadow-[0_12px_40px_-18px_rgba(33,23,16,0.45)] ring-1 ring-panel-line" style={{ height: (PAGE_H * pages + GAP * (pages - 1)) * zoom }}>
       <iframe
         ref={frame}
-        title="Plan önizlemesi (A4)"
+        title={pages > 1 ? `Plan önizlemesi (A4, ${pages} sayfa)` : 'Plan önizlemesi (A4)'}
         srcDoc={html}
         onLoad={measure}
         sandbox="allow-same-origin"
         className="absolute top-0 left-0 origin-top-left border-0 bg-white"
-        style={{ width: PAGE_W, height: PAGE_H, transform: `scale(${zoom})` }}
+        style={{ width: PAGE_W, height: PAGE_H * pages + GAP * (pages - 1), transform: `scale(${zoom})` }}
       />
     </div>
   );

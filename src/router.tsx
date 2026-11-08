@@ -12,6 +12,8 @@ const ServicesPage = lazy(() => import('@/pages/ServicesPage'));
 const ServiceDetailPage = lazy(() => import('@/pages/ServiceDetailPage'));
 const BlogListPage = lazy(() => import('@/pages/BlogListPage'));
 const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'));
+const RecipesListPage = lazy(() => import('@/pages/RecipesListPage'));
+const RecipePage = lazy(() => import('@/pages/RecipePage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const AppointmentPage = lazy(() => import('@/pages/AppointmentPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
@@ -37,6 +39,7 @@ const CalendarSettingsPage = lazy(() => import('@/pages/panel/CalendarSettingsPa
 const AuditLogPage = lazy(() => import('@/pages/panel/AuditLogPage'));
 const PlansPage = lazy(() => import('@/pages/panel/PlansPage'));
 const PlanEditorPage = lazy(() => import('@/pages/panel/PlanEditorPage'));
+const RecipesPage = lazy(() => import('@/pages/panel/RecipesPage'));
 
 function PublicFallback() {
   return <div className="min-h-dvh bg-espresso" aria-busy="true" />;
@@ -61,6 +64,8 @@ export const router = createBrowserRouter([
       { path: 'beslenme-rehberi', element: s(<BlogListPage />) },
       { path: 'beslenme-rehberi/kategori/:category', element: s(<BlogListPage />) },
       { path: 'beslenme-rehberi/:slug', element: s(<BlogPostPage />) },
+      { path: 'tarifler', element: s(<RecipesListPage />) },
+      { path: 'tarifler/:slug', element: s(<RecipePage />) },
       { path: 'iletisim', element: s(<ContactPage />) },
       { path: 'randevu', element: s(<AppointmentPage />) },
       { path: 'kvkk-aydinlatma-metni', element: s(<LegalPage doc="kvkk" />) },
@@ -86,6 +91,7 @@ export const router = createBrowserRouter([
           { path: 'danisanlar/:id', element: s(<ClientDetailPage />, true) },
           { path: 'planlar', element: s(<PlansPage />, true) },
           { path: 'planlar/:id', element: s(<PlanEditorPage />, true) },
+          { path: 'tarifler', element: s(<RecipesPage />, true) },
           { path: 'bildirimler', element: s(<NotificationsPage />, true) },
           { path: 'raporlar', element: s(<ReportsPage />, true) },
           { path: 'hizmetler', element: s(<ServicesAdminPage />, true) },

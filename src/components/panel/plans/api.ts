@@ -34,5 +34,10 @@ export async function downloadPlanPdf(id: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  return { fits: res.headers.get('x-plan-fits') !== 'false', scale: Number(res.headers.get('x-plan-scale') ?? 1) };
+  return {
+    fits: res.headers.get('x-plan-fits') !== 'false',
+    scale: Number(res.headers.get('x-plan-scale') ?? 1),
+    pages: Number(res.headers.get('x-plan-pages') ?? 1),
+    recipesFit: res.headers.get('x-plan-recipes-fit') !== 'false',
+  };
 }
