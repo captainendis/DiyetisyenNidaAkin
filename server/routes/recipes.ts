@@ -17,6 +17,7 @@ import { audit } from '../lib/audit';
 import { badRequest, HttpError, notFound, parse } from '../lib/http';
 import { sniffMime } from '../lib/storage';
 import { requirePermission } from '../auth/session';
+import { decryptNote, encryptNote } from '../services/recipe-notes';
 import { copyRecipeImage, deleteRecipeImage, processRecipeImage, recipeImageDataUri } from '../services/images';
 import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, recipeCreateSchema, recipeInputSchema, type PrintRecipe, type Recipe, type RecipeInput } from '../../shared/recipe';
 import type { NutritionPlanData } from '../../shared/plan';
@@ -50,7 +51,7 @@ export function toRecipe(r: Row): Recipe {
     tip: r.tip,
     isPublished: r.isPublished,
     isFeatured: !!r.featuredAt,
-    variantNote: r.variantNote,
+    variantNote: decryptNote(r.variantNoteEnc),
     clientId: r.clientId,
     imageBase: r.imageBase,
     slug: r.slug,
@@ -86,7 +87,7 @@ export async function resolvePlanRecipes(plan: NutritionPlanData): Promise<Print
       ingredients: strings(r.ingredients),
       steps: strings(r.steps),
       tip: r.tip,
-      variantNote: r.variantNote,
+      variantNote: decryptNote(r.variantNoteEnc),
       personal: !!r.clientId,
       label: it.label,
       image: await recipeImageDataUri(r.imageBase),
@@ -148,7 +149,8 @@ async function validateRelations(body: Pick<RecipeInput, 'clientId' | 'isPublish
 const fields = (b: RecipeInput) => ({
   title: b.title, category: b.category, summary: b.summary, servings: b.servings, prepMinutes: b.prepMinutes,
   cookMinutes: b.cookMinutes, kcal: b.kcal, ingredients: b.ingredients, steps: b.steps, tip: b.tip,
-  variantNote: b.variantNote, clientId: b.clientId, isPublished: b.isPublished,
+  // Varyasyon notu yalnızca şifreli yazılır; eski düz metin sütunu her yazımda boşaltılır
+  variantNoteEnc: encryptNote(b.variantNote), variantNote: '', clientId: b.clientId, isPublished: b.isPublished,
 });
 
 recipesRouter.get('/', read, async (req, res) => {

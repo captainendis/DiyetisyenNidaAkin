@@ -14,6 +14,7 @@ import request from 'supertest';
 import { createApp } from '../server/app';
 import { prisma } from '../server/lib/db';
 import { encryptJson } from '../server/lib/crypto';
+import { encryptLegacyVariantNotes } from '../server/services/recipe-notes';
 import { PUBLIC_UPLOADS } from '../server/lib/storage';
 import { samplePlanTemplate } from '../shared/plan';
 import type { Recipe } from '../shared/recipe';
@@ -223,6 +224,35 @@ describe('tarifler', () => {
       await prisma.recipe.updateMany({ where: { id: { in: recipeIds } }, data: { featuredAt: null } });
       for (const r of before) await prisma.recipe.updateMany({ where: { id: r.id }, data: { featuredAt: r.featuredAt } });
     }
+  });
+
+  it('varyasyon notu veritabanında yalnızca şifreli durur; API ve PDF çözülmüş hâlini kullanır', async () => {
+    const note = 'Çölyak: glutensiz ekmekle';
+    const res = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, title: 'Test şifreli not', variantNote: note });
+    expect(res.status).toBe(201);
+    recipeIds.push(res.body.recipe.id);
+    expect(res.body.recipe.variantNote).toBe(note);
+
+    const row = await prisma.recipe.findUniqueOrThrow({ where: { id: res.body.recipe.id } });
+    expect(row.variantNote).toBe('');
+    expect(row.variantNoteEnc).toMatch(/^v1:/);
+    expect(row.variantNoteEnc).not.toContain('glutensiz');
+
+    // Not silinince şifreli alan da boşalır
+    const cleared = await agent.patch(`/api/recipes/${row.id}`).set('X-CSRF-Token', csrf).send({ ...body, title: 'Test şifreli not', variantNote: '' });
+    expect(cleared.body.recipe.variantNote).toBe('');
+    expect((await prisma.recipe.findUniqueOrThrow({ where: { id: row.id } })).variantNoteEnc).toBeNull();
+  });
+
+  it('eski düz metin notlar açılışta şifreli sütuna taşınır (idempotent)', async () => {
+    const legacy = await prisma.recipe.create({ data: { title: 'Test eski not', category: 'SOUP', ingredients: ['a'], steps: ['b'], variantNote: 'Laktozsuz' } });
+    recipeIds.push(legacy.id);
+    expect(await encryptLegacyVariantNotes()).toBeGreaterThanOrEqual(1);
+    const row = await prisma.recipe.findUniqueOrThrow({ where: { id: legacy.id } });
+    expect(row.variantNote).toBe('');
+    expect(row.variantNoteEnc).toMatch(/^v1:/);
+    expect((await agent.get(`/api/recipes/${legacy.id}`)).body.recipe.variantNote).toBe('Laktozsuz');
+    expect(await encryptLegacyVariantNotes()).toBe(0);
   });
 });
 
