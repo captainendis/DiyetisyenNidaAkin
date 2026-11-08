@@ -303,7 +303,8 @@ Durumlar: Yeni Talep · Onay Bekliyor · Onaylandı · Tamamlandı · İptal Edi
 
 - Randevu formunda **aydınlatma metni onayı** (zorunlu) ve **açık rıza** (ayrı ve isteğe bağlı) birbirinden ayrıdır; zaman damgalarıyla saklanır.
 - Danışan detayında **verileri dışa aktar** (md. 11 erişim talebi) ve **kalıcı silme / anonimleştirme**. Dışa aktarma JSON'u
-  kimlik ve randevu bilgilerini, dosya listesini; klinik yetkili kullanıcıda ayrıca görüşme notlarını, ölçümleri ve
+  kimlik ve randevu bilgilerini, dosya listesini; klinik yetkili kullanıcıda ayrıca görüşme notlarını, ölçümleri,
+  **beslenme planlarını** (`nutritionPlans`: çözülmüş plan içeriği, plana eklenen tariflerin adı ve etiketi) ve
   **kişiye özel tarifleri** (`personalRecipes`: çözülmüş varyasyon notu, dayandığı ana tarif, malzemeler, adımlar, görsel yolu) içerir.
 - `npm run data:retention` — saklama süresi dolan pasif danışanları anonimleştirir (`--dry-run` ile önizleme).
 - Yasal metinler (`/kvkk-aydinlatma-metni`, `/acik-riza-metni`, `/gizlilik-politikasi`, `/cerez-politikasi`) **taslaktır**.

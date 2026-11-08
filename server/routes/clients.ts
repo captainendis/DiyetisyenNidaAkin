@@ -18,6 +18,7 @@ import { z } from 'zod';
 import { prisma, type Prisma } from '../lib/db';
 import { HttpError, badRequest, conflict, notFound, parse } from '../lib/http';
 import { deleteClientRecipeImages } from './recipes';
+import { decodePlan } from './plans';
 import { decryptNote } from '../services/recipe-notes';
 import { recipeImageUrl } from '../../shared/recipe';
 import { audit } from '../lib/audit';
@@ -492,7 +493,7 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
   parse(exportQuery, req.query);
   const client = await getClientOr404(id);
   const clinical = req.user!.permissions.includes('clinical:read');
-  const [appointments, notes, measurements, files, recipes] = await Promise.all([
+  const [appointments, notes, measurements, files, recipes, plans] = await Promise.all([
     prisma.appointment.findMany({
       where: { clientId: id },
       orderBy: { createdAt: 'asc' },
@@ -508,7 +509,15 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
     clinical
       ? prisma.recipe.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' }, include: { parent: { select: { title: true } } } })
       : [],
+    // Beslenme planları (şifreli saklanır; klinik yetki gerekir)
+    clinical ? prisma.nutritionPlan.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' } }) : [],
   ]);
+  // Planlardaki tarif bağlantılarını okunur hâle getir (tarif adı; silinmiş tarif null)
+  const decodedPlans = plans.map((p) => ({ plan: p, data: decodePlan(p.dataEnc) }));
+  const recipeIds = [...new Set(decodedPlans.flatMap((p) => p.data.recipes?.items.map((i) => i.recipeId) ?? []))];
+  const recipeTitles = new Map(
+    recipeIds.length ? (await prisma.recipe.findMany({ where: { id: { in: recipeIds } }, select: { id: true, title: true } })).map((r) => [r.id, r.title]) : [],
+  );
   const payload = {
     exportedAt: new Date().toISOString(),
     notice: 'Bu dosya 6698 sayılı KVKK md. 11 kapsamındaki bilgi talebi için hazırlanmıştır. Yetkisiz kişilerle paylaşmayın.',
@@ -518,6 +527,16 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
     consultationNotes: notes.map(serializeNote),
     measurements: measurements.map(serializeMeasurement),
     files,
+    nutritionPlans: decodedPlans.map(({ plan, data }) => {
+      const { recipes: attached, ...content } = data;
+      return {
+        name: plan.name,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+        content,
+        attachedRecipes: (attached?.items ?? []).map((i) => ({ title: recipeTitles.get(i.recipeId) ?? null, label: i.label })),
+      };
+    }),
     personalRecipes: recipes.map((r) => ({
       title: r.title,
       category: r.category,
@@ -536,7 +555,7 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
       updatedAt: r.updatedAt,
     })),
   };
-  await audit(req, 'client.exported', 'client', id, { clinical, personalRecipes: recipes.length });
+  await audit(req, 'client.exported', 'client', id, { clinical, nutritionPlans: plans.length, personalRecipes: recipes.length });
   res.set({
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Disposition': `attachment; filename="danisan-verileri-${client.id}.json"`,
