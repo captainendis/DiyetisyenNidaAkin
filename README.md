@@ -247,6 +247,8 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   kutusundan (ekle / çıkar) ya da tarif formundaki **“Ana sayfada göster”** anahtarıyla. En fazla 3 tarif, eklenme sırasıyla
   görünür; yalnızca yayındaki ve kişiye özel olmayan tarifler seçilebilir, yayından kaldırılan tarif ana sayfadan da çıkar.
   Hiç seçim yoksa son yayınlanan 3 tarif otomatik gösterilir.
+- Bölümün **başlığı, alt metni ve “Tüm tarifler” bağlantı metni** Panel → Web Sitesi İçeriği → Ana Sayfa → **Tarifler bölümü**
+  formundan düzenlenir (varsayılan: “Mutfaktan”).
 - Adres (slug) ilk yayında başlıktan üretilir ve sonradan **değişmez**; başlık düzeltilse de paylaşılan bağlantılar kırılmaz.
   Yayından kaldırılan tarifin sayfası 404 döner ve site haritasından çıkar.
 - SEO: site haritasında yer alır; sunucu tarafı meta + **Schema.org `Recipe`** (malzemeler, adımlar, süreler, porsiyon,

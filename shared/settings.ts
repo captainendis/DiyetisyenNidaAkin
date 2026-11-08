@@ -58,6 +58,13 @@ export const processSchema = z.object({
   steps: z.array(z.object({ title: text(40), body: text(240) })).min(2).max(6),
 });
 
+/** Ana sayfadaki tarif bölümü ("Mutfaktan"). Hangi tariflerin görüneceği Panel → Tarifler'den seçilir. */
+export const recipesSectionSchema = z.object({
+  heading: text(80).min(1, 'Başlık gerekli'),
+  intro: text(240),
+  linkLabel: text(30).min(1, 'Bağlantı metni gerekli'),
+});
+
 export const ctaSchema = z.object({
   heading: text(160),
   body: text(240),
@@ -157,6 +164,7 @@ export const settingsSchemas = {
   about: aboutSchema,
   approach: approachSchema,
   process: processSchema,
+  recipesSection: recipesSectionSchema,
   cta: ctaSchema,
   contact: contactSchema,
   social: socialSchema,
@@ -173,7 +181,7 @@ export type Settings = { [K in SettingsKey]: z.infer<(typeof settingsSchemas)[K]
 
 /** Herkese açık API'de dönülen ayar anahtarları (kvkk.retention gibi iç ayarlar dahil değil) */
 export const PUBLIC_SETTINGS_KEYS: SettingsKey[] = [
-  'hero', 'intro', 'about', 'approach', 'process', 'cta', 'contact', 'social', 'business', 'seo', 'appointment', 'media',
+  'hero', 'intro', 'about', 'approach', 'process', 'recipesSection', 'cta', 'contact', 'social', 'business', 'seo', 'appointment', 'media',
 ];
 
 export { defaultSettings } from './settings-defaults';

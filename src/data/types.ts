@@ -40,7 +40,7 @@ export interface PostDetail extends PostCard {
   author: { firstName: string; lastName: string } | null;
 }
 
-export type PublicSettings = Pick<Settings, 'hero' | 'intro' | 'about' | 'approach' | 'process' | 'cta' | 'contact' | 'social' | 'business' | 'seo' | 'appointment' | 'media'>;
+export type PublicSettings = Pick<Settings, 'hero' | 'intro' | 'about' | 'approach' | 'process' | 'recipesSection' | 'cta' | 'contact' | 'social' | 'business' | 'seo' | 'appointment' | 'media'>;
 
 export interface SiteData {
   settings: PublicSettings;

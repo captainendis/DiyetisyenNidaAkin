@@ -30,17 +30,18 @@ export function RecentRecipes() {
   }, [site.recipeCount]);
 
   if (!site.recipeCount || !recipes?.length) return null;
+  const t = site.settings.recipesSection;
   return (
     <section className="bg-cream text-espresso" aria-labelledby="recipes-title">
       <div className="container-edge py-24 sm:py-32">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <Reveal>
-            <h2 id="recipes-title" className="font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">Mutfaktan</h2>
-            <p className="mt-4 max-w-xl text-[1rem] leading-relaxed text-taupe">Planlarda en sık önerdiğim pratik ve dengeli tarifler.</p>
+            <h2 id="recipes-title" className="font-display text-[clamp(2.4rem,1.6rem+2.6vw,4rem)] leading-[1.02] font-medium">{t.heading}</h2>
+            {t.intro && <p className="mt-4 max-w-xl text-[1rem] leading-relaxed text-taupe">{t.intro}</p>}
           </Reveal>
           <Reveal delay={0.1}>
             <Link to="/tarifler" className="group inline-flex items-center gap-2 text-[0.95rem] font-medium text-cocoa hover:text-espresso">
-              {site.recipeCount > recipes.length ? `Tüm tarifler (${site.recipeCount})` : 'Tüm tarifler'}
+              {site.recipeCount > recipes.length ? `${t.linkLabel} (${site.recipeCount})` : t.linkLabel}
               <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
             </Link>
           </Reveal>

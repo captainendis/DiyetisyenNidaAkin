@@ -2,6 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Ana sayfa içerik formları: Hero, Tanıtım, Yaklaşım, Süreç, Randevu çağrısı */
+import { Link } from 'react-router';
 import { Input, Textarea } from '@/components/panel/ui';
 import { CharCount, FormCard, FormSection, SaveBar } from './FormBits';
 import { Repeater } from './Repeater';
@@ -117,6 +118,30 @@ export function ProcessForm() {
         />
       </FormSection>
       <SaveBar dirty={f.dirty} saving={f.saving} onSave={() => void f.save()} onReset={f.reset} viewHref="/" />
+    </FormCard>
+  );
+}
+
+export function RecipesSectionForm() {
+  const f = useSettingForm('recipesSection');
+  if (!f.draft) return null;
+  const d = f.draft;
+  return (
+    <FormCard>
+      <FormSection
+        title="Tarifler bölümü"
+        description={
+          <>
+            Süreç bölümünden sonra gelen tarif şeridi. Yalnızca web sitesinde yayınlanmış en az bir tarif varsa görünür; hangi tariflerin
+            gösterileceğini <Link to="/panel/tarifler" className="font-semibold underline">Tarifler</Link> sayfasındaki “Ana sayfada gösterilenler” kutusundan seçin.
+          </>
+        }
+      >
+        <Input label="Başlık" value={d.heading} maxLength={80} error={f.errors.heading} onChange={(e) => f.set('heading', e.target.value)} />
+        <Textarea label="Alt metin" rows={2} value={d.intro} maxLength={240} error={f.errors.intro} hint="Boş bırakılırsa gösterilmez." onChange={(e) => f.set('intro', e.target.value)} />
+        <Input label="Bağlantı metni" value={d.linkLabel} maxLength={30} error={f.errors.linkLabel} hint="Tarifler sayfasına giden bağlantı; toplam tarif sayısı yanına otomatik eklenir." onChange={(e) => f.set('linkLabel', e.target.value)} />
+      </FormSection>
+      <SaveBar dirty={f.dirty} saving={f.saving} onSave={() => void f.save()} onReset={f.reset} viewHref="/#recipes-title" />
     </FormCard>
   );
 }
