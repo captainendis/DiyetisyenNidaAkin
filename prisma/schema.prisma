@@ -442,7 +442,10 @@ enum RecipeCategory {
 /// danışan silinince birlikte silinir.
 model Recipe {
   id          String         @id @default(cuid())
-  title       String
+  /// AES-256-GCM şifreli JSON: { title, summary, ingredients[], steps[], tip } (RecipeContent).
+  /// Kişiye özel tarifler sağlık bilgisi içerebildiği için tüm tariflerde içerik şifreli tutulur;
+  /// yalnızca açılıştaki taşıma tamamlanana kadar (eski kurulumlarda) kısa süre boş olabilir.
+  contentEnc  String?
   /// Herkese açık adres (/tarifler/<slug>); ilk yayında atanır, sonra değişmez
   slug        String?        @unique
   isPublished Boolean        @default(false)
@@ -457,17 +460,11 @@ model Recipe {
   /// Varyasyonda neyin değiştiği (ör. "Laktozsuz, glutensiz ekmekle") — AES-256-GCM şifreli; sağlık bilgisi içerebilir
   variantNoteEnc String?
   category    RecipeCategory
-  summary     String         @default("")
   servings    Int?
   prepMinutes Int?
   cookMinutes Int?
   /// Porsiyon başına yaklaşık kcal
   kcal        Int?
-  /// string[]
-  ingredients Json           @default("[]")
-  /// string[]
-  steps       Json           @default("[]")
-  tip         String         @default("")
   /// /uploads/public/recipes/<id> — <base>-480.webp ve <base>-960.webp
   imageBase   String?
   createdById String?

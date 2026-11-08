@@ -12,9 +12,11 @@ import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../server/app';
+import { resolveMeta } from '../server/seo';
 import { prisma } from '../server/lib/db';
 import { encryptJson } from '../server/lib/crypto';
 import { encryptLegacyVariantNotes } from '../server/services/recipe-notes';
+import { encryptContent, encryptLegacyRecipeContent } from '../server/services/recipe-content';
 import { PUBLIC_UPLOADS } from '../server/lib/storage';
 import { samplePlanTemplate } from '../shared/plan';
 import type { Recipe } from '../shared/recipe';
@@ -143,6 +145,11 @@ describe('tarifler', () => {
     const detail = await request(app).get(`/api/public/recipes/${slug}`);
     expect(detail.status).toBe(200);
     expect(detail.body.recipe.title).toBe('Yeni Ad');
+    // Sunucu taraflı SEO: şifreli içerik çözülerek başlık ve Schema.org Recipe verisine yazılır
+    const meta = await resolveMeta(`/tarifler/${slug}`);
+    expect(meta.title).toContain('Yeni Ad tarifi');
+    const ld = meta.jsonLd?.find((x) => x['@type'] === 'Recipe');
+    expect(ld).toMatchObject({ name: 'Yeni Ad', recipeIngredient: body.ingredients });
 
     // Yayından kaldırılınca 404
     await agent.patch(`/api/recipes/${pub.body.recipe.id}`).set('X-CSRF-Token', csrf).send({ ...body, title: 'Yeni Ad', category: 'SOUP', isPublished: false }).expect(200);
@@ -274,7 +281,9 @@ describe('tarifler', () => {
     // Notları henüz taşınmamış eski bir kurulumu taklit et
     await prisma.$executeRawUnsafe(`ALTER TABLE "recipes" ADD COLUMN "variantNote" TEXT NOT NULL DEFAULT ''`);
     try {
-      const legacy = await prisma.recipe.create({ data: { title: 'Test eski not', category: 'SOUP', ingredients: ['a'], steps: ['b'] } });
+      const legacy = await prisma.recipe.create({
+        data: { category: 'SOUP', contentEnc: encryptContent({ title: 'Test eski not', summary: '', ingredients: ['a'], steps: ['b'], tip: '' }) },
+      });
       recipeIds.push(legacy.id);
       await prisma.$executeRaw`UPDATE "recipes" SET "variantNote" = 'Laktozsuz' WHERE id = ${legacy.id}`;
 
@@ -288,4 +297,50 @@ describe('tarifler', () => {
       await prisma.$executeRawUnsafe('ALTER TABLE "recipes" DROP COLUMN IF EXISTS "variantNote"');
     }
   });
+
+  it('tarif içeriği (ad, açıklama, malzemeler, adımlar, ipucu) veritabanında yalnızca şifreli durur; arama çalışır', async () => {
+    const secret = { ...body, title: 'Test Glutensiz Kek', summary: 'Çölyak için', tip: 'Laktozsuz sütle', ingredients: ['glutensiz un'], steps: ['karıştır'] };
+    const res = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send(secret);
+    expect(res.status).toBe(201);
+    recipeIds.push(res.body.recipe.id);
+    expect(res.body.recipe).toMatchObject({ title: secret.title, summary: secret.summary, tip: secret.tip, ingredients: secret.ingredients, steps: secret.steps });
+
+    // Ham satırın hiçbir sütununda düz metin yok
+    const raw = await prisma.$queryRaw<Record<string, unknown>[]>`SELECT * FROM "recipes" WHERE id = ${res.body.recipe.id}`;
+    const dump = JSON.stringify(raw[0]);
+    for (const word of ['Glutensiz', 'Çölyak', 'Laktozsuz', 'glutensiz un', 'karıştır']) expect(dump).not.toContain(word);
+    expect(raw[0]!.contentEnc).toMatch(/^v1:/);
+
+    // Panel araması çözülmüş içerik üzerinde çalışır
+    const hit = await agent.get('/api/recipes').query({ q: 'glutensiz kek' });
+    expect(hit.body.items.map((r: Recipe) => r.id)).toContain(res.body.recipe.id);
+  });
+
+  it('sürüm atlanmış kurulumda düz metin içerik sütunları: içerik şifrelenir, sütunlar kaldırılır (idempotent)', async () => {
+    const legacyColumns = async () =>
+      (await prisma.$queryRaw<{ column_name: string }[]>`SELECT column_name FROM information_schema.columns
+        WHERE table_schema = current_schema() AND table_name = 'recipes'
+          AND column_name IN ('title', 'summary', 'ingredients', 'steps', 'tip')`).map((c) => c.column_name);
+    expect(await legacyColumns()).toEqual([]);
+
+    // İçeriği henüz taşınmamış eski bir kurulumu taklit et
+    await prisma.$executeRawUnsafe(`ALTER TABLE "recipes" ADD COLUMN "title" TEXT, ADD COLUMN "summary" TEXT NOT NULL DEFAULT '',
+      ADD COLUMN "ingredients" JSONB NOT NULL DEFAULT '[]', ADD COLUMN "steps" JSONB NOT NULL DEFAULT '[]', ADD COLUMN "tip" TEXT NOT NULL DEFAULT ''`);
+    try {
+      const legacy = await prisma.recipe.create({ data: { category: 'SOUP' } });
+      recipeIds.push(legacy.id);
+      await prisma.$executeRaw`UPDATE "recipes" SET "contentEnc" = NULL, "title" = 'Eski çorba', "summary" = 'Eski özet',
+        "ingredients" = '["mercimek"]'::jsonb, "steps" = '["pişir"]'::jsonb, "tip" = 'Limonla' WHERE id = ${legacy.id}`;
+
+      expect(await encryptLegacyRecipeContent()).toBe(1);
+      expect(await legacyColumns()).toEqual([]);
+      const r = (await agent.get(`/api/recipes/${legacy.id}`)).body.recipe as Recipe;
+      expect(r).toMatchObject({ title: 'Eski çorba', summary: 'Eski özet', ingredients: ['mercimek'], steps: ['pişir'], tip: 'Limonla' });
+      expect(await encryptLegacyRecipeContent()).toBe(0);
+    } finally {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "recipes" DROP COLUMN IF EXISTS "title", DROP COLUMN IF EXISTS "summary",
+        DROP COLUMN IF EXISTS "ingredients", DROP COLUMN IF EXISTS "steps", DROP COLUMN IF EXISTS "tip"`);
+    }
+  });
 });
+

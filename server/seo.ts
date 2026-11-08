@@ -18,6 +18,7 @@ import { env } from './lib/env';
 import { getSettings } from './services/settings';
 import { DEFAULT_BLOG_CATEGORIES } from '../shared/constants';
 import { RECIPE_CATEGORY_LABEL, recipeImageUrl } from '../shared/recipe';
+import { decryptContent } from './services/recipe-content';
 
 const STATIC_ROUTES: { path: string; priority: string; changefreq: string }[] = [
   { path: '/', priority: '1.0', changefreq: 'weekly' },
@@ -188,24 +189,24 @@ export async function resolveMeta(pathname: string): Promise<PageMeta> {
   if ((m = clean.match(/^\/tarifler\/([a-z0-9-]+)$/))) {
     const r = await prisma.recipe.findFirst({ where: { slug: m[1], isPublished: true, clientId: null } });
     if (r) {
-      const ingredients = Array.isArray(r.ingredients) ? (r.ingredients as unknown[]).filter((x): x is string => typeof x === 'string') : [];
-      const steps = Array.isArray(r.steps) ? (r.steps as unknown[]).filter((x): x is string => typeof x === 'string') : [];
+      // İçerik şifreli saklanır; yalnızca yayındaki tarif için çözülür
+      const { title, summary, ingredients, steps } = decryptContent(r.contentEnc);
       const image = r.imageBase ? `${env.publicSiteUrl}${recipeImageUrl(r.imageBase, 960)}` : null;
-      const description = r.summary || `${r.title} tarifi: ${ingredients.slice(0, 4).join(', ')}.`;
+      const description = summary || `${title} tarifi: ${ingredients.slice(0, 4).join(', ')}.`;
       const iso = (min: number | null) => (min ? `PT${min}M` : undefined);
       const total = (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0);
       return {
-        title: t(`${r.title} tarifi`),
+        title: t(`${title} tarifi`),
         description,
         canonicalPath: clean,
         image,
         type: 'article',
         jsonLd: [
-          breadcrumb([{ name: 'Tarifler', path: '/tarifler' }, { name: r.title, path: clean }]),
+          breadcrumb([{ name: 'Tarifler', path: '/tarifler' }, { name: title, path: clean }]),
           {
             '@context': 'https://schema.org',
             '@type': 'Recipe',
-            name: r.title,
+            name: title,
             description,
             inLanguage: 'tr-TR',
             recipeCategory: RECIPE_CATEGORY_LABEL[r.category],

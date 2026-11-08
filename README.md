@@ -38,7 +38,7 @@ Diyetisyen Nida Akın için geliştirilmiş, **premium editorial tasarımlı her
 | Arka uç | Node.js (≥ 20.19) · Express 5 · Zod |
 | Veritabanı | PostgreSQL 16 · Prisma ORM 7 (`@prisma/adapter-pg`) |
 | Kimlik doğrulama | Sunucu taraflı oturum (HttpOnly + SameSite=Strict cookie) · CSRF token · scrypt parola özeti |
-| Şifreleme | AES-256-GCM (görüşme notları, ölçümler, danışan dosyaları, beslenme planları, tarif varyasyon notları) |
+| Şifreleme | AES-256-GCM (görüşme notları, ölçümler, danışan dosyaları, beslenme planları, tarif içerikleri ve varyasyon notları) |
 | Saat dilimi | Tüm iş kuralları `Europe/Istanbul`; veritabanında `timestamptz` (UTC) |
 
 Tek bir Node süreci hem API'yi hem de derlenmiş siteyi sunar (üretimde). Geliştirmede Vite (5173) API'ye (4000) proxy yapar.
@@ -228,13 +228,18 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   tarif %70'e kadar küçültülür; yine sığmazsa önizlemede ve indirmede uyarı verilir. Canlı önizleme tüm sayfaları gösterir.
 - Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planların PDF'i güncel hâliyle basılır; silinen tarif
   planlarda “silinmiş” olarak işaretlenir ve PDF'e basılmaz.
-- **Varyasyon notları** (“Laktozsuz”, “glutensiz ekmekle” …) sağlık bilgisi içerebileceği için **AES-256-GCM ile şifreli**
-  saklanır (`recipes.variantNoteEnc`, `DATA_ENCRYPTION_KEY` ile). Eski düz metin sütunu (`variantNote`) kaldırıldı:
-  `20261108210000_drop_plain_variant_note` migration'ı sütunu yalnızca içinde taşınmamış not yoksa siler; sunucu notların
-  henüz şifrelenmediği bir sürümden doğrudan güncellenirse migration sütunu bırakır, uygulama açılışta notları şifreleyip
-  sütunu kendisi kaldırır (veri kaybı olmaz).
-  Tarifin diğer alanları (ad, malzemeler, adımlar) şifrelenmez. Erişim planlarla aynı izinlerle (klinik yetkili roller)
-  sınırlıdır; ekleme/düzenleme/silme, yayınlama/yayından kaldırma denetim kaydına yazılır.
+- **Şifreleme:** kişiye özel tarifler sağlık bilgisi içerebildiği için (“Glutensiz …”, “laktozsuz süt”) **tüm tariflerde**
+  ad, kısa açıklama, malzemeler, adımlar ve ipucu tek bir alanda (`recipes.contentEnc`), **varyasyon notu** ayrı bir alanda
+  (`recipes.variantNoteEnc`) **AES-256-GCM ile şifreli** saklanır (`DATA_ENCRYPTION_KEY`). Bir tarif sonradan danışana
+  bağlansa da bağlantısı kaldırılsa da düz metin geride kalmaz. Yayındaki tarifler sitede gösterilirken çözülür.
+  Kategori, porsiyon, süreler, kalori, fotoğraf ve yayın bilgisi düz kalır (sıralama/süzme için; sağlık bilgisi değildir).
+  Panel araması, içerik çözüldükten sonra sunucu belleğinde yapılır.
+- **Eski kurulumlardan geçiş:** anahtar yalnızca uygulamada olduğu için düz metinden şifreliye taşıma uygulama açılışında,
+  sunucu istek almaya başlamadan önce yapılır (idempotent). İlgili migration'lar düz metin sütunlarını yalnızca içlerinde
+  taşınmamış veri yoksa siler; aksi hâlde uygulama önce şifreleyip sonra sütunları kendisi kaldırır — hangi sürümden
+  güncellenirse güncellensin veri kaybı olmaz. Taşınan kayıt varsa günlükte “✓ N tarifin içeriği şifrelendi” görünür.
+- Erişim planlarla aynı izinlerle (klinik yetkili roller) sınırlıdır; ekleme/düzenleme/silme, yayınlama/yayından kaldırma
+  denetim kaydına yazılır.
 
 ### Web sitesinde yayınlama
 

@@ -20,6 +20,7 @@ import { HttpError, badRequest, conflict, notFound, parse } from '../lib/http';
 import { deleteClientRecipeImages } from './recipes';
 import { decodePlan } from './plans';
 import { decryptNote } from '../services/recipe-notes';
+import { decryptContent } from '../services/recipe-content';
 import { recipeImageUrl } from '../../shared/recipe';
 import { audit } from '../lib/audit';
 import { decryptBuffer, decryptJson, decryptString, encryptBuffer, encryptJson, encryptString } from '../lib/crypto';
@@ -507,7 +508,7 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
     prisma.clientFile.findMany({ where: { clientId: id }, select: { originalName: true, mimeType: true, sizeBytes: true, createdAt: true } }),
     // Kişiye özel tarif varyasyonları (tarifler planlarla aynı klinik yetkiye bağlıdır)
     clinical
-      ? prisma.recipe.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' }, include: { parent: { select: { title: true } } } })
+      ? prisma.recipe.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' }, include: { parent: { select: { contentEnc: true } } } })
       : [],
     // Beslenme planları (şifreli saklanır; klinik yetki gerekir)
     clinical ? prisma.nutritionPlan.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' } }) : [],
@@ -516,7 +517,7 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
   const decodedPlans = plans.map((p) => ({ plan: p, data: decodePlan(p.dataEnc) }));
   const recipeIds = [...new Set(decodedPlans.flatMap((p) => p.data.recipes?.items.map((i) => i.recipeId) ?? []))];
   const recipeTitles = new Map(
-    recipeIds.length ? (await prisma.recipe.findMany({ where: { id: { in: recipeIds } }, select: { id: true, title: true } })).map((r) => [r.id, r.title]) : [],
+    recipeIds.length ? (await prisma.recipe.findMany({ where: { id: { in: recipeIds } }, select: { id: true, contentEnc: true } })).map((r) => [r.id, decryptContent(r.contentEnc).title]) : [],
   );
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -537,23 +538,26 @@ clientsRouter.get('/:id/export', canRead, async (req, res) => {
         attachedRecipes: (attached?.items ?? []).map((i) => ({ title: recipeTitles.get(i.recipeId) ?? null, label: i.label })),
       };
     }),
-    personalRecipes: recipes.map((r) => ({
-      title: r.title,
+    personalRecipes: recipes.map((r) => {
+      const c = decryptContent(r.contentEnc);
+      return {
+      title: c.title,
       category: r.category,
-      basedOn: r.parent?.title ?? null,
+      basedOn: r.parent ? decryptContent(r.parent.contentEnc).title : null,
       variantNote: decryptNote(r.variantNoteEnc),
-      summary: r.summary,
+      summary: c.summary,
       servings: r.servings,
       prepMinutes: r.prepMinutes,
       cookMinutes: r.cookMinutes,
       kcalPerServing: r.kcal,
-      ingredients: r.ingredients,
-      steps: r.steps,
-      tip: r.tip,
+      ingredients: c.ingredients,
+      steps: c.steps,
+      tip: c.tip,
       imageUrl: r.imageBase ? recipeImageUrl(r.imageBase, 960) : null,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
-    })),
+      };
+    }),
   };
   await audit(req, 'client.exported', 'client', id, { clinical, nutritionPlans: plans.length, personalRecipes: recipes.length });
   res.set({
