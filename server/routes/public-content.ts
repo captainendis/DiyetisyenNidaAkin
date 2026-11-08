@@ -9,6 +9,7 @@ import { notFound, parse } from '../lib/http';
 import { getSettings } from '../services/settings';
 import { PUBLIC_SETTINGS_KEYS } from '../../shared/settings';
 import { decryptNote } from '../services/recipe-notes';
+import { decryptContent } from '../services/recipe-content';
 import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, type PublicRecipe, type PublicRecipeCard } from '../../shared/recipe';
 
 export const publicContentRouter = Router();
@@ -97,17 +98,25 @@ publicContentRouter.get('/blog/:slug', async (req, res) => {
 const PUBLISHED_RECIPE = { isPublished: true, clientId: null, slug: { not: null } } as const;
 
 const recipeCard = {
-  slug: true, title: true, category: true, summary: true, variantNoteEnc: true, servings: true, prepMinutes: true,
+  slug: true, contentEnc: true, category: true, variantNoteEnc: true, servings: true, prepMinutes: true,
   cookMinutes: true, kcal: true, imageBase: true, publishedAt: true,
 } as const;
 
-const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
-const toCard = ({ variantNoteEnc, ...r }: { slug: string | null; publishedAt: Date | null; variantNoteEnc: string | null } & Omit<PublicRecipeCard, 'slug' | 'publishedAt' | 'variantNote'>): PublicRecipeCard => ({
-  ...r,
-  variantNote: decryptNote(variantNoteEnc),
-  slug: r.slug!,
-  publishedAt: r.publishedAt?.toISOString() ?? null,
-});
+type CardRow = Pick<PublicRecipeCard, 'category' | 'servings' | 'prepMinutes' | 'cookMinutes' | 'kcal' | 'imageBase'> & {
+  slug: string | null; publishedAt: Date | null; contentEnc: string | null; variantNoteEnc: string | null;
+};
+// İçerik şifreli saklanır; yayındaki tarif sitede gösterilirken çözülür
+const toCard = ({ contentEnc, variantNoteEnc, ...r }: CardRow): PublicRecipeCard => {
+  const c = decryptContent(contentEnc);
+  return {
+    ...r,
+    title: c.title,
+    summary: c.summary,
+    variantNote: decryptNote(variantNoteEnc),
+    slug: r.slug!,
+    publishedAt: r.publishedAt?.toISOString() ?? null,
+  };
+};
 
 /** Ana sayfa şeridi: panelde seçilenler (seçilme sırasıyla); hiç seçilmemişse son yayınlananlar */
 publicContentRouter.get('/recipes/home', async (_req, res) => {
@@ -138,7 +147,7 @@ publicContentRouter.get('/recipes', async (req, res) => {
 publicContentRouter.get('/recipes/:slug', async (req, res) => {
   const r = await prisma.recipe.findFirst({
     where: { ...PUBLISHED_RECIPE, slug: req.params.slug },
-    select: { ...recipeCard, ingredients: true, steps: true, tip: true, updatedAt: true },
+    select: { ...recipeCard, updatedAt: true },
   });
   if (!r) throw notFound('Tarif bulunamadı');
   const related = await prisma.recipe.findMany({
@@ -147,11 +156,12 @@ publicContentRouter.get('/recipes/:slug', async (req, res) => {
     take: 3,
     select: recipeCard,
   });
+  const c = decryptContent(r.contentEnc);
   const recipe: PublicRecipe = {
     ...toCard(r),
-    ingredients: strings(r.ingredients),
-    steps: strings(r.steps),
-    tip: r.tip,
+    ingredients: c.ingredients,
+    steps: c.steps,
+    tip: c.tip,
     updatedAt: r.updatedAt.toISOString(),
   };
   res.json({ recipe, related: related.map(toCard) });

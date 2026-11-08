@@ -18,6 +18,7 @@ import { badRequest, HttpError, notFound, parse } from '../lib/http';
 import { sniffMime } from '../lib/storage';
 import { requirePermission } from '../auth/session';
 import { decryptNote, encryptNote } from '../services/recipe-notes';
+import { decryptContent, encryptContent } from '../services/recipe-content';
 import { copyRecipeImage, deleteRecipeImage, processRecipeImage, recipeImageDataUri } from '../services/images';
 import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, recipeCreateSchema, recipeInputSchema, type PrintRecipe, type Recipe, type RecipeInput } from '../../shared/recipe';
 import type { NutritionPlanData } from '../../shared/plan';
@@ -27,28 +28,27 @@ export const recipesRouter = Router();
 const read = requirePermission('clinical:read');
 const write = requirePermission('clinical:write');
 
-const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
-
 const include = {
-  parent: { select: { id: true, title: true } },
+  parent: { select: { id: true, contentEnc: true } },
   client: { select: { id: true, firstName: true, lastName: true } },
   _count: { select: { variants: true } },
 } satisfies Prisma.RecipeInclude;
 type Row = Prisma.RecipeGetPayload<{ include: typeof include }>;
 
 export function toRecipe(r: Row): Recipe {
+  const c = decryptContent(r.contentEnc);
   return {
     id: r.id,
-    title: r.title,
+    title: c.title,
     category: r.category,
-    summary: r.summary,
+    summary: c.summary,
     servings: r.servings,
     prepMinutes: r.prepMinutes,
     cookMinutes: r.cookMinutes,
     kcal: r.kcal,
-    ingredients: strings(r.ingredients),
-    steps: strings(r.steps),
-    tip: r.tip,
+    ingredients: c.ingredients,
+    steps: c.steps,
+    tip: c.tip,
     isPublished: r.isPublished,
     isFeatured: !!r.featuredAt,
     variantNote: decryptNote(r.variantNoteEnc),
@@ -58,7 +58,7 @@ export function toRecipe(r: Row): Recipe {
     publishedAt: r.publishedAt?.toISOString() ?? null,
     featuredAt: r.featuredAt?.toISOString() ?? null,
     parentId: r.parentId,
-    parent: r.parent,
+    parent: r.parent ? { id: r.parent.id, title: decryptContent(r.parent.contentEnc).title } : null,
     client: r.client,
     variantCount: r._count.variants,
     createdAt: r.createdAt.toISOString(),
@@ -76,17 +76,18 @@ export async function resolvePlanRecipes(plan: NutritionPlanData): Promise<Print
   for (const it of items) {
     const r = byId.get(it.recipeId);
     if (!r) continue;
+    const c = decryptContent(r.contentEnc);
     out.push({
-      title: r.title,
+      title: c.title,
       category: r.category,
-      summary: r.summary,
+      summary: c.summary,
       servings: r.servings,
       prepMinutes: r.prepMinutes,
       cookMinutes: r.cookMinutes,
       kcal: r.kcal,
-      ingredients: strings(r.ingredients),
-      steps: strings(r.steps),
-      tip: r.tip,
+      ingredients: c.ingredients,
+      steps: c.steps,
+      tip: c.tip,
       variantNote: decryptNote(r.variantNoteEnc),
       personal: !!r.clientId,
       label: it.label,
@@ -147,9 +148,9 @@ async function validateRelations(body: Pick<RecipeInput, 'clientId' | 'isPublish
 }
 
 const fields = (b: RecipeInput) => ({
-  title: b.title, category: b.category, summary: b.summary, servings: b.servings, prepMinutes: b.prepMinutes,
-  cookMinutes: b.cookMinutes, kcal: b.kcal, ingredients: b.ingredients, steps: b.steps, tip: b.tip,
-  // Varyasyon notu yalnızca şifreli yazılır
+  // Ad, açıklama, malzemeler, adımlar, ipucu ve varyasyon notu yalnızca şifreli yazılır
+  contentEnc: encryptContent(b),
+  category: b.category, servings: b.servings, prepMinutes: b.prepMinutes, cookMinutes: b.cookMinutes, kcal: b.kcal,
   variantNoteEnc: encryptNote(b.variantNote), clientId: b.clientId, isPublished: b.isPublished,
 });
 
@@ -162,13 +163,15 @@ recipesRouter.get('/', read, async (req, res) => {
     where: {
       ...(q.category ? { category: q.category } : {}),
       ...(q.clientId ? { clientId: q.clientId } : {}),
-      ...(q.q ? { OR: [{ title: { contains: q.q, mode: 'insensitive' as const } }, { summary: { contains: q.q, mode: 'insensitive' as const } }] } : {}),
     },
     orderBy: [{ updatedAt: 'desc' }],
     take: 500,
     include,
   });
-  res.json({ items: rows.map(toRecipe) });
+  // İçerik şifreli olduğu için arama çözüldükten sonra bellekte yapılır (kütüphane küçük; en fazla 500 tarif)
+  const needle = q.q?.toLocaleLowerCase('tr-TR');
+  const items = rows.map(toRecipe).filter((r) => !needle || `${r.title} ${r.summary}`.toLocaleLowerCase('tr-TR').includes(needle));
+  res.json({ items });
 });
 
 recipesRouter.get('/:id', read, async (req, res) => {
