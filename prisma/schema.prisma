@@ -61,6 +61,7 @@ model User {
   measurements       Measurement[]
   clientFiles        ClientFile[]
   nutritionPlans     NutritionPlan[]
+  recipes            Recipe[]
   createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
 
   @@map("users")
@@ -423,6 +424,43 @@ model NutritionPlan {
   @@index([clientId])
   @@index([isTemplate])
   @@map("nutrition_plans")
+}
+
+enum RecipeCategory {
+  BREAKFAST
+  SNACK
+  MAIN
+  SOUP
+  SALAD
+  DESSERT
+  DRINK
+}
+
+/// Diyetisyenin tarif kütüphanesi. Danışana ait değildir (sağlık verisi içermez); planlara ek sayfa olarak eklenir.
+model Recipe {
+  id          String         @id @default(cuid())
+  title       String
+  category    RecipeCategory
+  summary     String         @default("")
+  servings    Int?
+  prepMinutes Int?
+  cookMinutes Int?
+  /// Porsiyon başına yaklaşık kcal
+  kcal        Int?
+  /// string[]
+  ingredients Json           @default("[]")
+  /// string[]
+  steps       Json           @default("[]")
+  tip         String         @default("")
+  /// /uploads/public/recipes/<id> — <base>-480.webp ve <base>-960.webp
+  imageBase   String?
+  createdById String?
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@index([category])
+  @@map("recipes")
 }
 
 // ───────────────────────────── İçerik ─────────────────────────────

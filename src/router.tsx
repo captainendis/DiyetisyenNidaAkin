@@ -37,6 +37,7 @@ const CalendarSettingsPage = lazy(() => import('@/pages/panel/CalendarSettingsPa
 const AuditLogPage = lazy(() => import('@/pages/panel/AuditLogPage'));
 const PlansPage = lazy(() => import('@/pages/panel/PlansPage'));
 const PlanEditorPage = lazy(() => import('@/pages/panel/PlanEditorPage'));
+const RecipesPage = lazy(() => import('@/pages/panel/RecipesPage'));
 
 function PublicFallback() {
   return <div className="min-h-dvh bg-espresso" aria-busy="true" />;
@@ -86,6 +87,7 @@ export const router = createBrowserRouter([
           { path: 'danisanlar/:id', element: s(<ClientDetailPage />, true) },
           { path: 'planlar', element: s(<PlansPage />, true) },
           { path: 'planlar/:id', element: s(<PlanEditorPage />, true) },
+          { path: 'tarifler', element: s(<RecipesPage />, true) },
           { path: 'bildirimler', element: s(<NotificationsPage />, true) },
           { path: 'raporlar', element: s(<ReportsPage />, true) },
           { path: 'hizmetler', element: s(<ServicesAdminPage />, true) },

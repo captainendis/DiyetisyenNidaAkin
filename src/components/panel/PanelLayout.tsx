@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import {
-  BarChart3, Bell, CalendarDays, ClipboardList, CalendarCog, ExternalLink, FileText, LayoutDashboard, Leaf, LogOut, Menu, Settings, UserRound, Users, X,
+  BarChart3, Bell, CalendarDays, ClipboardList, CalendarCog, CookingPot, ExternalLink, FileText, LayoutDashboard, Leaf, LogOut, Menu, Settings, UserRound, Users, X,
 } from 'lucide-react';
 import { LogoMark } from '@/components/icons/Logo';
 import { FeedbackProvider } from './ui';
@@ -23,6 +23,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { to: '/panel/randevular', label: 'Randevular', icon: CalendarDays, perm: 'appointments:read' },
       { to: '/panel/danisanlar', label: 'Danışanlar', icon: Users, perm: 'clients:read' },
       { to: '/panel/planlar', label: 'Beslenme Planları', icon: ClipboardList, perm: 'clinical:read' },
+      { to: '/panel/tarifler', label: 'Tarifler', icon: CookingPot, perm: 'clinical:read' },
       { to: '/panel/bildirimler', label: 'Bildirimler', icon: Bell, badge: 'notifications' },
     ],
   },

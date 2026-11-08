@@ -133,7 +133,7 @@ npm run db:seed        # temel verileri yazar; mevcut içeriği EZMEZ, tekrar ç
 Tablolar: `users`, `roles`, `sessions`, `password_reset_tokens`, `clients`, `appointments`,
 `appointment_status_history`, `services`, `availability_rules`, `blocked_dates`, `notifications`,
 `notification_deliveries`, `consultation_notes`, `measurements`, `client_files`, `blog_categories`,
-`blog_posts`, `faqs`, `media_assets`, `website_settings`, `nutrition_plans`, `audit_logs`.
+`blog_posts`, `faqs`, `media_assets`, `website_settings`, `nutrition_plans`, `recipes`, `audit_logs`.
 
 `appointments_no_overlap_confirmed` adlı PostgreSQL **exclusion constraint**, onaylanmış/tamamlanmış randevuların
 zaman aralıklarının çakışmasını veritabanı seviyesinde de engeller (uygulama katmanındaki kilitli kontrolün yedeği).
@@ -209,6 +209,27 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   görüntüleme ve PDF indirme denetim kaydına yazılır.
 - Sunucuda Chromium gerekir: Docker imajında otomatik kurulur; diğer ortamlarda `CHROMIUM_PATH` ile yolu verin
   (boşsa Playwright'ın kurulu tarayıcısı aranır).
+
+## Tarifler ve plan ek sayfası
+
+**Panel → Tarifler** — diyetisyenin fotoğraflı tarif kütüphanesi.
+
+- Tarif; ad, kategori (Kahvaltı, Ara öğün, Ana yemek, Çorba, Salata, Tatlı, İçecek), kısa açıklama, porsiyon,
+  hazırlık/pişirme süresi, porsiyon başına yaklaşık kalori, malzemeler (satır satır), adım adım hazırlanış ve isteğe bağlı
+  ipucundan oluşur. Kategori süzgeci ve ad/malzeme araması vardır.
+- **Fotoğraf:** sunucuda döndürülür, **konum (GPS) ve cihaz bilgileri silinir**, 4:3 olarak (dikkat çeken bölge korunarak)
+  kırpılır ve 480 px (panel/önizleme) + 960 px (baskı) WebP olarak `storage/public/recipes/` altına yazılır.
+- **Plana ekleme:** Plan düzenleyicideki **“Tarif önerileri (ek sayfa)”** bölümünden kütüphaneden çoklu seçimle en fazla
+  8 tarif eklenir (seçim penceresinden yeni tarif de oluşturulabilir). Her tarifin danışanın göreceği bir etiketi vardır;
+  plandaki öğün adına göre otomatik önerilir (“Kahvaltı için öneri”, “Ara öğün için öneri” …) ve değiştirilebilir. Sıra
+  değiştirilebilir, ek sayfa başlığı düzenlenebilir.
+- **PDF:** 1. sayfa plan olarak kalır (altyazıda “Tarif önerileri sonraki sayfada.” notu çıkar); tarifler fotoğraflarıyla
+  ek A4 sayfalara **otomatik dağıtılır** (sığdığı kadar sayfa başına, genelde 2 tarif). Tek başına sayfayı aşan uzun bir
+  tarif %70'e kadar küçültülür; yine sığmazsa önizlemede ve indirmede uyarı verilir. Canlı önizleme tüm sayfaları gösterir.
+- Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planların PDF'i güncel hâliyle basılır; silinen tarif
+  planlarda “silinmiş” olarak işaretlenir ve PDF'e basılmaz.
+- Tarifler danışana ait olmadığından şifrelenmez; erişim planlarla aynı izinlerle (klinik yetkili roller) sınırlıdır ve
+  ekleme/düzenleme/silme denetim kaydına yazılır.
 
 ## Randevu sistemi nasıl çalışır
 
@@ -296,6 +317,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `POST /site-images` (görsel işleme) · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
 | Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/pdf` |
+| Tarifler | `GET/POST /api/recipes` (`?category`, `?q`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 
