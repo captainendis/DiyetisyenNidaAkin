@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router';
 import { RequirePermission } from '@/components/panel/PanelAuth';
 import { ErrorState, PageHeader, Skeleton, Tabs } from '@/components/panel/ui';
 import { SettingsStoreProvider, useSettingsStore } from '@/components/panel/content/settingsStore';
-import { ApproachForm, CtaForm, HeroForm, IntroForm, ProcessForm } from '@/components/panel/content/HomeForms';
+import { ApproachForm, CtaForm, HeroForm, IntroForm, ProcessForm, RecipesSectionForm } from '@/components/panel/content/HomeForms';
 import { AboutForm } from '@/components/panel/content/AboutForm';
 import { ContactForm, SocialForm } from '@/components/panel/content/ContactForm';
 import { SeoForm } from '@/components/panel/content/SeoForm';
@@ -16,7 +16,7 @@ import type { SettingsKey } from '@shared/settings';
 
 type Tab = 'ana-sayfa' | 'gorseller' | 'hakkimda' | 'iletisim' | 'blog' | 'sss' | 'seo';
 const TAB_KEYS: Record<Tab, SettingsKey[]> = {
-  'ana-sayfa': ['hero', 'intro', 'approach', 'process', 'cta'],
+  'ana-sayfa': ['hero', 'intro', 'approach', 'process', 'recipesSection', 'cta'],
   gorseller: ['media'],
   hakkimda: ['about'],
   iletisim: ['contact', 'social'],
@@ -63,6 +63,7 @@ function Body() {
               <IntroForm />
               <ApproachForm />
               <ProcessForm />
+              <RecipesSectionForm />
               <CtaForm />
             </>
           )}

@@ -58,6 +58,11 @@ export const defaultSettings: Settings = {
       { title: 'Takip', body: 'Takip görüşmelerinde planı işleyen ve zorlanan kısımlara göre güncelliyoruz.' },
     ],
   },
+  recipesSection: {
+    heading: 'Mutfaktan',
+    intro: 'Planlarda en sık önerdiğim pratik ve dengeli tarifler.',
+    linkLabel: 'Tüm tarifler',
+  },
   cta: {
     heading: 'İlk görüşme için bir saat seçin.',
     body: 'Takvimden uygun bir saat seçebilir ya da saat seçmeden iletişim talebi bırakabilirsiniz. Talebiniz incelenip size dönüş yapılır.',
