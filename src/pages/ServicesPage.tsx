@@ -50,7 +50,7 @@ export default function ServicesPage() {
               <Reveal as="li" key={s.id} amount={0.3}>
                 <article id={s.slug} className="grid scroll-mt-28 gap-6 border-t border-espresso/12 py-12 last:border-b sm:py-16 lg:grid-cols-12 lg:gap-x-10">
                   <div className="lg:col-span-6">
-                    <ServiceIcon name={s.icon} className="h-12 w-12 text-gold" />
+                    <ServiceIcon name={s.icon} className="h-12 w-12 text-gold-ink" />
                     <h2 className="mt-6 font-display text-[clamp(2rem,1.5rem+1.6vw,3rem)] leading-[1.05] font-medium">
                       <Link to={`/hizmetler/${s.slug}`} className="hover:text-cocoa">{s.title}</Link>
                     </h2>

@@ -128,7 +128,7 @@ export function BlockedDates({ onWarnings }: { onWarnings: (w: AffectedAppointme
                     {g.ids.length > 1 && <span className="tabular">· {g.ids.length} gün</span>}
                   </div>
                 </div>
-                <IconButton label="Kaldır" className="hover:text-danger" onClick={() => void remove(g.ids, range)}>
+                <IconButton label="Kaldır" className="hover:text-danger-ink" onClick={() => void remove(g.ids, range)}>
                   <Trash2 className="h-4 w-4" />
                 </IconButton>
               </li>

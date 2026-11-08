@@ -30,14 +30,14 @@ interface SubmitRes { ok: true; status: 'PENDING' | 'NEW_REQUEST'; reference: st
 
 
 const fieldCls =
-  'w-full rounded-none border-0 border-b border-espresso/20 bg-transparent px-0 py-3 text-[1rem] text-espresso placeholder:text-taupe/60 transition-colors focus:border-espresso focus:outline-none focus:ring-0 aria-[invalid=true]:border-danger';
+  'w-full rounded-none border-0 border-b border-espresso/20 bg-transparent px-0 py-3 text-[1rem] text-espresso placeholder:text-taupe transition-colors focus:border-espresso focus:outline-none focus:ring-0 aria-[invalid=true]:border-danger';
 
 function FieldShell({ label, error, htmlFor, children, hint }: { label: string; error?: string; htmlFor: string; children: ReactNode; hint?: string }) {
   return (
     <div>
       <label htmlFor={htmlFor} className="text-[0.7rem] font-semibold tracking-[0.16em] text-taupe uppercase">{label}</label>
       {children}
-      {error ? <p className="mt-1.5 text-[0.8rem] text-danger" role="alert">{error}</p> : hint ? <p className="mt-1.5 text-[0.8rem] text-taupe">{hint}</p> : null}
+      {error ? <p className="mt-1.5 text-[0.8rem] text-danger-ink" role="alert">{error}</p> : hint ? <p className="mt-1.5 text-[0.8rem] text-taupe">{hint}</p> : null}
     </div>
   );
 }
@@ -286,7 +286,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
                       aria-pressed={active}
                       className={cn('flex items-center gap-3.5 px-4 py-3.5 text-left text-[0.92rem] transition-colors', spanLast && 'sm:col-span-2', active ? 'bg-espresso text-cream' : 'bg-ivory hover:bg-cream')}
                     >
-                      <ServiceIcon name={s.icon} className={cn('h-7 w-7 shrink-0', active ? 'text-rose' : 'text-gold')} />
+                      <ServiceIcon name={s.icon} className={cn('h-7 w-7 shrink-0', active ? 'text-rose' : 'text-gold-ink')} />
                       <span className="leading-snug">{s.title}</span>
                     </button>
                   );
@@ -315,7 +315,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
                   </button>
                 ))}
               </div>
-              {errors.meetingType && <p className="mt-2 text-[0.8rem] text-danger" role="alert">{errors.meetingType}</p>}
+              {errors.meetingType && <p className="mt-2 text-[0.8rem] text-danger-ink" role="alert">{errors.meetingType}</p>}
               {meetingType === 'IN_PERSON' && site.settings.contact.venueName && (
                 <p className="mt-3 max-w-md text-[0.85rem] leading-relaxed text-taupe">
                   Yüz yüze görüşmeler {site.settings.contact.venueName}’in üst katındaki danışmanlık alanında yapılır
@@ -351,7 +351,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
 
             {mode === 'callback' ? (
               <div className="mt-8 flex gap-5 border-t border-espresso/10 pt-8">
-                <PhoneCall className="mt-1 h-6 w-6 shrink-0 text-gold" strokeWidth={1.3} />
+                <PhoneCall className="mt-1 h-6 w-6 shrink-0 text-gold-ink" strokeWidth={1.3} />
                 <div>
                   <p className="font-display text-[1.4rem]">Sizin için uygun bir zamanı birlikte planlayalım.</p>
                   <p className="mt-2 max-w-md text-[0.95rem] leading-relaxed text-taupe">
@@ -421,7 +421,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
                       )}
                     </>
                   )}
-                  {errors.time && <p className="mt-3 text-[0.8rem] text-danger" role="alert">{errors.time}</p>}
+                  {errors.time && <p className="mt-3 text-[0.8rem] text-danger-ink" role="alert">{errors.time}</p>}
                 </div>
               </div>
             )}
@@ -465,10 +465,10 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
                 <span>
                   Kişisel verilerimin işlenmesine ilişkin{' '}
                   <Link to="/kvkk-aydinlatma-metni" target="_blank" className="underline decoration-gold underline-offset-4">Aydınlatma Metni</Link>'ni okudum.
-                  <span className="text-danger"> *</span>
+                  <span className="text-danger-ink"> *</span>
                 </span>
               </label>
-              {errors.kvkkNotice && <p className="-mt-2 pl-7 text-[0.8rem] text-danger" role="alert">{errors.kvkkNotice}</p>}
+              {errors.kvkkNotice && <p className="-mt-2 pl-7 text-[0.8rem] text-danger-ink" role="alert">{errors.kvkkNotice}</p>}
               <label className="flex cursor-pointer items-start gap-3 text-[0.88rem] leading-relaxed text-taupe">
                 <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-espresso" checked={form.explicitConsent} onChange={(e) => setForm({ ...form, explicitConsent: e.target.checked })} />
                 <span>
@@ -483,11 +483,11 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
 
         {step === 4 && result && (
           <motion.div key="s4" {...slide} className="py-4">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold text-gold">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold text-gold-ink">
               <Check className="h-6 w-6" strokeWidth={1.4} />
             </span>
             <h3 className="mt-7 font-display text-[2.1rem] leading-tight font-medium sm:text-[2.6rem]">Talebiniz alındı.</h3>
-            <p className="mt-2 text-[0.75rem] font-semibold tracking-[0.18em] text-rose-deep uppercase">Durum: Onay bekliyor</p>
+            <p className="mt-2 text-[0.75rem] font-semibold tracking-[0.18em] text-rose-ink uppercase">Durum: Onay bekliyor</p>
             <p className="mt-5 max-w-lg text-[1rem] leading-relaxed text-cocoa/80">
               {result.status === 'NEW_REQUEST'
                 ? 'İletişim talebiniz bize ulaştı. Talebiniz incelendikten sonra sizinle iletişime geçilerek görüşme zamanı birlikte belirlenecek.'

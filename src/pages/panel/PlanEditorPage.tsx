@@ -152,7 +152,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
         </Card>
         <div className={cn('lg:sticky lg:top-24 lg:self-start', mobileView === 'form' && 'hidden lg:block')}>
           <PlanPreview data={data} recipes={printRecipes} onFit={setFit} />
-          <p className={cn('mt-3 text-[0.8rem]', fit && !fit.fits ? 'font-semibold text-danger' : fit && fit.scale < 0.85 ? 'font-semibold text-[#93682a]' : 'text-panel-muted')} role="status">
+          <p className={cn('mt-3 text-[0.8rem]', fit && !fit.fits ? 'font-semibold text-danger-ink' : fit && fit.scale < 0.85 ? 'font-semibold text-warning-ink' : 'text-panel-muted')} role="status">
             {!fit
               ? 'Önizleme hazırlanıyor…'
               : !fit.fits
@@ -164,7 +164,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
                   : 'Tek sayfaya sığıyor · tam boyut.'}
           </p>
           {fit && fit.pages > 1 && (
-            <p className={cn('mt-1 text-[0.8rem]', fit.recipesFit ? 'text-panel-muted' : 'font-semibold text-[#93682a]')}>
+            <p className={cn('mt-1 text-[0.8rem]', fit.recipesFit ? 'text-panel-muted' : 'font-semibold text-warning-ink')}>
               {fit.recipesFit
                 ? `Tarif önerileri ${fit.pages - 1} ek sayfaya yerleşti · toplam ${fit.pages} sayfa.`
                 : 'Bir tarif tek sayfaya sığmıyor — adımlarını veya malzeme listesini kısaltın.'}

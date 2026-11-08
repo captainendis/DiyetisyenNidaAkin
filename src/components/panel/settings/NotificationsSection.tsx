@@ -45,15 +45,15 @@ export function NotificationsSection() {
         <ul className="space-y-2 text-sm">
           <li className="flex items-center justify-between rounded-lg border border-panel-line px-4 py-3">
             <span className="font-medium text-espresso">Panel içi</span>
-            <span className="text-[0.8rem] font-semibold text-success">Etkin</span>
+            <span className="text-[0.8rem] font-semibold text-success-ink">Etkin</span>
           </li>
           <li className="flex items-center justify-between rounded-lg border border-panel-line px-4 py-3">
             <span className="font-medium text-espresso">E-posta</span>
-            <span className={emailOn ? 'text-[0.8rem] font-semibold text-success' : 'text-[0.8rem] text-panel-muted'}>{emailOn ? 'Yapılandırıldı' : 'Yapılandırılmadı'}</span>
+            <span className={emailOn ? 'text-[0.8rem] font-semibold text-success-ink' : 'text-[0.8rem] text-panel-muted'}>{emailOn ? 'Yapılandırıldı' : 'Yapılandırılmadı'}</span>
           </li>
           <li className="flex items-center justify-between rounded-lg border border-panel-line px-4 py-3">
             <span className="font-medium text-espresso">WhatsApp</span>
-            <span className={waOn ? 'text-[0.8rem] font-semibold text-success' : 'text-[0.8rem] text-panel-muted'}>{waOn ? 'Yapılandırıldı' : 'Entegrasyon henüz yok'}</span>
+            <span className={waOn ? 'text-[0.8rem] font-semibold text-success-ink' : 'text-[0.8rem] text-panel-muted'}>{waOn ? 'Yapılandırıldı' : 'Entegrasyon henüz yok'}</span>
           </li>
         </ul>
         {!emailOn && (

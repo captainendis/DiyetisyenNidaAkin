@@ -92,7 +92,7 @@ export function BlogList() {
                 cell: (r) => (
                   <span className="inline-flex items-center gap-1.5">
                     <Badge tone={POST_TONE[r.status]}>{POST_STATUS_LABEL[r.status]}</Badge>
-                    {r.expertReviewed && <ShieldCheck className="h-4 w-4 text-success" aria-label="Uzman onaylı" />}
+                    {r.expertReviewed && <ShieldCheck className="h-4 w-4 text-success-ink" aria-label="Uzman onaylı" />}
                   </span>
                 ),
               },

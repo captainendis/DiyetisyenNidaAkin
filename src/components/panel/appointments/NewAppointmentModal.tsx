@@ -199,7 +199,7 @@ export default function NewAppointmentModal({
                   className="h-10 w-full rounded-lg border border-panel-line bg-white pr-3 pl-9 text-sm focus:border-cocoa focus:outline-none aria-[invalid=true]:border-danger"
                 />
               </div>
-              {errors.client && <p className="mt-1.5 text-[0.78rem] text-danger">{errors.client}</p>}
+              {errors.client && <p className="mt-1.5 text-[0.78rem] text-danger-ink">{errors.client}</p>}
               {searchState === 'error' && <p className="mt-2 text-[0.8rem] text-panel-muted">Danışan araması şu anda kullanılamıyor — “Yeni kişi” ile devam edebilirsiniz.</p>}
               {results.length > 0 && (
                 <ul className="mt-2 max-h-52 divide-y divide-panel-line overflow-y-auto rounded-lg border border-panel-line">
@@ -247,7 +247,7 @@ export default function NewAppointmentModal({
             <div className="pb-2"><Switch checked={outside} onChange={(v) => { setOutside(v); setTime(''); }} label="Çalışma saatleri dışında özel randevu" /></div>
           </div>
           <SlotPicker date={date} duration={effDuration} value={time} onChange={setTime} freeTime={outside} />
-          {errors.time && <p className="text-[0.78rem] text-danger">{errors.time}</p>}
+          {errors.time && <p className="text-[0.78rem] text-danger-ink">{errors.time}</p>}
         </section>
 
         <section className="grid gap-3 sm:grid-cols-[14rem_1fr]">

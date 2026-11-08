@@ -27,7 +27,7 @@ export function Process() {
               <span className="absolute top-0 left-0 flex h-[15px] w-[15px] items-center justify-center rounded-full border border-gold bg-ivory" aria-hidden>
                 <span className="h-[5px] w-[5px] rounded-full bg-gold" />
               </span>
-              <p className="font-display text-[3.2rem] leading-none font-light text-gold/80 tabular-nums lg:mt-10 lg:text-[4rem]">{String(i + 1).padStart(2, '0')}</p>
+              <p className="font-display text-[3.2rem] leading-none font-light text-gold-ink tabular-nums lg:mt-10 lg:text-[4rem]">{String(i + 1).padStart(2, '0')}</p>
               <h3 className="mt-4 font-display text-[1.75rem] leading-tight font-medium">{s.title}</h3>
               <p className="mt-2 max-w-[17rem] text-[0.95rem] leading-relaxed text-cocoa/75">{s.body}</p>
             </Reveal>

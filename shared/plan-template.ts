@@ -9,7 +9,7 @@
  * A4 baskıda da rahat okunacak şekilde seçilmiştir. İçerik uzarsa fitPlanToPage() tüm ölçüleri
  * orantılı küçültür; MIN_SCALE altına inmesi gerekirse "sığmıyor" sonucu döner.
  */
-import type { NutritionPlanData } from './plan';
+import { PLAN_THEMES, type NutritionPlanData, type PlanThemeColors } from './plan';
 import { RECIPE_CATEGORY_LABEL, recipeMeta, type PrintRecipe } from './recipe';
 
 export const MIN_SCALE = 0.72;
@@ -19,10 +19,8 @@ export const RECIPE_MIN_SCALE = 0.7;
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-const THEMES = {
-  green: { bg: '#EDF0E5', ink: '#1E3326', muted: '#5D6B60', accent: '#E3AE1E', card: '#FFFFFF', chip: '#E6EBDD', line: '#C7CFBD', dark: '#1F3326', darkInk: '#F1F3EC', darkAccent: '#E9B728' },
-  brand: { bg: '#F6EFE4', ink: '#2A1D14', muted: '#7A6555', accent: '#C99282', card: '#FFFDF9', chip: '#EFE5D6', line: '#DCCDB8', dark: '#302219', darkInk: '#F4EBDD', darkAccent: '#DDAFA0' },
-} as const;
+/** Kart zemini sayfa zeminiyle aynıysa (yazıcı dostu tema) kartlar ince bir çerçeveyle ayrılır */
+const outline = (t: PlanThemeColors) => (t.card.toLowerCase() === t.bg.toLowerCase() ? `box-shadow: inset 0 0 0 0.8pt ${t.line};` : '');
 
 const WEEKDAYS = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'];
 
@@ -58,7 +56,7 @@ export interface RenderPlanOptions {
 }
 
 export function renderPlanHtml(plan: NutritionPlanData, opts: RenderPlanOptions) {
-  const t = THEMES[plan.theme] ?? THEMES.green;
+  const t = (PLAN_THEMES[plan.theme] ?? PLAN_THEMES.green).colors;
   const recipes = opts.recipes ?? [];
   const recipesTitle = plan.recipes?.title?.trim() || 'Tarif önerileri';
   const cols = Math.max(1, ...plan.meals.map((m) => m.options.length));
@@ -153,7 +151,7 @@ h1 { font-size: calc(30pt * var(--s)); line-height: 1.02; font-weight: 800; lett
 .dot { flex: none; width: 4.4mm; height: 4.4mm; border-radius: 50%; background: ${t.accent}; border: 1.3pt solid ${t.ink}; margin-top: calc(1.2mm * var(--s)); position: relative; z-index: 1; }
 .time { font-size: calc(17pt * var(--s)); font-weight: 800; line-height: 1.05; letter-spacing: -0.01em; }
 .mname { font-size: calc(8.8pt * var(--s)); color: ${t.muted}; font-weight: 600; line-height: 1.2; margin-top: 0.6mm; }
-.card { background: ${t.card}; border-radius: 3.5mm; padding: calc(3.2mm * var(--s)) calc(4mm * var(--s)); display: grid; gap: 0 calc(4mm * var(--s)); }
+.card { background: ${t.card}; ${outline(t)} border-radius: 3.5mm; padding: calc(3.2mm * var(--s)) calc(4mm * var(--s)); display: grid; gap: 0 calc(4mm * var(--s)); }
 .opt + .opt { border-left: 0.8pt solid ${t.line}; padding-left: calc(4mm * var(--s)); }
 .opt-h { font-size: calc(8.4pt * var(--s)); color: ${t.muted}; font-weight: 700; margin-bottom: calc(0.8mm * var(--s)); }
 .opt ul { list-style: none; }
@@ -164,7 +162,7 @@ h1 { font-size: calc(30pt * var(--s)); line-height: 1.02; font-weight: 800; lett
 .habits { background: ${t.dark}; color: ${t.darkInk}; border-radius: 3.5mm; padding: calc(5mm * var(--s)) calc(5.5mm * var(--s)); }
 .habits p { font-size: calc(9.6pt * var(--s)); line-height: 1.5; margin-top: calc(2mm * var(--s)); opacity: 0.95; }
 .habits b { color: ${t.darkAccent}; font-weight: 800; }
-.portions { background: ${t.card}; border-radius: 3.5mm; padding: calc(5mm * var(--s)) calc(5mm * var(--s)); }
+.portions { background: ${t.card}; ${outline(t)} border-radius: 3.5mm; padding: calc(5mm * var(--s)) calc(5mm * var(--s)); }
 .chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2mm; }
 .chip { background: ${t.chip}; border-radius: 2mm; padding: calc(1.8mm * var(--s)) calc(2.4mm * var(--s)); }
 .chip b { display: block; font-size: calc(9.6pt * var(--s)); font-weight: 800; }
@@ -176,15 +174,15 @@ h1 { font-size: calc(30pt * var(--s)); line-height: 1.02; font-weight: 800; lett
 .rhead h1 { font-size: calc(24pt * var(--s)); max-width: none; }
 .rhead .sub { margin-top: 0; text-align: right; }
 .rlist { display: flex; flex-direction: column; gap: calc(4mm * var(--s)); }
-.recipe { background: ${t.card}; border-radius: 3.5mm; padding: calc(5mm * var(--s)) calc(5.5mm * var(--s)); break-inside: avoid; }
+.recipe { background: ${t.card}; ${outline(t)} border-radius: 3.5mm; padding: calc(5mm * var(--s)) calc(5.5mm * var(--s)); break-inside: avoid; }
 .r-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: calc(5mm * var(--s)); align-items: start; }
 .recipe.has-img .r-top { grid-template-columns: calc(58mm * var(--s)) minmax(0, 1fr); }
 .r-img { width: 100%; aspect-ratio: 4 / 3; border-radius: 2.5mm; overflow: hidden; background: ${t.chip}; }
 .r-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.r-label { display: inline-block; background: ${t.accent}; color: ${t.dark}; border-radius: 99px; padding: calc(0.7mm * var(--s)) calc(2.6mm * var(--s)); font-size: calc(8pt * var(--s)); font-weight: 800; letter-spacing: 0.02em; }
+.r-label { display: inline-block; background: ${t.accent}; color: ${t.ink}; border-radius: 99px; padding: calc(0.7mm * var(--s)) calc(2.6mm * var(--s)); font-size: calc(8pt * var(--s)); font-weight: 800; letter-spacing: 0.02em; }
 .r-title { font-size: calc(17pt * var(--s)); font-weight: 800; line-height: 1.12; letter-spacing: -0.01em; margin-top: calc(2mm * var(--s)); }
 .r-var { font-size: calc(9.4pt * var(--s)); font-weight: 600; color: ${t.ink}; margin-top: calc(1.2mm * var(--s)); }
-.r-var b { font-weight: 800; color: ${t.dark}; background: ${t.chip}; border-radius: 1.2mm; padding: 0 1.4mm; }
+.r-var b { font-weight: 800; color: ${t.ink}; background: ${t.chip}; border-radius: 1.2mm; padding: 0 1.4mm; }
 .r-meta { display: flex; flex-wrap: wrap; gap: calc(1.2mm * var(--s)) calc(1.6mm * var(--s)); margin-top: calc(2.2mm * var(--s)); }
 .r-meta span { background: ${t.chip}; border-radius: 1.5mm; padding: calc(0.6mm * var(--s)) calc(2mm * var(--s)); font-size: calc(8.4pt * var(--s)); font-weight: 600; color: ${t.muted}; }
 .r-sum { font-size: calc(9.8pt * var(--s)); line-height: 1.45; color: ${t.muted}; font-weight: 500; margin-top: calc(2.4mm * var(--s)); }

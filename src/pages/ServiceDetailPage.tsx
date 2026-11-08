@@ -41,7 +41,7 @@ export default function ServiceDetailPage() {
       <section className="bg-ivory text-espresso">
         <div className="container-edge grid gap-14 py-20 sm:py-28 lg:grid-cols-12 lg:gap-x-10 lg:py-36">
           <Reveal className="lg:col-span-3">
-            <ServiceIcon name={service.icon} className="h-20 w-20 text-gold" />
+            <ServiceIcon name={service.icon} className="h-20 w-20 text-gold-ink" />
             <div className="mt-6"><ServiceMeta durationMinutes={service.durationMinutes} priceCents={service.priceCents} /></div>
           </Reveal>
           <Reveal className="lg:col-span-7 lg:col-start-5">
@@ -62,7 +62,7 @@ export default function ServiceDetailPage() {
               {others.map((s) => (
                 <li key={s.id}>
                   <Link to={`/hizmetler/${s.slug}`} className="group flex h-full items-center gap-5 bg-cream px-6 py-7 transition-colors hover:bg-ivory">
-                    <ServiceIcon name={s.icon} className="h-10 w-10 shrink-0 text-gold transition-colors group-hover:text-rose-deep" />
+                    <ServiceIcon name={s.icon} className="h-10 w-10 shrink-0 text-gold-ink transition-colors group-hover:text-rose-ink" />
                     <span className="font-display text-[1.35rem] leading-tight">{s.title}</span>
                   </Link>
                 </li>

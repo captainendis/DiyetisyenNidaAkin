@@ -74,7 +74,7 @@ export function AppointmentSection() {
           <Switch checked={d.inPersonEnabled} onChange={(v) => f.set('inPersonEnabled', v)} label="Yüz yüze görüşme" />
           <Switch checked={d.onlineEnabled} onChange={(v) => f.set('onlineEnabled', v)} label="Online görüşme" />
         </div>
-        {!d.inPersonEnabled && !d.onlineEnabled && <p className="text-[0.78rem] text-danger">En az bir görüşme türünü açık bırakın.</p>}
+        {!d.inPersonEnabled && !d.onlineEnabled && <p className="text-[0.78rem] text-danger-ink">En az bir görüşme türünü açık bırakın.</p>}
         <Switch
           checked={d.allowRequestWithoutTime}
           onChange={(v) => f.set('allowRequestWithoutTime', v)}

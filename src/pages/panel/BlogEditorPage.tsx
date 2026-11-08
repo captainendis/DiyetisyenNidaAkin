@@ -223,7 +223,7 @@ function Editor({ initial, categories }: { initial: Post | null; categories: { i
         <aside className="space-y-5">
           <Card className="space-y-3 p-5">
             <h2 className="flex items-center gap-2 text-[0.9rem] font-bold text-espresso">
-              <ShieldCheck className="h-4 w-4 text-success" /> Uzman onayı
+              <ShieldCheck className="h-4 w-4 text-success-ink" /> Uzman onayı
             </h2>
             <p className="text-[0.8rem] leading-relaxed text-panel-muted">
               Beslenme içerikleri okuyucular tarafından tavsiye olarak algılanabilir. Bu nedenle bir yazı, içeriği bir uzman tarafından gözden geçirilip onaylanmadan yayınlanamaz.
@@ -233,7 +233,7 @@ function Editor({ initial, categories }: { initial: Post | null; categories: { i
               checked={d.expertReviewed}
               onChange={(e) => set('expertReviewed', e.target.checked)}
             />
-            {errors.expertReviewed && <p className="text-[0.78rem] text-danger" role="alert">{errors.expertReviewed}</p>}
+            {errors.expertReviewed && <p className="text-[0.78rem] text-danger-ink" role="alert">{errors.expertReviewed}</p>}
             {status === 'PUBLISHED' && !d.expertReviewed && <Notice tone="warning">Onay kaldırılıp kaydedilirse yazı yayından kaldırılır.</Notice>}
           </Card>
 
@@ -264,7 +264,7 @@ function Editor({ initial, categories }: { initial: Post | null; categories: { i
             <p className="text-[0.75rem] text-panel-muted">Tahmini okuma süresi: {readingMinutes(d.content)} dk</p>
           </Card>
 
-          <Button variant="ghost" className="w-full text-danger hover:bg-danger/10" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove()} loading={busy === 'delete'} disabled={!!busy && busy !== 'delete'}>
+          <Button variant="ghost" className="w-full text-danger-ink hover:bg-danger/10" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove()} loading={busy === 'delete'} disabled={!!busy && busy !== 'delete'}>
             {post ? 'Yazıyı sil' : 'Vazgeç'}
           </Button>
         </aside>

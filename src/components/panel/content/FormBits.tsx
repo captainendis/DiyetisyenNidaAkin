@@ -56,7 +56,7 @@ export function FormCard({ children, className }: { children: ReactNode; classNa
 /** Karakter sayacı */
 export function CharCount({ value, max }: { value: string | null | undefined; max: number }) {
   const n = value?.length ?? 0;
-  return <span className={cn('tabular', n > max ? 'text-danger' : n > max * 0.9 ? 'text-[#93682a]' : 'text-panel-muted')}>{n}/{max}</span>;
+  return <span className={cn('tabular', n > max ? 'text-danger-ink' : n > max * 0.9 ? 'text-warning-ink' : 'text-panel-muted')}>{n}/{max}</span>;
 }
 
 export function Notice({ tone = 'info', children, className }: { tone?: 'info' | 'warning'; children: ReactNode; className?: string }) {

@@ -12,7 +12,7 @@ export function AffectedWarning({ items, onDismiss }: { items: AffectedAppointme
   return (
     <div className="mb-6 rounded-xl border border-warning/40 bg-warning/10 p-5" role="alert">
       <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning-ink" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-[#6f4d1d]">{items.length} onaylı randevu yeni takvimin dışında kalıyor</p>
           <p className="mt-1 text-[0.82rem] text-[#6f4d1d]/85">

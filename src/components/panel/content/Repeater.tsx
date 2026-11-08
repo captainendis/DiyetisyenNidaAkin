@@ -39,7 +39,7 @@ export function Repeater<T>({
               <ArrowDown className="h-3.5 w-3.5" />
             </IconButton>
             {items.length > min && (
-              <IconButton label="Kaldır" className="h-7 w-7 hover:text-danger" onClick={() => onChange(items.filter((_, j) => j !== i))}>
+              <IconButton label="Kaldır" className="h-7 w-7 hover:text-danger-ink" onClick={() => onChange(items.filter((_, j) => j !== i))}>
                 <Trash2 className="h-3.5 w-3.5" />
               </IconButton>
             )}

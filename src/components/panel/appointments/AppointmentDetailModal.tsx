@@ -165,7 +165,7 @@ export default function AppointmentDetailModal({
                 </Button>
               )}
               {a.status === 'CONFIRMED' && (
-                <Button variant="ghost" className="text-danger hover:bg-danger/10" onClick={() => setPanel(panel === 'cancel' ? null : 'cancel')}>İptal et</Button>
+                <Button variant="ghost" className="text-danger-ink hover:bg-danger/10" onClick={() => setPanel(panel === 'cancel' ? null : 'cancel')}>İptal et</Button>
               )}
             </div>
           )}
@@ -290,7 +290,7 @@ export default function AppointmentDetailModal({
               </Link>
             ) : <span />}
             {a.status !== 'COMPLETED' && (
-              <Button variant="ghost" size="sm" className="text-danger hover:bg-danger/10" icon={<Trash2 className="h-4 w-4" />} loading={busy === 'delete'} onClick={remove}>
+              <Button variant="ghost" size="sm" className="text-danger-ink hover:bg-danger/10" icon={<Trash2 className="h-4 w-4" />} loading={busy === 'delete'} onClick={remove}>
                 Sil
               </Button>
             )}

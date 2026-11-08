@@ -163,7 +163,7 @@ export default function DashboardPage() {
                         {a.date ? <span className="tabular">{formatDayStr(a.date, 'd MMM ccc')} · {a.time}</span> : 'Saat seçilmedi — geri arama'}
                         <span aria-hidden>·</span> {MEETING_TYPE_LABEL[a.meetingType]}
                       </p>
-                      <p className="mt-0.5 text-[0.74rem] text-panel-muted/80">{formatPhone(a.contactPhone)} · {relativeTime(a.createdAt)} geldi</p>
+                      <p className="mt-0.5 text-[0.74rem] text-panel-muted">{formatPhone(a.contactPhone)} · {relativeTime(a.createdAt)} geldi</p>
                     </button>
                     {canWrite && (
                       <div className="mt-2.5 flex gap-2">

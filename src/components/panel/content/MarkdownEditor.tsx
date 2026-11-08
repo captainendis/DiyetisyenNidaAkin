@@ -104,7 +104,7 @@ export function MarkdownEditor({ value, onChange, error }: { value: string; onCh
         )}
       </div>
       <div className="flex items-center justify-between border-t border-panel-line px-4 py-2 text-[0.75rem] text-panel-muted">
-        <span>{error ? <span className="text-danger">{error}</span> : 'Biçimlendirme: ## başlık · **kalın** · *italik* · - liste · [metin](https://…)'}</span>
+        <span>{error ? <span className="text-danger-ink">{error}</span> : 'Biçimlendirme: ## başlık · **kalın** · *italik* · - liste · [metin](https://…)'}</span>
         <span className="tabular">{value.split(/\s+/).filter(Boolean).length} kelime</span>
       </div>
     </div>
