@@ -159,7 +159,7 @@ export default function NotificationsPage() {
         <Card>
           <div className="flex flex-col gap-3 px-4 pt-3 sm:flex-row sm:items-end sm:justify-between sm:px-5">
             <Tabs<'all' | 'unread'>
-              className="border-b-0"
+              underline={false}
               value={filter}
               onChange={(v) => { setFilter(v); setPage(1); }}
               tabs={[{ value: 'all', label: 'Tümü' }, { value: 'unread', label: 'Okunmamış', count: data?.unread }]}

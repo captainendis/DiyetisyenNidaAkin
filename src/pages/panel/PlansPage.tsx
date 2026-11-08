@@ -71,7 +71,7 @@ function Body() {
       <Card>
         <div className="flex flex-col gap-3 px-5 pt-4 sm:flex-row sm:items-end sm:justify-between">
           <Tabs<View>
-            className="border-0"
+            underline={false}
             value={view}
             onChange={(v) => setParams({ gorunum: v }, { replace: true })}
             tabs={[{ value: 'planlar', label: 'Danışan planları' }, { value: 'sablonlar', label: 'Şablonlar' }]}
