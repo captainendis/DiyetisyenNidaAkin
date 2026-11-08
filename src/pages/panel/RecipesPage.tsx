@@ -16,6 +16,7 @@ import { RequirePermission, usePanelAuth } from '@/components/panel/PanelAuth';
 import { Button, Card, EmptyState, ErrorState, PageHeader, Skeleton, Tabs } from '@/components/panel/ui';
 import { RecipeFormModal } from '@/components/panel/recipes/RecipeFormModal';
 import { CategoryChips, RecipeCard } from '@/components/panel/recipes/RecipeCard';
+import { HomeFeaturedBox } from '@/components/panel/recipes/HomeFeaturedBox';
 import { RECIPE_CATEGORIES, type Recipe, type RecipeCategory } from '@shared/recipe';
 
 const norm = (s: string) => s.toLocaleLowerCase('tr-TR');
@@ -65,13 +66,13 @@ function Body() {
         title="Tarifler"
         description="Fotoğraflı tarif kütüphaneniz. Planlara ek sayfa olarak eklenir; seçtikleriniz web sitesinde yayınlanır, kişiye özel varyasyonlar yalnızca o danışanda kalır."
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 sm:flex-nowrap">
             {publishedCount > 0 && (
               <a
                 href="/tarifler"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-cocoa ring-1 ring-panel-line ring-inset hover:bg-panel-bg"
+                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold whitespace-nowrap text-cocoa ring-1 ring-panel-line ring-inset hover:bg-panel-bg"
               >
                 <ExternalLink className="h-4 w-4" /> Sitede gör ({publishedCount})
               </a>
@@ -80,6 +81,7 @@ function Body() {
           </div>
         }
       />
+      {data && !clientFilter && !parentFilter && <HomeFeaturedBox library={all} editable={editable} onChanged={() => void reload()} />}
       <Card className="p-4 sm:p-5">
         <Tabs<Scope>
           className="mb-4"

@@ -8,7 +8,7 @@ import { prisma } from '../lib/db';
 import { notFound, parse } from '../lib/http';
 import { getSettings } from '../services/settings';
 import { PUBLIC_SETTINGS_KEYS } from '../../shared/settings';
-import { RECIPE_CATEGORIES, type PublicRecipe, type PublicRecipeCard } from '../../shared/recipe';
+import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, type PublicRecipe, type PublicRecipeCard } from '../../shared/recipe';
 
 export const publicContentRouter = Router();
 
@@ -105,6 +105,20 @@ const toCard = (r: { slug: string | null; publishedAt: Date | null } & Omit<Publ
   ...r,
   slug: r.slug!,
   publishedAt: r.publishedAt?.toISOString() ?? null,
+});
+
+/** Ana sayfa şeridi: panelde seçilenler (seçilme sırasıyla); hiç seçilmemişse son yayınlananlar */
+publicContentRouter.get('/recipes/home', async (_req, res) => {
+  const featured = await prisma.recipe.findMany({
+    where: { ...PUBLISHED_RECIPE, featuredAt: { not: null } },
+    orderBy: { featuredAt: 'asc' },
+    take: MAX_FEATURED_RECIPES,
+    select: recipeCard,
+  });
+  const rows = featured.length
+    ? featured
+    : await prisma.recipe.findMany({ where: PUBLISHED_RECIPE, orderBy: { publishedAt: 'desc' }, take: MAX_FEATURED_RECIPES, select: recipeCard });
+  res.json({ recipes: rows.map(toCard), selected: featured.length > 0 });
 });
 
 publicContentRouter.get('/recipes', async (req, res) => {

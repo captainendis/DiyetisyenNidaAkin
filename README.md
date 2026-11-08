@@ -237,7 +237,11 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   ve **/tarifler/&lt;adres&gt;** (malzemeler, adımlar, künye, ipucu, “genel öneridir” uyarısı) altında görünür.
   Diğerleri yalnızca panelde ve planlarda kalır.
 - Yayınlanmış en az bir tarif varsa üst menüye ve alt bilgiye **“Tarifler”** bağlantısı kendiliğinden eklenir; ana sayfada
-  “Süreç” bölümünden sonra son yayınlanan 3 tarifin yer aldığı **“Mutfaktan”** şeridi görünür (tarif yoksa hiç çizilmez).
+  “Süreç” bölümünden sonra **“Mutfaktan”** şeridi görünür (yayınlanmış tarif yoksa hiç çizilmez).
+- **Ana sayfada hangi tariflerin görüneceği panelden seçilir:** Panel → Tarifler'in üstündeki **“Ana sayfada gösterilenler”**
+  kutusundan (ekle / çıkar) ya da tarif formundaki **“Ana sayfada göster”** anahtarıyla. En fazla 3 tarif, eklenme sırasıyla
+  görünür; yalnızca yayındaki ve kişiye özel olmayan tarifler seçilebilir, yayından kaldırılan tarif ana sayfadan da çıkar.
+  Hiç seçim yoksa son yayınlanan 3 tarif otomatik gösterilir.
 - Adres (slug) ilk yayında başlıktan üretilir ve sonradan **değişmez**; başlık düzeltilse de paylaşılan bağlantılar kırılmaz.
   Yayından kaldırılan tarifin sayfası 404 döner ve site haritasından çıkar.
 - SEO: site haritasında yer alır; sunucu tarafı meta + **Schema.org `Recipe`** (malzemeler, adımlar, süreler, porsiyon,
@@ -343,8 +347,8 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `POST /site-images` (görsel işleme) · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
 | Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/pdf` |
-| Tarifler | `GET/POST /api/recipes` (`?category`, `?q`, `?clientId`; POST'ta `parentId`, `copyImage`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` |
-| Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/:slug` |
+| Tarifler | `GET/POST /api/recipes` (`?category`, `?q`, `?clientId`; POST'ta `parentId`, `copyImage`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` · `PUT /:id/featured` |
+| Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/home` · `GET /api/public/recipes/:slug` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 

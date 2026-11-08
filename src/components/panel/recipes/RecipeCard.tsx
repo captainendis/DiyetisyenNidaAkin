@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import type { ReactNode } from 'react';
-import { Check, CookingPot, GitBranch, Globe, UserRound } from 'lucide-react';
+import { Check, CookingPot, GitBranch, Globe, House, UserRound } from 'lucide-react';
 import { cn } from '@/lib/format';
 import { RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, recipeImageUrl, recipeMeta, type Recipe, type RecipeCategory } from '@shared/recipe';
 
@@ -59,6 +59,7 @@ export function RecipeCard({ recipe, onClick, selected, footer }: { recipe: Reci
 export function RecipeBadges({ recipe, className }: { recipe: Recipe; className?: string }) {
   const items = [
     recipe.isPublished && { icon: Globe, text: 'Yayında', cls: 'bg-[#2f6b4f] text-white' },
+    recipe.isFeatured && { icon: House, text: 'Ana sayfada', cls: 'bg-gold text-espresso' },
     recipe.client && { icon: UserRound, text: 'Kişiye özel', cls: 'bg-rose text-espresso' },
     !recipe.client && recipe.parentId && { icon: GitBranch, text: 'Varyasyon', cls: 'bg-white/90 text-cocoa' },
     !recipe.parentId && recipe.variantCount > 0 && { icon: GitBranch, text: `${recipe.variantCount} varyasyon`, cls: 'bg-white/90 text-cocoa' },

@@ -1,7 +1,10 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-/** Ana sayfa: son yayınlanan tarifler (en fazla 3). Yayınlanmış tarif yoksa hiç çizilmez. */
+/**
+ * Ana sayfa "Mutfaktan" şeridi: panelde "Ana sayfada göster" seçilen tarifler (en fazla 3);
+ * hiç seçilmemişse son yayınlananlar. Yayınlanmış tarif yoksa hiç çizilmez.
+ */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '@/lib/api';
@@ -18,7 +21,7 @@ export function RecentRecipes() {
     if (!site.recipeCount) return;
     let alive = true;
     api
-      .get<{ recipes: PublicRecipeCard[] }>('/public/recipes', { limit: 3 })
+      .get<{ recipes: PublicRecipeCard[] }>('/public/recipes/home')
       .then((r) => alive && setRecipes(r.recipes))
       .catch(() => alive && setRecipes([]));
     return () => {

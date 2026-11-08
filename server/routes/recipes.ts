@@ -18,7 +18,7 @@ import { badRequest, HttpError, notFound, parse } from '../lib/http';
 import { sniffMime } from '../lib/storage';
 import { requirePermission } from '../auth/session';
 import { copyRecipeImage, deleteRecipeImage, processRecipeImage, recipeImageDataUri } from '../services/images';
-import { RECIPE_CATEGORIES, recipeCreateSchema, recipeInputSchema, type PrintRecipe, type Recipe, type RecipeInput } from '../../shared/recipe';
+import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, recipeCreateSchema, recipeInputSchema, type PrintRecipe, type Recipe, type RecipeInput } from '../../shared/recipe';
 import type { NutritionPlanData } from '../../shared/plan';
 import { slugify } from '../../shared/text';
 
@@ -49,11 +49,13 @@ export function toRecipe(r: Row): Recipe {
     steps: strings(r.steps),
     tip: r.tip,
     isPublished: r.isPublished,
+    isFeatured: !!r.featuredAt,
     variantNote: r.variantNote,
     clientId: r.clientId,
     imageBase: r.imageBase,
     slug: r.slug,
     publishedAt: r.publishedAt?.toISOString() ?? null,
+    featuredAt: r.featuredAt?.toISOString() ?? null,
     parentId: r.parentId,
     parent: r.parent,
     client: r.client,
@@ -106,12 +108,27 @@ async function load(id: string) {
   return r;
 }
 
+const RESERVED_SLUGS = new Set(['home']);
+
 async function uniqueSlug(title: string, ignoreId?: string) {
   const base = slugify(title).slice(0, 70) || 'tarif';
   for (let i = 1; ; i++) {
     const slug = i === 1 ? base : `${base}-${i}`;
+    if (RESERVED_SLUGS.has(slug)) continue; // /api/public/recipes/home ile çakışmasın
     const hit = await prisma.recipe.findUnique({ where: { slug }, select: { id: true } });
     if (!hit || hit.id === ignoreId) return slug;
+  }
+}
+
+const invalid = (field: string, message: string) => new HttpError(422, 'VALIDATION_ERROR', message, { fields: { [field]: message } });
+
+/** Ana sayfa seçimi: yalnızca yayındaki, kişiye özel olmayan tarifler; en fazla MAX_FEATURED_RECIPES */
+async function validateFeatured(body: Pick<RecipeInput, 'clientId' | 'isPublished' | 'isFeatured'>, selfId?: string) {
+  if (!body.isFeatured) return;
+  if (!body.isPublished || body.clientId) throw invalid('isFeatured', 'Ana sayfada yalnızca web sitesinde yayınlanan tarifler gösterilebilir.');
+  const others = await prisma.recipe.count({ where: { featuredAt: { not: null }, ...(selfId ? { id: { not: selfId } } : {}) } });
+  if (others >= MAX_FEATURED_RECIPES) {
+    throw invalid('isFeatured', `Ana sayfada en fazla ${MAX_FEATURED_RECIPES} tarif gösterilebilir. Önce başka bir tarifi ana sayfadan çıkarın.`);
   }
 }
 
@@ -159,6 +176,7 @@ recipesRouter.get('/:id', read, async (req, res) => {
 recipesRouter.post('/', write, async (req, res) => {
   const body = parse(recipeCreateSchema, req.body);
   await validateRelations(body);
+  await validateFeatured(body);
   let parentId: string | null = null;
   let imageBase: string | null = null;
   if (body.parentId) {
@@ -172,6 +190,7 @@ recipesRouter.post('/', write, async (req, res) => {
       ...fields(body),
       parentId,
       imageBase,
+      featuredAt: body.isFeatured ? new Date() : null,
       createdById: req.user!.id,
       ...(body.isPublished ? { slug: await uniqueSlug(body.title), publishedAt: new Date() } : {}),
     },
@@ -186,11 +205,14 @@ recipesRouter.patch('/:id', write, async (req, res) => {
   const body = parse(recipeInputSchema, req.body);
   const existing = await load(String(req.params.id));
   await validateRelations(body);
+  await validateFeatured(body, existing.id);
   const publishing = body.isPublished && !existing.isPublished;
   const r = await prisma.recipe.update({
     where: { id: existing.id },
     data: {
       ...fields(body),
+      // Seçilme zamanı korunur (ana sayfadaki sıra değişmesin); yayından kalkan tarif ana sayfadan da çıkar
+      featuredAt: body.isFeatured && body.isPublished && !body.clientId ? (existing.featuredAt ?? new Date()) : null,
       // Adres ilk yayında atanır ve sonra değişmez (paylaşılan bağlantılar kırılmasın)
       ...(publishing ? { slug: existing.slug ?? (await uniqueSlug(body.title, existing.id)), publishedAt: existing.publishedAt ?? new Date() } : {}),
     },
@@ -199,6 +221,23 @@ recipesRouter.patch('/:id', write, async (req, res) => {
   await audit(req, 'recipe.updated', 'recipe', r.id);
   if (publishing) await audit(req, 'recipe.published', 'recipe', r.id);
   if (!body.isPublished && existing.isPublished) await audit(req, 'recipe.unpublished', 'recipe', r.id);
+  if (!!r.featuredAt !== !!existing.featuredAt) await audit(req, r.featuredAt ? 'recipe.featured' : 'recipe.unfeatured', 'recipe', r.id);
+  res.json({ recipe: toRecipe(r) });
+});
+
+/** Hızlı seçim: ana sayfada göster / çıkar (kütüphanedeki "Ana sayfa" kutusundan) */
+recipesRouter.put('/:id/featured', write, async (req, res) => {
+  const { featured } = parse(z.object({ featured: z.boolean() }), req.body);
+  const existing = await load(String(req.params.id));
+  if (featured && !existing.featuredAt) {
+    await validateFeatured({ isFeatured: true, isPublished: existing.isPublished, clientId: existing.clientId }, existing.id);
+  }
+  const r = await prisma.recipe.update({
+    where: { id: existing.id },
+    data: { featuredAt: featured ? (existing.featuredAt ?? new Date()) : null },
+    include,
+  });
+  if (!!r.featuredAt !== !!existing.featuredAt) await audit(req, featured ? 'recipe.featured' : 'recipe.unfeatured', 'recipe', r.id);
   res.json({ recipe: toRecipe(r) });
 });
 

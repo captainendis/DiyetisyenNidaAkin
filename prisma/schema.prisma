@@ -447,6 +447,8 @@ model Recipe {
   slug        String?        @unique
   isPublished Boolean        @default(false)
   publishedAt DateTime?      @db.Timestamptz(3)
+  /// Ana sayfadaki "Mutfaktan" şeridinde gösterilsin mi (doluysa seçilme zamanı; sıralama bu alana göre). En fazla 3.
+  featuredAt  DateTime?      @db.Timestamptz(3)
   parentId    String?
   parent      Recipe?        @relation("RecipeVariants", fields: [parentId], references: [id], onDelete: SetNull)
   variants    Recipe[]       @relation("RecipeVariants")

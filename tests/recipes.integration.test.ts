@@ -182,4 +182,47 @@ describe('tarifler', () => {
     expect(await prisma.recipe.findUnique({ where: { id: variant.id } })).toBeNull();
     expect(fs.existsSync(variantFile)).toBe(false);
   });
+
+  it('ana sayfa: seçim yoksa son yayınlananlar, seçilince yalnızca seçilenler (en fazla 3, seçim sırasıyla)', async () => {
+    // Diğer testlerden / geliştirme verisinden gelen seçimleri geçici olarak kaldır
+    const before = await prisma.recipe.findMany({ where: { featuredAt: { not: null } }, select: { id: true, featuredAt: true } });
+    await prisma.recipe.updateMany({ where: { featuredAt: { not: null } }, data: { featuredAt: null } });
+    try {
+      const mk = async (title: string) => {
+        const r = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, title, isPublished: true });
+        recipeIds.push(r.body.recipe.id);
+        return r.body.recipe as Recipe;
+      };
+      const [a, b, c, d] = [await mk('Test AS A'), await mk('Test AS B'), await mk('Test AS C'), await mk('Test AS D')];
+
+      let home = await request(app).get('/api/public/recipes/home');
+      expect(home.body.selected).toBe(false);
+      expect(home.body.recipes.map((r: { title: string }) => r.title)).toEqual(['Test AS D', 'Test AS C', 'Test AS B']);
+
+      for (const r of [b, d, a]) await agent.put(`/api/recipes/${r.id}/featured`).set('X-CSRF-Token', csrf).send({ featured: true }).expect(200);
+      const over = await agent.put(`/api/recipes/${c.id}/featured`).set('X-CSRF-Token', csrf).send({ featured: true });
+      expect(over.status).toBe(422);
+      expect(over.body.error.details.fields.isFeatured).toMatch(/en fazla 3/);
+
+      home = await request(app).get('/api/public/recipes/home');
+      expect(home.body.selected).toBe(true);
+      expect(home.body.recipes.map((r: { title: string }) => r.title)).toEqual(['Test AS B', 'Test AS D', 'Test AS A']);
+
+      // Düzenlemede seçim sırası korunur; yayından kaldırılan tarif ana sayfadan da çıkar
+      await agent.patch(`/api/recipes/${b.id}`).set('X-CSRF-Token', csrf).send({ ...body, title: 'Test AS B2', isPublished: true, isFeatured: true }).expect(200);
+      await agent.patch(`/api/recipes/${d.id}`).set('X-CSRF-Token', csrf).send({ ...body, title: 'Test AS D', isPublished: false, isFeatured: true }).expect(422);
+      const off = await agent.patch(`/api/recipes/${d.id}`).set('X-CSRF-Token', csrf).send({ ...body, title: 'Test AS D', isPublished: false });
+      expect(off.body.recipe.isFeatured).toBe(false);
+      home = await request(app).get('/api/public/recipes/home');
+      expect(home.body.recipes.map((r: { title: string }) => r.title)).toEqual(['Test AS B2', 'Test AS A']);
+
+      // "home" adresi ayrılmış: bu adla yayınlanan tarif farklı adres alır
+      const h = await mk('Home');
+      expect(h.slug).not.toBe('home');
+    } finally {
+      await prisma.recipe.updateMany({ where: { id: { in: recipeIds } }, data: { featuredAt: null } });
+      for (const r of before) await prisma.recipe.updateMany({ where: { id: r.id }, data: { featuredAt: r.featuredAt } });
+    }
+  });
 });
+

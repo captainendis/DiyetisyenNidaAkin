@@ -14,7 +14,7 @@ import { Button, Input, Modal, Select, Switch, Textarea, useFeedback } from '@/c
 import { ClientPicker, type ClientRef } from './ClientPicker';
 import { cn } from '@/lib/format';
 import {
-  RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, recipeImageUrl, type Recipe, type RecipeCategory, type RecipeInput,
+  MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, recipeImageUrl, type Recipe, type RecipeCategory, type RecipeInput,
 } from '@shared/recipe';
 
 const MAX_UPLOAD = 15 * 1024 * 1024;
@@ -31,12 +31,14 @@ interface Draft {
   steps: string[];
   tip: string;
   isPublished: boolean;
+  isFeatured: boolean;
   variantNote: string;
   client: ClientRef | null;
 }
 
 const toDraft = (r?: Recipe | null, category?: RecipeCategory): Draft => ({
   isPublished: r?.isPublished ?? false,
+  isFeatured: r?.isFeatured ?? false,
   variantNote: r?.variantNote ?? '',
   client: r?.client ?? null,
   title: r?.title ?? '',
@@ -62,6 +64,7 @@ type Mode = { kind: 'new' } | { kind: 'edit'; recipe: Recipe } | { kind: 'varian
 const variantDraft = (base: Recipe, client: ClientRef | null): Draft => ({
   ...toDraft(base),
   isPublished: false,
+  isFeatured: false,
   variantNote: '',
   client,
 });
@@ -148,6 +151,7 @@ export function RecipeFormModal({
       steps: d.steps.map((s) => s.trim()).filter(Boolean),
       tip: d.tip.trim(),
       isPublished: d.client ? false : d.isPublished,
+      isFeatured: !d.client && d.isPublished && d.isFeatured,
       variantNote: d.variantNote.trim(),
       clientId: d.client?.id ?? null,
     };
@@ -322,6 +326,17 @@ export function RecipeFormModal({
               onChange={(v) => set('isPublished', v)}
             />
             {err.isPublished && <p className="mt-1.5 text-[0.78rem] text-danger" role="alert">{err.isPublished}</p>}
+            {!d.client && d.isPublished && (
+              <div className="mt-3 border-t border-panel-line pt-3">
+                <Switch
+                  label="Ana sayfada göster"
+                  description={`Ana sayfadaki “Mutfaktan” bölümünde öne çıkar (en fazla ${MAX_FEATURED_RECIPES} tarif).`}
+                  checked={d.isFeatured}
+                  onChange={(v) => set('isFeatured', v)}
+                />
+                {err.isFeatured && <p className="mt-1.5 text-[0.78rem] text-danger" role="alert">{err.isFeatured}</p>}
+              </div>
+            )}
             {editing?.isPublished && editing.slug && d.isPublished && (
               <a href={`/tarifler/${editing.slug}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[0.78rem] font-semibold text-cocoa hover:underline">
                 Sitede görüntüle <ExternalLink className="h-3.5 w-3.5" />

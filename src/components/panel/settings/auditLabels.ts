@@ -46,6 +46,8 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   'recipe.variant_created': 'Tarif varyasyonu oluşturuldu',
   'recipe.published': 'Tarif web sitesinde yayınlandı',
   'recipe.unpublished': 'Tarif yayından kaldırıldı',
+  'recipe.featured': 'Tarif ana sayfaya eklendi',
+  'recipe.unfeatured': 'Tarif ana sayfadan çıkarıldı',
   'recipe.image_uploaded': 'Tarif fotoğrafı yüklendi',
   'recipe.image_removed': 'Tarif fotoğrafı kaldırıldı',
   'media.deleted': 'Görsel silindi',

@@ -31,6 +31,9 @@ export const RECIPE_DEFAULT_LABEL: Record<RecipeCategory, string> = {
   DRINK: 'İçecek önerisi',
 };
 
+/** Ana sayfada aynı anda gösterilebilecek en fazla tarif */
+export const MAX_FEATURED_RECIPES = 3;
+
 const minutes = z.number().int().min(0, 'Geçersiz süre').max(1440, 'En fazla 1440 dk').nullable();
 
 export const recipeInputSchema = z.object({
@@ -47,6 +50,8 @@ export const recipeInputSchema = z.object({
   tip: z.string().trim().max(300).default(''),
   /** Web sitesinde /tarifler altında yayınlansın mı (kişiye özel varyasyonlarda her zaman false) */
   isPublished: z.boolean().default(false),
+  /** Ana sayfadaki "Mutfaktan" şeridinde göster (yalnızca yayındaki, kişiye özel olmayan tarifler; en fazla MAX_FEATURED) */
+  isFeatured: z.boolean().default(false),
   /** Varyasyonda neyin değiştiği; danışanın PDF'inde "Sana özel" notu olarak görünür */
   variantNote: z.string().trim().max(120).default(''),
   /** Kişiye özel varyasyon: bağlı danışan */
@@ -66,6 +71,8 @@ export interface Recipe extends RecipeInput {
   imageBase: string | null;
   slug: string | null;
   publishedAt: string | null;
+  /** Ana sayfaya eklenme zamanı (şeritteki sıra) */
+  featuredAt: string | null;
   parentId: string | null;
   parent: { id: string; title: string } | null;
   client: { id: string; firstName: string; lastName: string } | null;
