@@ -13,6 +13,8 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   'auth.password_changed': 'Şifre değiştirildi',
   'auth.session_revoked': 'Başka bir oturum kapatıldı',
   'user.created_via_cli': 'Kullanıcı oluşturuldu (sunucu)',
+  'user.created': 'Panel kullanıcısı eklendi',
+  'user.link_issued': 'Kullanıcıya şifre bağlantısı üretildi',
   'user.profile_updated': 'Profil güncellendi',
   'user.notification_prefs_updated': 'Bildirim tercihleri güncellendi',
   'user.activated': 'Kullanıcı etkinleştirildi',

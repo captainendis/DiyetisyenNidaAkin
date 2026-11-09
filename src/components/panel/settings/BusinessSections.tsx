@@ -136,8 +136,6 @@ export function PrivacySection() {
         />
         <Notice>
           <p>
-            Anonimleştirme sunucuda <code className="rounded bg-white px-1 py-0.5 font-mono text-[0.78rem]">npm run data:retention</code> komutuyla çalışır
-            (önce <code className="rounded bg-white px-1 py-0.5 font-mono text-[0.78rem]">-- --dry-run</code> ile etkisini görebilirsiniz). Düzenli çalıştırma için sunucuya günlük zamanlanmış görev olarak eklenmelidir.
             Anonimleştirmede klinik notlar, ölçümler ve dosyalar kalıcı olarak silinir; randevu kayıtları kimlik bilgisi olmadan istatistik için tutulur.
           </p>
         </Notice>
