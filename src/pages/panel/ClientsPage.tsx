@@ -68,7 +68,7 @@ function ClientsInner() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Ad, soyad, telefon veya e-posta ile ara"
-              className="h-10 w-full rounded-lg border border-panel-line bg-white pr-3 pl-9 text-sm text-espresso placeholder:text-panel-muted/70 focus:border-cocoa focus:ring-2 focus:ring-cocoa/10 focus:outline-none"
+              className="h-10 w-full rounded-lg border border-panel-line bg-white pr-3 pl-9 text-sm text-espresso placeholder:text-panel-muted focus:border-cocoa focus:ring-2 focus:ring-cocoa/10 focus:outline-none"
             />
           </label>
           <div className="grid grid-cols-2 gap-3 sm:flex">

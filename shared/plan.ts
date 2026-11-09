@@ -11,6 +11,46 @@ const line = z.string().trim().max(120);
 
 export const MAX_PLAN_RECIPES = 8;
 
+/**
+ * Plan renk temaları (PDF şablonu ve paneldeki seçici ortak kullanır).
+ * Her tema WCAG AA'yı sağlar: ink zemin/kart/çip üzerinde ≥ 7:1, muted ≥ 4,5:1,
+ * koyu kutuda darkInk ≥ 7:1 ve darkAccent ≥ 4,5:1, ink vurgu üzerinde ≥ 4,5:1 (tarif etiketi).
+ * Yeni tema eklerken bu oranları koru; id'ler kayıtlı planlarda saklandığı için değiştirilmez.
+ */
+export interface PlanThemeColors {
+  bg: string; ink: string; muted: string; accent: string; card: string; chip: string; line: string;
+  /** Alışkanlıklar kutusunun zemini, metni ve başlık vurgusu */
+  dark: string; darkInk: string; darkAccent: string;
+}
+export const PLAN_THEME_IDS = ['green', 'brand', 'citrus', 'plum', 'sea', 'mono'] as const;
+export type PlanThemeId = (typeof PLAN_THEME_IDS)[number];
+export const PLAN_THEMES: Record<PlanThemeId, { label: string; note: string; colors: PlanThemeColors }> = {
+  green: {
+    label: 'Adaçayı', note: 'Örnek plandaki yeşil',
+    colors: { bg: '#EDF0E5', ink: '#1E3326', muted: '#5D6B60', accent: '#E3AE1E', card: '#FFFFFF', chip: '#E6EBDD', line: '#C7CFBD', dark: '#1F3326', darkInk: '#F1F3EC', darkAccent: '#E9B728' },
+  },
+  brand: {
+    label: 'Marka', note: 'Kahve ve krem',
+    colors: { bg: '#F6EFE4', ink: '#2A1D14', muted: '#6E5A4B', accent: '#C99282', card: '#FFFDF9', chip: '#EFE5D6', line: '#DCCDB8', dark: '#302219', darkInk: '#F4EBDD', darkAccent: '#DDAFA0' },
+  },
+  citrus: {
+    label: 'Narenciye', note: 'Limon sarısı, portakal',
+    colors: { bg: '#FBF4DF', ink: '#2B2A12', muted: '#635E3E', accent: '#EE8A2B', card: '#FFFFFF', chip: '#F4EBCB', line: '#E2D6AE', dark: '#3A3A16', darkInk: '#FBF4DF', darkAccent: '#F5A04A' },
+  },
+  plum: {
+    label: 'Erik', note: 'Mürdüm ve pembe',
+    colors: { bg: '#F3EEF2', ink: '#2E1A2B', muted: '#65525F', accent: '#DE96B4', card: '#FFFFFF', chip: '#EBE2E9', line: '#D6C8D2', dark: '#3B2036', darkInk: '#F6EFF4', darkAccent: '#E9A3C0' },
+  },
+  sea: {
+    label: 'Deniz', note: 'Petrol mavisi, kum',
+    colors: { bg: '#EAF1F3', ink: '#14303A', muted: '#4F646B', accent: '#E7B85A', card: '#FFFFFF', chip: '#DFEAED', line: '#C2D3D8', dark: '#17363F', darkInk: '#EEF4F5', darkAccent: '#F0C670' },
+  },
+  mono: {
+    label: 'Yazıcı dostu', note: 'Siyah beyaz, az mürekkep',
+    colors: { bg: '#FFFFFF', ink: '#111111', muted: '#555555', accent: '#D4D4D4', card: '#FFFFFF', chip: '#F1F1F1', line: '#BDBDBD', dark: '#F1F1F1', darkInk: '#111111', darkAccent: '#111111' },
+  },
+};
+
 export const planMealSchema = z.object({
   /** "06.30" gibi serbest saat metni */
   time: z.string().trim().max(12),
@@ -22,7 +62,7 @@ export const planMealSchema = z.object({
 export const nutritionPlanDataSchema = z.object({
   title: z.string().trim().min(1, 'Başlık gerekli').max(60),
   subtitle: z.string().trim().max(160),
-  theme: z.enum(['green', 'brand']).default('green'),
+  theme: z.enum(PLAN_THEME_IDS).default('green'),
   water: z.object({
     show: z.boolean(),
     liters: z.string().trim().max(10),

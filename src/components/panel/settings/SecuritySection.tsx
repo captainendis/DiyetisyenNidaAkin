@@ -84,7 +84,7 @@ export function SecuritySection() {
           </div>
           <ul className="flex flex-wrap gap-x-5 gap-y-1 text-[0.78rem]" aria-label="Şifre kuralları">
             {rules.map((r) => (
-              <li key={r.label} className={cn('flex items-center gap-1.5', r.ok ? 'text-success' : 'text-panel-muted')}>
+              <li key={r.label} className={cn('flex items-center gap-1.5', r.ok ? 'text-success-ink' : 'text-panel-muted')}>
                 <Check className={cn('h-3.5 w-3.5', !r.ok && 'opacity-30')} /> {r.label}
               </li>
             ))}

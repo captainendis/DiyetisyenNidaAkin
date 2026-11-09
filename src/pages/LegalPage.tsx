@@ -28,7 +28,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
             <div className="border-l-2 border-warning bg-warning/10 px-5 py-4 text-[0.88rem] leading-relaxed text-[#6d4c1e] lg:sticky lg:top-28" role="note">
               <strong className="block font-semibold">Taslak metin</strong>
               Bu metin taslaktır; yayın öncesi hukuk uzmanınca gözden geçirilmelidir.
-              <span className="mt-2 block text-[0.78rem] opacity-80">Sürüm: {KVKK_NOTICE_VERSION}</span>
+              <span className="mt-2 block text-[0.78rem]">Sürüm: {KVKK_NOTICE_VERSION}</span>
             </div>
           </aside>
           <div className="prose-editorial lg:col-span-7 lg:col-start-5">

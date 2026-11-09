@@ -7,8 +7,20 @@ import { Logo, LogoMark } from '@/components/icons/Logo';
 import { useSiteImages } from '@/config/media';
 import { Picture } from '@/components/sections/Picture';
 
-/** Panel giriş/şifre ekranları için ayrık düzen: solda marka paneli, sağda form */
-export function AuthLayout({ title, description, children }: { title: string; description?: ReactNode; children: ReactNode }) {
+interface AsideCopy {
+  heading: ReactNode;
+  text: ReactNode;
+  footnote: ReactNode;
+}
+
+const PANEL_COPY: AsideCopy = {
+  heading: 'Hoş geldiniz.',
+  text: 'Randevularınızı, danışanlarınızı ve web sitenizi tek bir yerden yönetin.',
+  footnote: 'Yalnızca yetkili kullanıcılar içindir. Tüm erişimler kayıt altına alınır.',
+};
+
+/** Giriş/şifre ekranları için ayrık düzen: solda marka paneli, sağda form. Panel ve danışan hesabı ortak kullanır. */
+export function AuthLayout({ title, description, children, aside = PANEL_COPY }: { title: string; description?: ReactNode; children: ReactNode; aside?: AsideCopy }) {
   const images = useSiteImages();
   return (
     <div className="panel-root grid min-h-dvh bg-panel-bg text-espresso lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
@@ -19,16 +31,16 @@ export function AuthLayout({ title, description, children }: { title: string; de
         <Link to="/" className="relative z-[2]" aria-label="Web sitesine dön"><Logo /></Link>
         <div className="relative z-[2] max-w-md">
           <p className="font-display text-[3.2rem] leading-[1.02] font-medium text-ivory xl:text-[3.8rem]">
-            Hoş geldiniz.
+            {aside.heading}
           </p>
-          <p className="mt-6 text-[0.95rem] leading-relaxed text-mist">Randevularınızı, danışanlarınızı ve web sitenizi tek bir yerden yönetin.</p>
+          <p className="mt-6 text-[0.95rem] leading-relaxed text-mist">{aside.text}</p>
         </div>
-        <p className="relative z-[2] text-[0.75rem] text-mist/70">Yalnızca yetkili kullanıcılar içindir. Tüm erişimler kayıt altına alınır.</p>
+        <p className="relative z-[2] text-[0.75rem] text-mist">{aside.footnote}</p>
       </aside>
       <main className="flex min-h-dvh flex-col px-6 py-10 sm:px-12 lg:px-16 xl:px-24">
         <div className="flex items-center justify-between lg:hidden">
           <Link to="/" className="flex items-center gap-3 text-espresso" aria-label="Web sitesine dön">
-            <LogoMark className="h-9 w-9 text-rose-deep" />
+            <LogoMark className="h-9 w-9 text-rose-ink" />
             <span className="font-display text-[1.4rem]">Nida Akın</span>
           </Link>
         </div>

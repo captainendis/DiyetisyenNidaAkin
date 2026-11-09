@@ -63,6 +63,8 @@ model User {
   nutritionPlans     NutritionPlan[]
   recipes            Recipe[]
   createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
+  clientAccountsCreated ClientAccount[]
+  clientMessages     ClientMessage[]
 
   @@map("users")
 }
@@ -148,6 +150,8 @@ model Client {
   notifications     Notification[]
   nutritionPlans    NutritionPlan[]
   recipes           Recipe[]
+  account           ClientAccount?
+  messages          ClientMessage[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -198,6 +202,7 @@ model Appointment {
   statusHistory     AppointmentStatusHistory[]
   notifications     Notification[]
   consultationNotes ConsultationNote[]
+  clientMessages    ClientMessage[]
 
   @@index([startsAt])
   @@index([status])
@@ -400,6 +405,8 @@ model ClientFile {
   sizeBytes    Int
   uploadedById String?
   uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  /// Danışan hesabında ("Hesabım → Dosyalar") görünsün mü
+  visibleToClient Boolean @default(true)
   createdAt    DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([clientId])
@@ -574,4 +581,88 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ───────────────────────────── Danışan hesabı (Hesabım) ─────────────────────────────
+// Personel kimliğinden (User/Session) tamamen ayrıdır: ayrı tablo, ayrı cookie ("na_csid"), ayrı API (/api/portal).
+// Hesaplar yalnızca "portal:manage" izni olan personel tarafından açılır; danışan şifresini etkinleştirme bağlantısıyla kendisi belirler.
+
+enum ClientTokenPurpose {
+  ACTIVATE
+  RESET
+}
+
+model ClientAccount {
+  id                String    @id @default(cuid())
+  clientId          String    @unique
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  email             String    @unique
+  /// Etkinleştirilene kadar boş — bu durumda giriş yapılamaz
+  passwordHash      String?
+  isActive          Boolean   @default(true)
+  failedLoginCount  Int       @default(0)
+  lockedUntil       DateTime? @db.Timestamptz(3)
+  lastLoginAt       DateTime? @db.Timestamptz(3)
+  passwordChangedAt DateTime? @db.Timestamptz(3)
+  activatedAt       DateTime? @db.Timestamptz(3)
+  createdById       String?
+  createdBy         User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+
+  sessions ClientSession[]
+  tokens   ClientAccountToken[]
+
+  @@map("client_accounts")
+}
+
+/// Etkinleştirme / şifre sıfırlama bağlantıları. Ham token yalnızca bağlantıda; DB'de SHA-256 özeti.
+model ClientAccountToken {
+  id        String             @id @default(cuid())
+  tokenHash String             @unique
+  accountId String
+  account   ClientAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  purpose   ClientTokenPurpose
+  expiresAt DateTime           @db.Timestamptz(3)
+  usedAt    DateTime?          @db.Timestamptz(3)
+  createdAt DateTime           @default(now()) @db.Timestamptz(3)
+
+  @@index([accountId])
+  @@map("client_account_tokens")
+}
+
+model ClientSession {
+  id         String        @id @default(cuid())
+  tokenHash  String        @unique
+  csrfToken  String
+  accountId  String
+  account    ClientAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  remember   Boolean       @default(false)
+  expiresAt  DateTime      @db.Timestamptz(3)
+  lastSeenAt DateTime      @default(now()) @db.Timestamptz(3)
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime      @default(now()) @db.Timestamptz(3)
+
+  @@index([accountId])
+  @@index([expiresAt])
+  @@map("client_sessions")
+}
+
+/// Diyetisyenin danışana yazdığı mesaj/öneri. Klinik notlardan (ConsultationNote) ayrıdır; yalnızca bunlar danışana görünür.
+model ClientMessage {
+  id            String       @id @default(cuid())
+  clientId      String
+  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  authorId      String?
+  author        User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  /// AES-256-GCM şifreli metin
+  contentEnc    String
+  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+
+  @@index([clientId])
+  @@map("client_messages")
 }

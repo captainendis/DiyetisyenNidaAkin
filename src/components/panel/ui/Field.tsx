@@ -5,7 +5,7 @@ import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type Selec
 import { cn } from '@/lib/format';
 
 const control =
-  'w-full rounded-lg border border-panel-line bg-white px-3 text-sm text-espresso placeholder:text-panel-muted/70 transition-colors focus:border-cocoa focus:outline-none focus:ring-2 focus:ring-cocoa/10 disabled:bg-panel-bg disabled:text-panel-muted aria-[invalid=true]:border-danger';
+  'w-full rounded-lg border border-panel-line bg-white px-3 text-sm text-espresso placeholder:text-panel-muted transition-colors focus:border-cocoa focus:outline-none focus:ring-2 focus:ring-cocoa/10 disabled:bg-panel-bg disabled:text-panel-muted aria-[invalid=true]:border-danger';
 
 export function Field({
   label, hint, error, required, children, className, htmlFor,
@@ -15,12 +15,12 @@ export function Field({
       {label && (
         <label htmlFor={htmlFor} className="text-[0.8rem] font-semibold text-cocoa">
           {label}
-          {required && <span className="ml-0.5 text-danger" aria-hidden>*</span>}
+          {required && <span className="ml-0.5 text-danger-ink" aria-hidden>*</span>}
         </label>
       )}
       {children}
       {error ? (
-        <p className="text-[0.78rem] text-danger" role="alert">{error}</p>
+        <p className="text-[0.78rem] text-danger-ink" role="alert">{error}</p>
       ) : hint ? (
         <p className="text-[0.78rem] text-panel-muted">{hint}</p>
       ) : null}

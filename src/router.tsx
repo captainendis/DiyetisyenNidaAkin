@@ -41,9 +41,30 @@ const PlansPage = lazy(() => import('@/pages/panel/PlansPage'));
 const PlanEditorPage = lazy(() => import('@/pages/panel/PlanEditorPage'));
 const RecipesPage = lazy(() => import('@/pages/panel/RecipesPage'));
 
+// Danışan hesabı (Hesabım) — ayrı parçalarda; panelden ve herkese açık site paketinden bağımsız
+const PortalRoot = lazy(() => import('@/pages/portal/PortalRoot'));
+const PortalLoginPage = lazy(() => import('@/pages/portal/PortalLoginPage'));
+const PortalForgotPage = lazy(() => import('@/pages/portal/PortalForgotPage'));
+const PortalTokenPage = lazy(() => import('@/pages/portal/PortalTokenPage'));
+const PortalShell = lazy(() => import('@/pages/portal/PortalShell'));
+const PortalHomePage = lazy(() => import('@/pages/portal/PortalHomePage'));
+const PortalPlansPage = lazy(() => import('@/pages/portal/PortalPlansPage'));
+const PortalPlanPage = lazy(() => import('@/pages/portal/PortalPlanPage'));
+const PortalRecipesPage = lazy(() => import('@/pages/portal/PortalRecipesPage'));
+const PortalRecipePage = lazy(() => import('@/pages/portal/PortalRecipePage'));
+const PortalAppointmentsPage = lazy(() => import('@/pages/portal/PortalAppointmentsPage'));
+const PortalProgressPage = lazy(() => import('@/pages/portal/PortalProgressPage'));
+const PortalMessagesPage = lazy(() => import('@/pages/portal/PortalMessagesPage'));
+const PortalFilesPage = lazy(() => import('@/pages/portal/PortalFilesPage'));
+const PortalAccountPage = lazy(() => import('@/pages/portal/PortalAccountPage'));
+
 function PublicFallback() {
   return <div className="min-h-dvh bg-espresso" aria-busy="true" />;
 }
+function PortalFallback() {
+  return <div className="min-h-dvh bg-ivory" aria-busy="true" />;
+}
+const p = (el: ReactNode) => <Suspense fallback={<PortalFallback />}>{el}</Suspense>;
 function PanelFallback() {
   return (
     <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
@@ -73,6 +94,31 @@ export const router = createBrowserRouter([
       { path: 'gizlilik-politikasi', element: s(<LegalPage doc="privacy" />) },
       { path: 'cerez-politikasi', element: s(<LegalPage doc="cookies" />) },
       { path: '*', element: s(<NotFoundPage />) },
+    ],
+  },
+  {
+    path: 'hesabim',
+    element: p(<PortalRoot />),
+    children: [
+      { path: 'giris', element: p(<PortalLoginPage />) },
+      { path: 'sifremi-unuttum', element: p(<PortalForgotPage />) },
+      { path: 'etkinlestir', element: p(<PortalTokenPage mode="activate" />) },
+      { path: 'sifre-sifirla', element: p(<PortalTokenPage mode="reset" />) },
+      {
+        element: p(<PortalShell />),
+        children: [
+          { index: true, element: p(<PortalHomePage />) },
+          { path: 'listeler', element: p(<PortalPlansPage />) },
+          { path: 'listeler/:id', element: p(<PortalPlanPage />) },
+          { path: 'tarifler', element: p(<PortalRecipesPage />) },
+          { path: 'tarifler/:id', element: p(<PortalRecipePage />) },
+          { path: 'randevular', element: p(<PortalAppointmentsPage />) },
+          { path: 'olcumler', element: p(<PortalProgressPage />) },
+          { path: 'mesajlar', element: p(<PortalMessagesPage />) },
+          { path: 'dosyalar', element: p(<PortalFilesPage />) },
+          { path: 'hesap', element: p(<PortalAccountPage />) },
+        ],
+      },
     ],
   },
   {

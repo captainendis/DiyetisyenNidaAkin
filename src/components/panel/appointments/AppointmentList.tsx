@@ -178,7 +178,7 @@ export function AppointmentList({
                 cell: (a) => (
                   <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     {(a.status === 'PENDING' || (a.status === 'NEW_REQUEST' && a.date)) && (
-                      <IconButton label="Onayla" onClick={() => void quickConfirm(a)} className="text-success hover:bg-success/10 hover:text-success">
+                      <IconButton label="Onayla" onClick={() => void quickConfirm(a)} className="text-success-ink hover:bg-success/10 hover:text-success-ink">
                         <Check className="h-4 w-4" />
                       </IconButton>
                     )}

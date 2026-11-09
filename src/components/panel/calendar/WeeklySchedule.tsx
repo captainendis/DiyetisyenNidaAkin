@@ -194,7 +194,7 @@ export function WeeklySchedule({ onWarnings, onSaved }: { onWarnings: (w: Affect
                 </p>
               </div>
               {rowErr.length > 0 && (
-                <p className="mt-2 text-[0.78rem] text-danger" role="alert">{[...new Set(rowErr)].join(' · ')}</p>
+                <p className="mt-2 text-[0.78rem] text-danger-ink" role="alert">{[...new Set(rowErr)].join(' · ')}</p>
               )}
             </li>
           );

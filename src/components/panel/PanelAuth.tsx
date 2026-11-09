@@ -9,7 +9,7 @@ import { api, ApiError, setCsrfToken, setUnauthorizedHandler } from '@/lib/api';
 export type Permission =
   | 'dashboard:read' | 'appointments:read' | 'appointments:write' | 'clients:read' | 'clients:write' | 'clients:delete'
   | 'clinical:read' | 'clinical:write' | 'services:write' | 'content:write' | 'availability:write' | 'reports:read'
-  | 'settings:write' | 'users:manage' | 'audit:read';
+  | 'settings:write' | 'users:manage' | 'audit:read' | 'portal:manage';
 
 export interface PanelUser {
   id: string;

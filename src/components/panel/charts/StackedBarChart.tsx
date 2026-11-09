@@ -90,7 +90,7 @@ export function StackedBarChart({ data, series, height = 220, caption }: { data:
                 <text x={cx} y={y(totals[i]) - 6} textAnchor="middle" fontSize={11} className="fill-cocoa tabular font-semibold">{totals[i]}</text>
               )}
               <text x={cx} y={height - padB + 18} textAnchor="middle" fontSize={11} className={hover === i ? 'fill-espresso font-semibold' : 'fill-panel-muted'}>{d.label}</text>
-              {d.sublabel && <text x={cx} y={height - padB + 32} textAnchor="middle" fontSize={10} className="fill-panel-muted/80 tabular">{d.sublabel}</text>}
+              {d.sublabel && <text x={cx} y={height - padB + 32} textAnchor="middle" fontSize={10} className="fill-panel-muted tabular">{d.sublabel}</text>}
             </g>
           );
         })}

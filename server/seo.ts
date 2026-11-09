@@ -3,7 +3,7 @@
 
 /**
  * SEO uçları ve üretimde SPA servisi
- *  - GET /robots.txt   : /panel ve /api taranmaz
+ *  - GET /robots.txt   : /panel, /hesabim ve /api taranmaz
  *  - GET /sitemap.xml  : statik sayfalar + yayınlanmış hizmetler, blog yazıları ve tarifler
  *  - Üretimde (NODE_ENV=production): dist/ statik dosyaları + her rota için dist/index.html'e
  *    <!--seo:start--> … <!--seo:end--> arasına title/description/canonical/OG/Twitter/JSON-LD enjeksiyonu.
@@ -108,6 +108,9 @@ export async function resolveMeta(pathname: string): Promise<PageMeta> {
   const { seo } = await getSettings(['seo']);
   const t = (title?: string) => (title ? `${title} ${seo.titleSuffix.trim()}` : seo.defaultTitle);
 
+  if (clean.startsWith('/hesabim')) {
+    return { title: 'Danışan Hesabım | Nida Akın', description: 'Danışanlar için beslenme listeleri, tarifler ve randevular.', canonicalPath: clean, noindex: true };
+  }
   if (clean.startsWith('/panel')) {
     return { title: 'Yönetim Paneli | Nida Akın', description: 'Yetkili kullanıcılar için yönetim paneli.', canonicalPath: clean, noindex: true };
   }
@@ -279,7 +282,7 @@ async function buildSitemap() {
 export function registerSeo(app: Express) {
   app.get('/robots.txt', (_req: Request, res: Response) => {
     res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(
-      ['User-agent: *', 'Allow: /', 'Disallow: /panel', 'Disallow: /api/', '', `Sitemap: ${env.publicSiteUrl}/sitemap.xml`, ''].join('\n'),
+      ['User-agent: *', 'Allow: /', 'Disallow: /panel', 'Disallow: /hesabim', 'Disallow: /api/', '', `Sitemap: ${env.publicSiteUrl}/sitemap.xml`, ''].join('\n'),
     );
   });
 

@@ -139,12 +139,12 @@ export default function ServicesAdminPage() {
               >
                 <GripVertical className="hidden h-5 w-5 shrink-0 cursor-grab text-panel-muted sm:block" aria-hidden />
                 <span className="hidden w-6 shrink-0 sm:inline font-display text-[1.05rem] text-gold [font-variant-numeric:lining-nums_tabular-nums]">{String(i + 1).padStart(2, '0')}</span>
-                <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-lg', s.isPublished ? 'bg-espresso text-rose' : 'bg-panel-line/60 text-cocoa/50')}>
+                <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-lg', s.isPublished ? 'bg-espresso text-rose' : 'bg-panel-line/60 text-cocoa/75')}>
                   <ServiceIcon name={s.icon} className="h-7 w-7" />
                 </span>
                 <button type="button" onClick={() => setEditing({ service: s })} className="min-w-0 flex-1 text-left">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className={cn('font-semibold', s.isPublished ? 'text-espresso' : 'text-cocoa/60')}>{s.title}</span>
+                    <span className={cn('font-semibold', s.isPublished ? 'text-espresso' : 'text-cocoa/75')}>{s.title}</span>
                     {!s.isPublished && <Badge>Yayında değil</Badge>}
                   </span>
                   <span className="mt-0.5 line-clamp-1 block text-[0.82rem] text-panel-muted">{s.summary}</span>
@@ -160,7 +160,7 @@ export default function ServicesAdminPage() {
                   <IconButton label="Yukarı taşı" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp className="h-4 w-4" /></IconButton>
                   <IconButton label="Aşağı taşı" disabled={i === items.length - 1} onClick={() => move(i, 1)}><ArrowDown className="h-4 w-4" /></IconButton>
                   <IconButton label="Düzenle" onClick={() => setEditing({ service: s })}><Pencil className="h-4 w-4" /></IconButton>
-                  <IconButton label="Sil" className="hover:text-danger" onClick={() => void remove(s)}><Trash2 className="h-4 w-4" /></IconButton>
+                  <IconButton label="Sil" className="hover:text-danger-ink" onClick={() => void remove(s)}><Trash2 className="h-4 w-4" /></IconButton>
                 </div>
               </li>
             ))}

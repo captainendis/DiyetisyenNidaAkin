@@ -64,7 +64,7 @@ export function SetupChecklist() {
             <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
               {done.map((i) => (
                 <li key={i.key} className="flex items-center gap-1.5 text-[0.8rem] text-cocoa/70">
-                  <Check className="h-3.5 w-3.5 text-success" aria-hidden /> {i.label}
+                  <Check className="h-3.5 w-3.5 text-success-ink" aria-hidden /> {i.label}
                 </li>
               ))}
             </ul>

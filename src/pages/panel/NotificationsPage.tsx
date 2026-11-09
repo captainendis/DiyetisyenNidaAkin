@@ -51,7 +51,7 @@ function ChannelStatus() {
       <p className="mt-1 text-[0.8rem] leading-relaxed text-panel-muted">Panel içi bildirimler her zaman aktiftir. Harici kanallar yapılandırılmadan hiçbir mesaj gönderilmez.</p>
       <ul className="mt-4 space-y-3">
         <li className="flex items-center justify-between gap-3 text-sm">
-          <span className="flex items-center gap-2.5 text-cocoa"><Circle className="h-4 w-4 fill-success text-success" aria-hidden /> Panel içi</span>
+          <span className="flex items-center gap-2.5 text-cocoa"><Circle className="h-4 w-4 fill-success text-success-ink" aria-hidden /> Panel içi</span>
           <Badge tone="success">Aktif</Badge>
         </li>
         {data.channels.map((c) => {
@@ -196,7 +196,7 @@ export default function NotificationsPage() {
                         const linked = !!(n.appointmentId || n.clientId);
                         return (
                           <li key={n.id} className={cn('group flex items-start gap-3 px-4 py-3.5 sm:px-5', unread && 'bg-rose/[0.07]')}>
-                            <span className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full', unread ? 'bg-cocoa text-rose' : 'bg-panel-bg text-cocoa/60')}>
+                            <span className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full', unread ? 'bg-cocoa text-rose' : 'bg-panel-bg text-cocoa/75')}>
                               <Icon className="h-4 w-4" />
                             </span>
                             <button type="button" onClick={() => void open(n)} className="min-w-0 flex-1 text-left" aria-label={`${n.title}${unread ? ' (okunmamış)' : ''}${linked ? ' — ilgili kaydı aç' : ''}`}>

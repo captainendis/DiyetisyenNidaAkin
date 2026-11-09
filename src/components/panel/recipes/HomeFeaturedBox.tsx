@@ -66,7 +66,7 @@ export function HomeFeaturedBox({ library, editable, onChanged }: { library: Rec
               <p className="truncate text-[0.72rem] text-panel-muted">{featured.length ? RECIPE_CATEGORY_LABEL[r.category] : 'Otomatik (son yayınlanan)'}</p>
             </div>
             {featured.length > 0 && editable && (
-              <button type="button" aria-label={`${r.title} ana sayfadan çıkar`} disabled={busy === r.id} onClick={() => void toggle(r, false)} className="rounded p-1 text-panel-muted hover:bg-panel-bg hover:text-danger disabled:opacity-40">
+              <button type="button" aria-label={`${r.title} ana sayfadan çıkar`} disabled={busy === r.id} onClick={() => void toggle(r, false)} className="rounded p-1 text-panel-muted hover:bg-panel-bg hover:text-danger-ink disabled:opacity-40">
                 <X className="h-4 w-4" />
               </button>
             )}

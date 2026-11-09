@@ -42,7 +42,7 @@ export function SlotPicker({
     );
   }
   if (!date) return <p className="text-sm text-panel-muted">Önce bir gün seçin.</p>;
-  if (error) return <p className="text-sm text-danger">Saatler yüklenemedi.</p>;
+  if (error) return <p className="text-sm text-danger-ink">Saatler yüklenemedi.</p>;
   if (!slots) {
     return (
       <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" aria-busy="true">
