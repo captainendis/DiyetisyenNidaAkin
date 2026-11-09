@@ -64,11 +64,6 @@ function ChannelStatus() {
           );
         })}
       </ul>
-      {data.channels.some((c) => !c.configured) && (
-        <p className="mt-4 border-t border-panel-line pt-3 text-[0.75rem] leading-relaxed text-panel-muted">
-          E-posta için sunucuda SMTP ayarları gerekir (README → E-posta). WhatsApp gönderimi için resmi WhatsApp Business API entegrasyonu henüz eklenmedi.
-        </p>
-      )}
     </Card>
   );
 }
