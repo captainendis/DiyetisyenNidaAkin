@@ -8,6 +8,8 @@
  *    birleştirilerek bir günün "çalışma pencereleri" hesaplanır.
  *  - Boş zaman dilimleri, mevcut randevular (+ dinlenme süresi) çıkarılarak üretilir.
  *  - validateSlot(): randevu oluşturma/güncellemede tüm kuralları kontrol eder.
+ *  - Grup dersleri (pilates, class_sessions) de takvimde zaman kaplar: boş dilimlerden düşülür ve
+ *    hem randevu hem ders yazımlarında çakışma olarak kontrol edilir.
  *  - withAppointmentLock(): advisory lock ile transaction içinde çakışma kontrolü + yazma yapar.
  *    Veritabanındaki exclusion constraint son savunma hattıdır.
  *
@@ -17,6 +19,7 @@ import { DateTime } from 'luxon';
 import { prisma, Prisma, type Tx } from '../lib/db';
 import { conflict } from '../lib/http';
 import {
+  CLASS_BLOCKING_STATUSES,
   HARD_CONFLICT_STATUSES,
   SLOT_HOLDING_STATUSES,
   TIME_ZONE,
@@ -99,7 +102,8 @@ export async function getDayPlans(from: string, to: string, db: Tx | typeof pris
 
 export interface BusyInterval extends Interval {
   id: string;
-  status: AppointmentStatus;
+  /** Grup dersi ise 'CLASS' */
+  status: AppointmentStatus | 'CLASS';
 }
 
 async function busyIntervals(date: string, statuses: AppointmentStatus[], db: Tx | typeof prisma, ignoreId?: string): Promise<BusyInterval[]> {
@@ -112,13 +116,16 @@ async function busyIntervals(date: string, statuses: AppointmentStatus[], db: Tx
     },
     select: { id: true, startsAt: true, endsAt: true, status: true },
   });
+  const classes = await db.classSession.findMany({
+    where: { status: { in: CLASS_BLOCKING_STATUSES }, startsAt: { lt: endOfDayExclusive(date) }, endsAt: { gt: startOfDay(date) } },
+    select: { id: true, startsAt: true, endsAt: true },
+  });
   const dayStart = DateTime.fromISO(date, { zone: TIME_ZONE }).startOf('day');
-  return rows.map((r) => ({
-    id: r.id,
-    status: r.status as AppointmentStatus,
-    start: Math.round(DateTime.fromJSDate(r.startsAt!).diff(dayStart, 'minutes').minutes),
-    end: Math.round(DateTime.fromJSDate(r.endsAt!).diff(dayStart, 'minutes').minutes),
-  }));
+  const mins = (d: Date) => Math.round(DateTime.fromJSDate(d).diff(dayStart, 'minutes').minutes);
+  return [
+    ...rows.map((r) => ({ id: r.id, status: r.status as AppointmentStatus, start: mins(r.startsAt!), end: mins(r.endsAt!) })),
+    ...classes.map((r) => ({ id: r.id, status: 'CLASS' as const, start: mins(r.startsAt), end: mins(r.endsAt) })),
+  ];
 }
 
 export interface Slot {
@@ -161,6 +168,7 @@ export type SlotProblem =
   | 'NOT_WORKING_DAY'
   | 'OUTSIDE_HOURS'
   | 'CONFLICT'
+  | 'CLASS_CONFLICT'
   | 'TOO_SOON'
   | 'TOO_FAR';
 
@@ -169,6 +177,7 @@ export const SLOT_PROBLEM_MESSAGE: Record<SlotProblem, string> = {
   NOT_WORKING_DAY: 'Seçilen gün çalışma günü değil veya takvim kapalı.',
   OUTSIDE_HOURS: 'Seçilen saat çalışma saatleri (veya öğle arası/kapalı aralık) ile uyumlu değil.',
   CONFLICT: 'Bu saat aralığında onaylanmış başka bir randevu var.',
+  CLASS_CONFLICT: 'Bu saat aralığında bir grup dersi (pilates) var.',
   TOO_SOON: 'Bu saat için talep süresi geçti. Lütfen daha ileri bir saat seçin.',
   TOO_FAR: 'Bu tarih, randevu talebi alınabilecek süreden daha ileride.',
 };
@@ -177,16 +186,22 @@ export const SLOT_PROBLEM_MESSAGE: Record<SlotProblem, string> = {
  * Tek bir randevu aralığını doğrular. İlk sorunu fırlatır (409).
  * @param opts.statuses çakışma kontrolünde dikkate alınacak durumlar
  * @param opts.enforceHours false ise çalışma saati/gün kontrolü atlanır (panelde bilinçli "özel randevu")
+ * @param opts.classBufferMinutes grup dersleriyle aradaki zorunlu boşluk (varsayılan: günün dinlenme süresi;
+ *        ders–ders kontrolünde 0 — art arda dersler mümkün olsun)
+ *
+ * Grup dersiyle çakışma da 409 "CONFLICT" kodu ile döner (web sitesi tarafı aynı kodu "saat doldu"ya çevirir);
+ * ayrıntıda conflictingClassSessionId bulunur.
  */
 export async function assertSlotAllowed(
   db: Tx,
-  input: { date: string; time: string; durationMinutes: number; ignoreAppointmentId?: string },
+  input: { date: string; time: string; durationMinutes: number; ignoreAppointmentId?: string; ignoreClassSessionId?: string },
   opts: {
     statuses?: AppointmentStatus[];
     enforceHours?: boolean;
     allowPast?: boolean;
     leadTimeHours?: number;
     maxDaysAhead?: number;
+    classBufferMinutes?: number;
   } = {},
 ) {
   const { date, time, durationMinutes } = input;
@@ -223,6 +238,19 @@ export async function assertSlotAllowed(
   });
   if (clash) {
     throw conflict('CONFLICT', SLOT_PROBLEM_MESSAGE.CONFLICT, { conflictingAppointmentId: clash.id });
+  }
+  const classBuffer = opts.classBufferMinutes ?? buffer;
+  const classClash = await db.classSession.findFirst({
+    where: {
+      status: { in: CLASS_BLOCKING_STATUSES },
+      startsAt: { lt: new Date(endsAt.getTime() + classBuffer * 60_000) },
+      endsAt: { gt: new Date(startsAt.getTime() - classBuffer * 60_000) },
+      ...(input.ignoreClassSessionId ? { id: { not: input.ignoreClassSessionId } } : {}),
+    },
+    select: { id: true },
+  });
+  if (classClash) {
+    throw conflict('CONFLICT', SLOT_PROBLEM_MESSAGE.CLASS_CONFLICT, { conflictingClassSessionId: classClash.id });
   }
   return { startsAt, endsAt };
 }

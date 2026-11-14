@@ -30,6 +30,7 @@ import { plansRouter } from './routes/plans';
 import { recipesRouter } from './routes/recipes';
 import { portalRouter } from './routes/portal';
 import { clientPortalAdminRouter } from './routes/client-portal-admin';
+import { classesRouter } from './routes/classes';
 
 /** Oturum + CSRF gerektiren personel uçları */
 const STAFF: [string, Hono<AppEnv>][] = [
@@ -47,6 +48,7 @@ const STAFF: [string, Hono<AppEnv>][] = [
   ['/audit-logs', auditRouter],
   ['/plans', plansRouter],
   ['/recipes', recipesRouter],
+  ['/classes', classesRouter],
 ];
 
 function build() {

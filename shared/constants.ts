@@ -118,3 +118,30 @@ export const DEFAULT_BLOG_CATEGORIES = [
 
 /** KVKK metin sürümü — metin değiştiğinde artırın; rıza kayıtları sürümle ilişkilendirilir */
 export const KVKK_NOTICE_VERSION = '2026-10-taslak';
+
+// ───────────────────────── Grup dersleri (Pilates) ─────────────────────────
+
+export const CLASS_SESSION_STATUSES = ['SCHEDULED', 'COMPLETED', 'CANCELLED'] as const;
+export type ClassSessionStatus = (typeof CLASS_SESSION_STATUSES)[number];
+export const CLASS_SESSION_STATUS_LABEL: Record<ClassSessionStatus, string> = {
+  SCHEDULED: 'Planlandı',
+  COMPLETED: 'Yapıldı',
+  CANCELLED: 'İptal',
+};
+/** Takvimde zaman kaplayan ders durumları */
+export const CLASS_BLOCKING_STATUSES: ClassSessionStatus[] = ['SCHEDULED', 'COMPLETED'];
+
+export const CLASS_ATTENDANCE_STATUSES = ['BOOKED', 'ATTENDED', 'NO_SHOW', 'EXCUSED'] as const;
+export type ClassAttendanceStatus = (typeof CLASS_ATTENDANCE_STATUSES)[number];
+export const CLASS_ATTENDANCE_LABEL: Record<ClassAttendanceStatus, string> = {
+  BOOKED: 'Kayıtlı',
+  ATTENDED: 'Katıldı',
+  NO_SHOW: 'Gelmedi',
+  EXCUSED: 'Haber verdi',
+};
+/** Kontenjandan yer tutan katılım durumları (haber veren kişinin yeri boşalır) */
+export const CLASS_SEAT_HOLDING: ClassAttendanceStatus[] = ['BOOKED', 'ATTENDED', 'NO_SHOW'];
+
+/** Grup dersi kontenjanı sınırları (pilates grupları için varsayılan 3 kişi) */
+export const CLASS_CAPACITY_DEFAULT = 3;
+export const CLASS_CAPACITY_MAX = 12;

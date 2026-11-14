@@ -6,28 +6,36 @@
  *  - TimeGrid: gün/hafta. Çalışma dışı saatler taranmış, randevular duruma göre renkli bloklar.
  *    Boş alana tıklama → yeni randevu; bloğu sürükle-bırak (15 dk yakalama) → yeniden planlama.
  *  - MonthView: ay ızgarası, gün başına özet; güne tıklama → gün görünümü.
+ *  - Pilates (grup) dersleri ayrı renkte, sürüklenemeyen bloklar olarak gösterilir; tıklayınca ders detayı açılır.
  */
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { DateTime } from 'luxon';
-import { MapPin, Video } from 'lucide-react';
+import { Dumbbell, MapPin, Video } from 'lucide-react';
 import { TIME_ZONE, APPOINTMENT_STATUS_LABEL } from '@shared/constants';
 import { minutesOf, timeOf } from '@shared/time';
 import { cn } from '@/lib/format';
 import { STATUS_BLOCK } from '../ui';
 import { displayName, type AppointmentDTO, type DayPlanDTO } from './types';
+import type { ClassSessionDTO } from '@shared/classes';
 
 const HOUR_PX = 64;
 const SNAP = 15;
 const DRAGGABLE = new Set(['NEW_REQUEST', 'PENDING', 'CONFIRMED']);
 
-interface Placed { a: AppointmentDTO; start: number; end: number; lane: number; lanes: number }
+type Entry = { kind: 'appt'; a: AppointmentDTO } | { kind: 'class'; c: ClassSessionDTO };
+type Placed = Entry & { start: number; end: number; lane: number; lanes: number };
+
+/** Takvimde ders bloğu rengi (randevu durum renklerinden ayrışır) */
+const CLASS_BLOCK = 'bg-info/15 border-info text-info-ink';
 
 /** Çakışan blokları yan yana şeritlere yerleştir */
-function layout(items: AppointmentDTO[]): Placed[] {
-  const sorted = items
-    .filter((a) => a.time && a.durationMinutes)
-    .map((a) => ({ a, start: minutesOf(a.time!), end: minutesOf(a.time!) + a.durationMinutes! }))
-    .sort((x, y) => x.start - y.start || y.end - x.end);
+function layout(items: AppointmentDTO[], classes: ClassSessionDTO[] = []): Placed[] {
+  const sorted = [
+    ...items
+      .filter((a) => a.time && a.durationMinutes)
+      .map((a) => ({ kind: 'appt' as const, a, start: minutesOf(a.time!), end: minutesOf(a.time!) + a.durationMinutes! })),
+    ...classes.map((c) => ({ kind: 'class' as const, c, start: minutesOf(c.time), end: minutesOf(c.time) + c.durationMinutes })),
+  ].sort((x, y) => x.start - y.start || y.end - x.end);
   const out: Placed[] = [];
   let cluster: Placed[] = [];
   let clusterEnd = -1;
@@ -50,10 +58,12 @@ function layout(items: AppointmentDTO[]): Placed[] {
 }
 
 export function TimeGrid({
-  days, items, plans, onSelect, onCreate, onMove, compact = false,
+  days, items, classes = [], plans, onSelect, onSelectClass, onCreate, onMove, compact = false,
 }: {
   days: string[];
   items: AppointmentDTO[];
+  classes?: ClassSessionDTO[];
+  onSelectClass?: (id: string) => void;
   plans: Map<string, DayPlanDTO>;
   onSelect: (id: string) => void;
   onCreate: (date: string, time: string) => void;
@@ -65,8 +75,9 @@ export function TimeGrid({
     let s = 8, e = 20;
     for (const p of plans.values()) for (const w of p.windows) { s = Math.min(s, Math.floor(w.start / 60)); e = Math.max(e, Math.ceil(w.end / 60)); }
     for (const a of items) if (a.time && a.durationMinutes) { const st = minutesOf(a.time); s = Math.min(s, Math.floor(st / 60)); e = Math.max(e, Math.ceil((st + a.durationMinutes) / 60)); }
+    for (const c of classes) { const st = minutesOf(c.time); s = Math.min(s, Math.floor(st / 60)); e = Math.max(e, Math.ceil((st + c.durationMinutes) / 60)); }
     return [Math.max(0, s), Math.min(24, e)];
-  }, [plans, items]);
+  }, [plans, items, classes]);
   const hours = Array.from({ length: endH - startH }, (_, i) => startH + i);
   const gridH = hours.length * HOUR_PX;
   const y = (min: number) => ((min - startH * 60) / 60) * HOUR_PX;
@@ -76,6 +87,11 @@ export function TimeGrid({
     for (const a of items) if (a.date) m.set(a.date, [...(m.get(a.date) ?? []), a]);
     return m;
   }, [items]);
+  const classesByDay = useMemo(() => {
+    const m = new Map<string, ClassSessionDTO[]>();
+    for (const c of classes) m.set(c.date, [...(m.get(c.date) ?? []), c]);
+    return m;
+  }, [classes]);
 
   // ── Sürükle-bırak ──
   const [drag, setDrag] = useState<{ a: AppointmentDTO; date: string; start: number; active: boolean } | null>(null);
@@ -170,7 +186,7 @@ export function TimeGrid({
             </div>
             {days.map((d) => {
               const p = plans.get(d);
-              const placed = layout(byDay.get(d) ?? []);
+              const placed = layout(byDay.get(d) ?? [], classesByDay.get(d) ?? []);
               return (
                 <div
                   key={d}
@@ -200,9 +216,36 @@ export function TimeGrid({
                       <span className="absolute -top-[5px] -left-1 h-2 w-2 rounded-full bg-danger" />
                     </div>
                   )}
-                  {placed.map(({ a, start, end, lane, lanes }) => {
-                    const isDragging = drag?.a.id === a.id;
+                  {placed.map((p) => {
+                    const { start, end, lane, lanes } = p;
                     const h = Math.max(22, y(end) - y(start) - 2);
+                    const box = { top: y(start) + 1, height: h, left: `calc(${(lane / lanes) * 100}% + 3px)`, width: `calc(${100 / lanes}% - 6px)` };
+                    if (p.kind === 'class') {
+                      const c = p.c;
+                      return (
+                        <button
+                          key={`c-${c.id}`}
+                          type="button"
+                          onClick={() => onSelectClass?.(c.id)}
+                          className={cn(
+                            'absolute z-10 overflow-hidden rounded-md border-l-[3px] px-2 py-1 text-left text-[0.75rem] leading-tight transition-shadow hover:shadow-md focus-visible:z-30',
+                            CLASS_BLOCK,
+                            c.status === 'CANCELLED' && 'line-through opacity-60',
+                          )}
+                          style={box}
+                          aria-label={`Pilates: ${c.title}, ${c.time}, ${c.seatsTaken}/${c.capacity} kişi`}
+                        >
+                          <p className="flex items-center gap-1 truncate font-bold"><Dumbbell className="h-3 w-3 shrink-0" />{c.title}</p>
+                          {h > 34 && (
+                            <p className="mt-0.5 truncate tabular opacity-80">
+                              {c.time}–{timeOf(minutesOf(c.time) + c.durationMinutes)} · {c.seatsTaken}/{c.capacity}
+                            </p>
+                          )}
+                        </button>
+                      );
+                    }
+                    const a = p.a;
+                    const isDragging = drag?.a.id === a.id;
                     return (
                       <button
                         key={a.id}
@@ -218,7 +261,7 @@ export function TimeGrid({
                           DRAGGABLE.has(a.status) && 'cursor-grab touch-none active:cursor-grabbing',
                           isDragging && 'opacity-35',
                         )}
-                        style={{ top: y(start) + 1, height: h, left: `calc(${(lane / lanes) * 100}% + 3px)`, width: `calc(${100 / lanes}% - 6px)` }}
+                        style={box}
                         aria-label={`${displayName(a)}, ${a.time}, ${APPOINTMENT_STATUS_LABEL[a.status]}`}
                       >
                         <p className="truncate font-bold">{displayName(a)}</p>
@@ -259,10 +302,12 @@ const DOT: Record<string, string> = {
 };
 
 export function MonthView({
-  anchor, items, plans, onPickDay, onSelect,
+  anchor, items, classes = [], plans, onPickDay, onSelect, onSelectClass,
 }: {
   anchor: string;
   items: AppointmentDTO[];
+  classes?: ClassSessionDTO[];
+  onSelectClass?: (id: string) => void;
   plans: Map<string, DayPlanDTO>;
   onPickDay: (date: string) => void;
   onSelect: (id: string) => void;
@@ -273,9 +318,16 @@ export function MonthView({
   const days: string[] = [];
   for (let d = start; d <= end; d = d.plus({ days: 1 })) days.push(d.toISODate()!);
   const today = DateTime.now().setZone(TIME_ZONE).toISODate();
-  const byDay = new Map<string, AppointmentDTO[]>();
-  for (const x of items) if (x.date) byDay.set(x.date, [...(byDay.get(x.date) ?? []), x]);
-  byDay.forEach((v) => v.sort((p, q) => (p.time ?? '').localeCompare(q.time ?? '')));
+  type MonthEntry = { id: string; time: string; label: string; dot: string; cancelled: boolean; open: () => void };
+  const byDay = new Map<string, MonthEntry[]>();
+  const push = (date: string, e: MonthEntry) => byDay.set(date, [...(byDay.get(date) ?? []), e]);
+  for (const x of items) {
+    if (x.date) push(x.date, { id: x.id, time: x.time ?? '', label: displayName(x), dot: DOT[x.status]!, cancelled: x.status === 'CANCELLED', open: () => onSelect(x.id) });
+  }
+  for (const c of classes) {
+    push(c.date, { id: `c-${c.id}`, time: c.time, label: `${c.title} (${c.seatsTaken}/${c.capacity})`, dot: 'bg-info', cancelled: c.status === 'CANCELLED', open: () => onSelectClass?.(c.id) });
+  }
+  byDay.forEach((v) => v.sort((p, q) => p.time.localeCompare(q.time)));
   const weekdays = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
   return (
@@ -305,23 +357,23 @@ export function MonthView({
                   'flex h-7 w-7 items-center justify-center rounded-full text-[0.82rem] font-bold tabular hover:bg-panel-bg',
                   d === today ? 'bg-cocoa text-ivory hover:bg-cocoa' : inMonth ? 'text-espresso' : 'text-panel-muted/60',
                 )}
-                aria-label={`${dt.toFormat('d MMMM')} gün görünümü (${list.length} randevu)`}
+                aria-label={`${dt.toFormat('d MMMM')} gün görünümü (${list.length} kayıt)`}
               >
                 {dt.day}
               </button>
               {/* Mobil: noktalar */}
               {list.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1 sm:hidden" aria-hidden>
-                  {list.slice(0, 6).map((x) => <span key={x.id} className={cn('h-1.5 w-1.5 rounded-full', DOT[x.status])} />)}
+                  {list.slice(0, 6).map((x) => <span key={x.id} className={cn('h-1.5 w-1.5 rounded-full', x.dot)} />)}
                 </div>
               )}
               <ul className="mt-1 hidden space-y-0.5 sm:block">
                 {list.slice(0, 3).map((x) => (
                   <li key={x.id}>
-                    <button type="button" onClick={() => onSelect(x.id)} className={cn('flex w-full items-center gap-1.5 truncate rounded px-1 py-0.5 text-left text-[0.72rem] hover:bg-panel-bg', x.status === 'CANCELLED' && 'line-through opacity-60')}>
-                      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', DOT[x.status])} />
+                    <button type="button" onClick={x.open} className={cn('flex w-full items-center gap-1.5 truncate rounded px-1 py-0.5 text-left text-[0.72rem] hover:bg-panel-bg', x.cancelled && 'line-through opacity-60')}>
+                      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', x.dot)} />
                       <span className="tabular text-panel-muted">{x.time}</span>
-                      <span className="truncate font-semibold text-espresso">{displayName(x)}</span>
+                      <span className="truncate font-semibold text-espresso">{x.label}</span>
                     </button>
                   </li>
                 ))}

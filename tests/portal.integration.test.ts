@@ -174,6 +174,28 @@ describe('danışanın gördükleri', () => {
     expect((await portal.get('/api/portal/files')).body.items).toHaveLength(0);
     expect((await portal.get(`/api/portal/files/${fileId}/download`)).status).toBe(404);
   });
+
+  it('pilates derslerinde yalnızca kendi katılımını görür; diğer katılımcılar dönmez', async () => {
+    const start = new Date(Date.now() + 9 * 864e5);
+    const session = await prisma.classSession.create({
+      data: {
+        title: 'Portal Pilates',
+        startsAt: start,
+        endsAt: new Date(start.getTime() + 50 * 60e3),
+        capacity: 3,
+        attendees: { create: [{ clientId: clientA }, { clientId: clientB, status: 'EXCUSED' }] },
+      },
+    });
+    try {
+      const res = await portal.get('/api/portal/classes');
+      expect(res.status).toBe(200);
+      expect(res.body.items).toEqual([expect.objectContaining({ id: session.id, title: 'Portal Pilates', status: 'SCHEDULED', myStatus: 'BOOKED' })]);
+      expect(JSON.stringify(res.body)).not.toContain(clientB);
+      expect(JSON.stringify(res.body)).not.toContain('Başka');
+    } finally {
+      await prisma.classSession.delete({ where: { id: session.id } });
+    }
+  });
 });
 
 describe('oturum sınırları', () => {

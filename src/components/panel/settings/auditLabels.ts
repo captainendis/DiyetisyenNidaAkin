@@ -115,6 +115,18 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   'portal.file_downloaded': 'Danışan dosya indirdi',
   'report.export': 'Rapor dışa aktarıldı',
   'retention.run': 'Veri saklama politikası uygulandı',
+  'class_group.created': 'Pilates grubu oluşturuldu',
+  'class_group.updated': 'Pilates grubu güncellendi',
+  'class_group.members_changed': 'Pilates grubu üyeleri değişti',
+  'class_group.deleted': 'Pilates grubu silindi',
+  'class_session.created': 'Pilates dersi eklendi',
+  'class_session.recurring_created': 'Tekrarlayan pilates dersleri eklendi',
+  'class_session.updated': 'Pilates dersi güncellendi',
+  'class_session.status_changed': 'Pilates dersi durumu değişti',
+  'class_session.deleted': 'Pilates dersi silindi',
+  'class_session.attendee_added': 'Derse katılımcı eklendi',
+  'class_session.attendee_removed': 'Dersten katılımcı çıkarıldı',
+  'class_session.attendance_changed': 'Ders katılımı işaretlendi',
 };
 
 export const AUDIT_ENTITY_LABEL: Record<string, string> = {
@@ -135,6 +147,8 @@ export const AUDIT_ENTITY_LABEL: Record<string, string> = {
   client_account: 'Danışan hesabı',
   nutrition_plan: 'Beslenme planı',
   recipe: 'Tarif',
+  class_group: 'Pilates grubu',
+  class_session: 'Pilates dersi',
   report: 'Rapor',
   system: 'Sistem',
 };

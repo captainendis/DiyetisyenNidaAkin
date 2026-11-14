@@ -496,6 +496,15 @@ clientsRouter.get('/:id/export', canRead, async (c) => {
     clinical ? prisma.clientMessage.findMany({ where: { clientId: id }, orderBy: { createdAt: 'asc' } }) : [],
     prisma.clientAccount.findUnique({ where: { clientId: id }, select: { email: true, isActive: true, activatedAt: true, lastLoginAt: true, createdAt: true } }),
   ]);
+  // Grup dersleri (pilates): üyelikler ve katılım geçmişi (diğer katılımcıların bilgisi dahil edilmez)
+  const [classGroups, classAttendances] = await Promise.all([
+    prisma.classGroupMember.findMany({ where: { clientId: id }, select: { createdAt: true, group: { select: { name: true } } } }),
+    prisma.classAttendance.findMany({
+      where: { clientId: id },
+      orderBy: { createdAt: 'asc' },
+      select: { status: true, session: { select: { title: true, startsAt: true, endsAt: true, status: true } } },
+    }),
+  ]);
   // Planlardaki tarif bağlantılarını okunur hâle getir (tarif adı; silinmiş tarif null)
   const decodedPlans = plans.map((p) => ({ plan: p, data: decodePlan(p.dataEnc) }));
   const recipeIds = [...new Set(decodedPlans.flatMap((p) => p.data.recipes?.items.map((i) => i.recipeId) ?? []))];
@@ -512,6 +521,8 @@ clientsRouter.get('/:id/export', canRead, async (c) => {
     measurements: measurements.map(serializeMeasurement),
     files,
     clientAccount: account,
+    classGroups: classGroups.map((m) => ({ group: m.group.name, joinedAt: m.createdAt })),
+    classAttendances: classAttendances.map((a) => ({ ...a.session, attendance: a.status })),
     messagesToClient: messages.map((m) => {
       let content = '';
       try {

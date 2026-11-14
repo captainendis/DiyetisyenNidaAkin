@@ -67,6 +67,7 @@ model User {
   createdAppointments Appointment[]          @relation("AppointmentCreatedBy")
   clientAccountsCreated ClientAccount[]
   clientMessages     ClientMessage[]
+  classSessions      ClassSession[]
 
   @@map("users")
 }
@@ -154,6 +155,8 @@ model Client {
   recipes           Recipe[]
   account           ClientAccount?
   messages          ClientMessage[]
+  classGroups       ClassGroupMember[]
+  classAttendances  ClassAttendance[]
 
   @@index([lastName, firstName])
   @@index([phone])
@@ -667,6 +670,96 @@ model ClientMessage {
 
   @@index([clientId])
   @@map("client_messages")
+}
+
+// ───────────────────────────── Grup dersleri (Pilates) ─────────────────────────────
+// Sabit gruplar (ör. "Salı-Perşembe 18:00", en fazla 3 kişi) ve tarihli dersler. Dersler takvimde zaman kaplar:
+// randevularla aynı kilit (withAppointmentLock) altında yazılır ve çakışma kontrolüne girer (server/services/classes.ts).
+// Sağlık verisi tutulmaz; yalnızca katılım bilgisi.
+
+enum ClassSessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum ClassAttendanceStatus {
+  /// Derse kayıtlı (henüz sonuçlanmadı)
+  BOOKED
+  ATTENDED
+  NO_SHOW
+  /// Haber vererek katılmadı — kontenjandan düşer, yerine telafi danışanı eklenebilir
+  EXCUSED
+}
+
+model ClassGroup {
+  id                     String   @id @default(cuid())
+  name                   String   @db.VarChar(80)
+  /// Gruptaki en fazla kişi sayısı (pilates için genelde 3)
+  capacity               Int      @default(3)
+  defaultDurationMinutes Int      @default(50)
+  note                   String?  @db.Text
+  /// Pasif gruplar listede ayrı gösterilir; geçmiş dersleri korunur
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now()) @db.DateTime(3)
+  updatedAt              DateTime @updatedAt @db.DateTime(3)
+
+  members  ClassGroupMember[]
+  sessions ClassSession[]
+
+  @@map("class_groups")
+}
+
+model ClassGroupMember {
+  id        String     @id @default(cuid())
+  groupId   String
+  group     ClassGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now()) @db.DateTime(3)
+
+  @@unique([groupId, clientId])
+  @@index([clientId])
+  @@map("class_group_members")
+}
+
+model ClassSession {
+  id          String             @id @default(cuid())
+  /// Grup silinse de geçmiş ders kalır (title anlık kopyadır)
+  groupId     String?
+  group       ClassGroup?        @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  title       String             @db.VarChar(80)
+  startsAt    DateTime           @db.DateTime(3)
+  endsAt      DateTime           @db.DateTime(3)
+  capacity    Int
+  status      ClassSessionStatus @default(SCHEDULED)
+  note        String?            @db.Text
+  createdById String?
+  createdBy   User?              @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime           @default(now()) @db.DateTime(3)
+  updatedAt   DateTime           @updatedAt @db.DateTime(3)
+
+  attendees ClassAttendance[]
+
+  @@index([startsAt])
+  @@index([groupId])
+  @@index([status])
+  @@map("class_sessions")
+}
+
+model ClassAttendance {
+  id        String                @id @default(cuid())
+  sessionId String
+  session   ClassSession          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  status    ClassAttendanceStatus @default(BOOKED)
+  createdAt DateTime              @default(now()) @db.DateTime(3)
+  updatedAt DateTime              @updatedAt @db.DateTime(3)
+
+  @@unique([sessionId, clientId])
+  @@index([clientId])
+  @@map("class_attendances")
 }
 
 // ───────────────────────────── Sistem ─────────────────────────────

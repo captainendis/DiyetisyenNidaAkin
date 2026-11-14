@@ -16,6 +16,7 @@ import { ClientFormModal } from '@/components/panel/clients/ClientFormModal';
 import { DeleteClientDialog } from '@/components/panel/clients/DeleteClientDialog';
 import { OverviewTab } from '@/components/panel/clients/OverviewTab';
 import { AppointmentsTab } from '@/components/panel/clients/AppointmentsTab';
+import { ClassesTab } from '@/components/panel/clients/ClassesTab';
 import { NotesTab } from '@/components/panel/clients/NotesTab';
 import { ClientMessagesTab } from '@/components/panel/clients/ClientMessagesTab';
 import { MeasurementsTab } from '@/components/panel/clients/MeasurementsTab';
@@ -23,7 +24,7 @@ import { FilesTab } from '@/components/panel/clients/FilesTab';
 import { ClientPlansTab } from '@/components/panel/plans/ClientPlansTab';
 import { CLIENT_STATUS_TONE, type Client, type ClientStats } from '@/components/panel/clients/types';
 
-type Tab = 'genel' | 'randevular' | 'notlar' | 'mesajlar' | 'planlar' | 'takip' | 'dosyalar';
+type Tab = 'genel' | 'randevular' | 'pilates' | 'notlar' | 'mesajlar' | 'planlar' | 'takip' | 'dosyalar';
 
 function ClinicalLocked() {
   return (
@@ -115,6 +116,7 @@ function Detail() {
         tabs={[
           { value: 'genel', label: 'Genel Bakış' },
           { value: 'randevular', label: 'Randevu Geçmişi' },
+          ...(can('appointments:read') ? [{ value: 'pilates' as const, label: 'Pilates' }] : []),
           { value: 'notlar', label: <span className="flex items-center gap-1.5">Görüşme Notları{!clinical && <Lock className="h-3 w-3" />}</span> },
           { value: 'mesajlar', label: <span className="flex items-center gap-1.5">Danışana Mesajlar{!clinical && <Lock className="h-3 w-3" />}</span> },
           { value: 'planlar', label: <span className="flex items-center gap-1.5">Beslenme Planları{!clinical && <Lock className="h-3 w-3" />}</span> },
@@ -126,6 +128,7 @@ function Detail() {
       <div role="tabpanel">
         {tab === 'genel' && <OverviewTab client={client} stats={stats} onClientChanged={updateClient} />}
         {tab === 'randevular' && <AppointmentsTab clientId={client.id} />}
+        {tab === 'pilates' && can('appointments:read') && <ClassesTab clientId={client.id} />}
         {tab === 'notlar' && (clinical ? <NotesTab clientId={client.id} /> : <ClinicalLocked />)}
         {tab === 'mesajlar' && (clinical ? <ClientMessagesTab clientId={client.id} /> : <ClinicalLocked />)}
         {tab === 'planlar' && (clinical ? <ClientPlansTab clientId={client.id} clientName={`${client.firstName} ${client.lastName}`} /> : <ClinicalLocked />)}

@@ -8,7 +8,7 @@
  * URL parametreleri: view, d (görünüm tarihi), id (detay modalı), new=1 (&clientId, date, time)
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from '@/lib/router';
+import { Link, useNavigate, useSearchParams } from '@/lib/router';
 import { DateTime } from 'luxon';
 import { ChevronLeft, ChevronRight, Inbox, Plus } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
@@ -23,6 +23,7 @@ import NewAppointmentModal from '@/components/panel/appointments/NewAppointmentM
 import { AppointmentList, type ListFilters } from '@/components/panel/appointments/AppointmentList';
 import { MonthView, STATUS_DOT, TimeGrid } from '@/components/panel/appointments/CalendarViews';
 import { displayName, type AppointmentDTO, type DayPlanDTO } from '@/components/panel/appointments/types';
+import type { ClassSessionDTO } from '@shared/classes';
 
 type View = 'list' | 'day' | 'week' | 'month';
 const VIEWS: { value: View; label: string }[] = [
@@ -43,6 +44,7 @@ function Inner() {
   const [params, setParams] = useSearchParams();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const fb = useFeedback();
+  const navigate = useNavigate();
   const { can, refreshUnread } = usePanelAuth();
   const canWrite = can('appointments:write');
 
@@ -84,11 +86,13 @@ function Inner() {
   const [from, to] = rangeFor(view === 'list' ? 'week' : view, anchor);
   const cal = useApi(async () => {
     if (view === 'list') return null;
-    const [appts, plans] = await Promise.all([
+    const [appts, plans, classes] = await Promise.all([
       api.get<{ items: AppointmentDTO[] }>('/appointments', { from, to, pageSize: 500, sort: 'startsAt' }),
       api.get<{ days: DayPlanDTO[] }>('/appointments/day-plans', { from, to }),
+      // Pilates dersleri de takvimde zaman kaplar
+      api.get<{ items: ClassSessionDTO[] }>('/classes/sessions', { from, to, includeCancelled: '1' }).catch(() => ({ items: [] as ClassSessionDTO[] })),
     ]);
-    return { items: appts.items.filter((a) => a.date), plans: new Map(plans.days.map((p) => [p.date, p])) };
+    return { items: appts.items.filter((a) => a.date), classes: classes.items, plans: new Map(plans.days.map((p) => [p.date, p])) };
   }, [view, from, to, refreshKey]);
 
   const unscheduled = useApi(() => api.get<{ total: number }>('/appointments', { status: 'NEW_REQUEST', pageSize: 1 }), [refreshKey]);
@@ -97,6 +101,8 @@ function Inner() {
     () => (cal.data?.items ?? []).filter((a) => showCancelled || (a.status !== 'CANCELLED' && a.status !== 'NO_SHOW')),
     [cal.data, showCancelled],
   );
+  const classes = useMemo(() => (cal.data?.classes ?? []).filter((c) => showCancelled || c.status !== 'CANCELLED'), [cal.data, showCancelled]);
+  const openClass = (id: string) => navigate(`/panel/pilates?ders=${id}`);
   const days = useMemo(() => {
     const out: string[] = [];
     for (let d = DateTime.fromISO(from, { zone: TIME_ZONE }); d.toISODate()! <= to; d = d.plus({ days: 1 })) out.push(d.toISODate()!);
@@ -204,6 +210,9 @@ function Inner() {
                       <span className={cn('h-2 w-2 rounded-full', STATUS_DOT[s])} /> {APPOINTMENT_STATUS_LABEL[s]}
                     </li>
                   ))}
+                  <li className="flex items-center gap-1.5 text-[0.75rem] text-panel-muted">
+                    <span className="h-2 w-2 rounded-full bg-info" /> Pilates
+                  </li>
                 </ul>
                 <Switch checked={showCancelled} onChange={setShowCancelled} label={<span className="text-[0.8rem]">İptal / gelmeyenler</span>} />
               </div>
@@ -221,19 +230,21 @@ function Inner() {
             <Skeleton className="h-[26rem] w-full" />
           </div>
         ) : view === 'month' ? (
-          <MonthView anchor={anchor} items={items} plans={cal.data.plans} onPickDay={(d) => update({ view: 'day', d })} onSelect={(id) => update({ id })} />
+          <MonthView anchor={anchor} items={items} classes={classes} plans={cal.data.plans} onPickDay={(d) => update({ view: 'day', d })} onSelect={(id) => update({ id })} onSelectClass={openClass} />
         ) : (
           <>
             <TimeGrid
               days={days}
               items={items}
+              classes={classes}
               plans={cal.data.plans}
               compact={isMobile}
               onSelect={(id) => update({ id })}
+              onSelectClass={openClass}
               onCreate={(date, time) => canWrite && update({ new: '1', date, time })}
               onMove={canWrite ? onMove : () => {}}
             />
-            {items.length === 0 && (
+            {items.length === 0 && classes.length === 0 && (
               <p className="border-t border-panel-line px-5 py-3 text-center text-sm text-panel-muted">
                 {view === 'day' ? 'Bu gün için randevu bulunmuyor.' : 'Bu hafta için randevu bulunmuyor.'} Boş bir saate tıklayarak randevu ekleyebilirsiniz.
               </p>

@@ -20,6 +20,7 @@ Diyetisyen Nida Akın için geliştirilmiş, **premium editorial tasarımlı her
 7. [Demo modu](#demo-modu)
 8. [İçerik ve yapılandırma](#içerik-ve-yapılandırma)
 9. [Randevu sistemi nasıl çalışır](#randevu-sistemi-nasıl-çalışır)
+   - [Pilates (grup dersleri)](#pilates-grup-dersleri)
 10. [Güvenlik ve KVKK](#güvenlik-ve-kvkk)
 11. [API özeti](#api-özeti)
 12. [Test](#test)
@@ -304,6 +305,24 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
 Durumlar: Yeni Talep · Onay Bekliyor · Onaylandı · Tamamlandı · İptal Edildi · Gelmedi — her değişiklik
 `appointment_status_history` tablosuna yazılır.
 
+### Pilates (grup dersleri)
+
+Panel → **Pilates** (`/panel/pilates`). Yetki randevularla aynıdır (`appointments:read/write`), asistan da yönetebilir;
+sağlık verisi tutulmaz, yalnızca katılım bilgisi.
+
+- **Grup:** sabit üyeler + kontenjan (varsayılan **3 kişi**, en fazla 12) + ders süresi. Üye sayısı kontenjanı aşamaz.
+- **Ders programı:** gruba gün/saat (ör. Salı 18:00, Perşembe 19:00) ve hafta sayısı (≤ 26) seçilir; dersler tek seferde
+  açılır, üyeler otomatik katılımcı olur. Dolu/kapalı güne denk gelen tarihler **atlanır ve nedeniyle listelenir**.
+- **Tek ders:** gruptan veya grupsuz (deneme / telafi / özel ders).
+- **Yoklama:** Katıldı · Gelmedi · Haber verdi. "Haber verdi" kontenjandan düşer; boşalan yere telafi/misafir danışan
+  eklenebilir. "Ders yapıldı" işaretlenince işaretlenmemiş kayıtlar "katıldı" sayılır. Gelecek ders "katıldı" yapılamaz.
+- **Üyelik değişikliği:** gruptan çıkan kişi planlı derslerden çıkarılır, yeni üye yer olan derslere eklenir (isteğe bağlı).
+- **Takvim:** planlı/yapılmış dersler zaman kaplar — randevu takviminde mavi bloklar olarak görünür, web sitesindeki boş
+  saatlerden düşülür ve randevularla aynı kilit altında çakışma kontrolüne girer. Randevu ↔ ders arasında günün dinlenme
+  süresi uygulanır; ders ↔ ders arasında yalnızca örtüşme engellenir (art arda dersler mümkün).
+- **Danışan:** danışan detayında "Pilates" sekmesi (grup, yaklaşan/geçmiş dersler, devam oranı); danışan hesabında
+  (Hesabım → Randevular) yalnızca kendi dersleri görünür — diğer katılımcıların adı gösterilmez. KVKK dışa aktarımına dahildir.
+
 ## Güvenlik ve KVKK
 
 **Uygulanan teknik önlemler**
@@ -380,6 +399,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/print` (A4 yazdırma sayfası, `?autoprint=1`) |
 | Tarifler | `GET/POST /api/recipes` (`?category`, `?q`, `?clientId`; POST'ta `parentId`, `copyImage`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` · `PUT /:id/featured` |
 | Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/home` · `GET /api/public/recipes/:slug` |
+| Pilates (grup dersleri) | `GET/POST /api/classes/groups` · `GET/PATCH/DELETE /groups/:id` · `PUT /groups/:id/members` · `POST /groups/:id/recurring` · `GET/POST /api/classes/sessions` (`?from&to&groupId&clientId&includeCancelled`) · `GET/PATCH/DELETE /sessions/:id` · `POST /sessions/:id/status` · `POST /sessions/:id/attendees` · `PATCH/DELETE /sessions/:id/attendees/:clientId` · `GET /clients/:clientId` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
 <!-- api:end -->
 

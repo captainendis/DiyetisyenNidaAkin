@@ -8,6 +8,10 @@ import { z } from 'zod';
 import {
   APPOINTMENT_STATUSES,
   BLOCKED_DATE_KINDS,
+  CLASS_ATTENDANCE_STATUSES,
+  CLASS_CAPACITY_DEFAULT,
+  CLASS_CAPACITY_MAX,
+  CLASS_SESSION_STATUSES,
   BLOCKED_DATE_REASONS,
   CLIENT_STATUSES,
   MEETING_TYPES,
@@ -301,3 +305,85 @@ export const notificationPrefsSchema = z.object({
 });
 
 export const reportQuerySchema = z.object({ from: dateStr, to: dateStr });
+
+// ───────────────────────── Grup dersleri (Pilates) ─────────────────────────
+
+const capacity = z.coerce.number().int().min(1, 'En az 1 kişi').max(CLASS_CAPACITY_MAX, `En fazla ${CLASS_CAPACITY_MAX} kişi`);
+const classDuration = z.coerce.number().int().min(15, 'En az 15 dakika').max(240, 'En fazla 240 dakika');
+const classTitle = z.string().trim().min(2, 'En az 2 karakter girin').max(80, 'En fazla 80 karakter');
+const optionalNote = z.string().trim().max(1000, 'En fazla 1000 karakter').optional().nullable().transform((v) => (v ? v : null));
+const idList = z.array(z.string().min(1).max(40)).max(CLASS_CAPACITY_MAX * 4);
+
+export const classGroupCreateSchema = z.object({
+  name: classTitle,
+  capacity: capacity.default(CLASS_CAPACITY_DEFAULT),
+  defaultDurationMinutes: classDuration.default(50),
+  note: optionalNote,
+  memberIds: idList.default([]),
+});
+export const classGroupUpdateSchema = z.object({
+  name: classTitle.optional(),
+  capacity: capacity.optional(),
+  defaultDurationMinutes: classDuration.optional(),
+  note: optionalNote,
+  isActive: z.boolean().optional(),
+});
+export const classGroupMembersSchema = z.object({
+  memberIds: idList,
+  /** true: gelecekteki planlı derslerin katılımcı listesi de güncellenir */
+  syncUpcoming: z.boolean().default(true),
+});
+
+export const classSessionCreateSchema = z
+  .object({
+    groupId: z.string().max(40).optional().nullable(),
+    title: classTitle.optional().nullable(),
+    date: dateStr,
+    time: timeStr,
+    durationMinutes: classDuration.optional(),
+    capacity: capacity.optional(),
+    /** Grupsuz (tek seferlik) derste katılımcılar */
+    clientIds: idList.optional(),
+    note: optionalNote,
+    allowOutsideHours: z.boolean().default(false),
+  })
+  .refine((v) => v.groupId || v.title, { path: ['title'], message: 'Grup seçin veya ders adı girin' });
+
+export const classRecurringSchema = z.object({
+  /** Haftalık tekrar: her gün için saat (ör. Salı 18:00, Perşembe 19:00) */
+  slots: z
+    .array(z.object({ weekday: z.number().int().min(1).max(7), time: timeStr }))
+    .min(1, 'En az bir gün seçin')
+    .max(14),
+  startDate: dateStr,
+  weeks: z.coerce.number().int().min(1, 'En az 1 hafta').max(26, 'En fazla 26 hafta'),
+  durationMinutes: classDuration.optional(),
+  allowOutsideHours: z.boolean().default(false),
+});
+
+export const classSessionUpdateSchema = z.object({
+  title: classTitle.optional(),
+  date: dateStr.optional(),
+  time: timeStr.optional(),
+  durationMinutes: classDuration.optional(),
+  capacity: capacity.optional(),
+  note: optionalNote,
+  allowOutsideHours: z.boolean().default(false),
+});
+
+export const classSessionStatusSchema = z.object({
+  status: z.enum(CLASS_SESSION_STATUSES),
+});
+
+export const classAttendeeAddSchema = z.object({ clientId: z.string().min(1).max(40) });
+export const classAttendanceUpdateSchema = z.object({ status: z.enum(CLASS_ATTENDANCE_STATUSES) });
+
+export const classSessionListQuerySchema = z
+  .object({
+    from: dateStr,
+    to: dateStr,
+    groupId: z.string().max(40).optional(),
+    clientId: z.string().max(40).optional(),
+    includeCancelled: z.enum(['0', '1']).optional(),
+  })
+  .refine((v) => v.from <= v.to, 'Geçersiz aralık');

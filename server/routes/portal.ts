@@ -40,6 +40,7 @@ import {
   type PortalRecipe,
   type PortalRecipeCard,
 } from '../../shared/portal';
+import type { PortalClassSession } from '../../shared/classes';
 
 const MAX_FAILED = 5;
 const LOCK_MINUTES = 15;
@@ -378,6 +379,26 @@ portalRouter.get('/appointments', async (c) => {
     select: apptSelect,
   });
   return c.json({ items: rows.map(toAppointment) });
+});
+
+/** Grup dersleri (pilates): yalnızca danışanın kendi katılımı — diğer katılımcıların bilgisi gösterilmez */
+portalRouter.get('/classes', async (c) => {
+  const clientId = portalUser(c).clientId;
+  const rows = await prisma.classAttendance.findMany({
+    where: { clientId },
+    include: { session: { select: { id: true, title: true, startsAt: true, endsAt: true, status: true } } },
+    orderBy: { session: { startsAt: 'desc' } },
+    take: 200,
+  });
+  const items: PortalClassSession[] = rows.map((r) => ({
+    id: r.session.id,
+    title: r.session.title,
+    startsAt: r.session.startsAt.toISOString(),
+    endsAt: r.session.endsAt.toISOString(),
+    status: r.session.status,
+    myStatus: r.status,
+  }));
+  return c.json({ items });
 });
 
 portalRouter.get('/measurements', async (c) => {
