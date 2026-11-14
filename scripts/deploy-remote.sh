@@ -6,6 +6,8 @@
 # Derleme sunucuda YAPILMAZ: CI'da hazırlanan paket (.next/standalone + dist-scripts + prisma) açılır.
 #
 #   APP_ROOT=/home/KULLANICI/nidaakin bash deploy-remote.sh deploy <revizyon>   # .deploy/releases/<revizyon> açılmış olmalı
+#   APP_ROOT=… bash deploy-remote.sh deploy-bg <revizyon>   # aynısı, SSH'tan bağımsız arka planda (CI bunu kullanır);
+#                                                          # günlük: .deploy/logs/<revizyon>.log, çıkış kodu: <...>.log.exit
 #   APP_ROOT=/home/KULLANICI/nidaakin bash deploy-remote.sh rollback            # bir önceki derlemeye dön (veritabanı DEĞİL)
 #   APP_ROOT=/home/KULLANICI/nidaakin bash deploy-remote.sh status
 #
@@ -31,8 +33,29 @@ KEEP_RELEASES="${KEEP_RELEASES:-3}"
 cd "$APP_ROOT"
 APP_ROOT="$(pwd -P)"
 STATE="$APP_ROOT/.deploy"
-mkdir -p "$STATE/releases" "$STATE/previous" "$STATE/incoming"
+mkdir -p "$STATE/releases" "$STATE/previous" "$STATE/incoming" "$STATE/logs"
 chmod 700 "$STATE"
+
+# Arka planda dağıtım: SSH bağlantısı kopsa ya da CI işi zaman aşımına uğrasa da sunucuda iş sonuna kadar sürer.
+# Kilit almadan önce ayrılır (kilidi asıl "deploy" süreci alır).
+if [ "${1:-}" = "deploy-bg" ]; then
+  [ -n "${2:-}" ] || { echo "Kullanım: deploy-remote.sh deploy-bg <revizyon>" >&2; exit 1; }
+  SELF="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
+  LOG="$STATE/logs/$2.log"
+  rm -f "$LOG" "$LOG.exit"
+  # shellcheck disable=SC2016
+  RUNNER='bash "$0" deploy "$1" > "$2" 2>&1; echo $? > "$2.exit"'
+  if command -v setsid >/dev/null 2>&1; then
+    setsid nohup bash -c "$RUNNER" "$SELF" "$2" "$LOG" < /dev/null > /dev/null 2>&1 &
+  else
+    nohup bash -c "$RUNNER" "$SELF" "$2" "$LOG" < /dev/null > /dev/null 2>&1 &
+  fi
+  echo "Dağıtım arka planda başladı. Günlük: $LOG"
+  # Eski günlükleri temizle (son 20)
+  # shellcheck disable=SC2012
+  { ls -1t "$STATE/logs/"*.log 2>/dev/null || true; } | tail -n +21 | while read -r f; do rm -f "$f" "$f.exit"; done
+  exit 0
+fi
 
 step() { printf '\n\033[1m▸ %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[31m✖ %s\033[0m\n' "$*" >&2; exit 1; }
@@ -145,7 +168,8 @@ case "$ACTION" in
       || [ "$(cat "$STATE/lock.sha256" 2>/dev/null)" != "$LOCK_HASH" ]; then
       step "Bağımlılıklar kuruluyor (npm ci)"
       # NODE_ENV=production iken npm geliştirme bağımlılıklarını atlar; prisma CLI bunlardan biri
-      npm ci --include=dev --ignore-scripts --no-audit --no-fund
+      echo "İlk kurulumda paylaşımlı hostingde 10–20 dakika sürebilir; sonraki dağıtımlarda bu adım atlanır."
+      npm ci --include=dev --ignore-scripts --no-audit --no-fund --no-progress --prefer-offline
       printf '%s' "$LOCK_HASH" > "$STATE/lock.sha256"
     else
       step "Bağımlılıklar güncel (paket kilidi değişmedi)"

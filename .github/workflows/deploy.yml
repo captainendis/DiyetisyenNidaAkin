@@ -38,7 +38,8 @@ jobs:
     needs: ci
     if: vars.DEPLOY_ENABLED == 'true' && inputs.action != 'rollback'
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # İlk dağıtımda sunucudaki npm ci paylaşımlı hostingde uzun sürebilir
+    timeout-minutes: 60
     environment:
       name: production
       url: ${{ vars.SITE_URL }}
@@ -93,6 +94,9 @@ jobs:
             IdentitiesOnly yes
             StrictHostKeyChecking yes
             ServerAliveInterval 30
+            ControlMaster auto
+            ControlPath ~/.ssh/cm-%r@%h-%p
+            ControlPersist 10m
           CFG
 
       - name: Paketi yükle
@@ -111,8 +115,24 @@ jobs:
         run: |
           q() { printf %q "$1"; }
           REL=".deploy/releases/$REV"
+          LOG=".deploy/logs/$REV.log"
+          # Sunucuda SSH'tan bağımsız arka planda başlat (bağlantı kopsa da iş yarım kalmaz)
           ssh prod "set -euo pipefail; cd $(q "$APP_ROOT"); rm -rf $REL; mkdir -p $REL; tar -xzf .deploy/incoming/$REV.tar.gz -C $REL; \
-            APP_ROOT=$(q "$APP_ROOT") NODE_ACTIVATE=$(q "$NODE_ACTIVATE") RESTART_CMD=$(q "$RESTART_CMD") bash $REL/scripts/deploy-remote.sh deploy $REV"
+            APP_ROOT=$(q "$APP_ROOT") NODE_ACTIVATE=$(q "$NODE_ACTIVATE") RESTART_CMD=$(q "$RESTART_CMD") bash $REL/scripts/deploy-remote.sh deploy-bg $REV"
+          # Günlüğü canlı izle; çıkış kodu dosyası oluşunca bitir
+          SHOWN=0
+          while true; do
+            NEW="$(ssh prod "cd $(q "$APP_ROOT") && tail -n +$((SHOWN + 1)) $LOG 2>/dev/null" || true)"
+            if [ -n "$NEW" ]; then printf '%s\n' "$NEW"; SHOWN=$((SHOWN + $(printf '%s\n' "$NEW" | wc -l))); fi
+            CODE="$(ssh prod "cat $(q "$APP_ROOT")/$LOG.exit 2>/dev/null" || true)"
+            if [ -n "$CODE" ]; then
+              NEW="$(ssh prod "cd $(q "$APP_ROOT") && tail -n +$((SHOWN + 1)) $LOG 2>/dev/null" || true)"
+              [ -n "$NEW" ] && printf '%s\n' "$NEW"
+              [ "$CODE" = "0" ] || { echo "::error::Sunucuda dağıtım başarısız (çıkış kodu $CODE). Günlük: $APP_ROOT/$LOG"; exit 1; }
+              exit 0
+            fi
+            sleep 15
+          done
 
       - name: Doğrula (/api/health → yeni sürüm)
         env:
