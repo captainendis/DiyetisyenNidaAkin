@@ -7,12 +7,11 @@
  *  - /messages  danışana mesajlar (klinik notlardan ayrı; danışan bunları görür) — clinical:read / clinical:write
  *  - /files/:fileId/visibility  dosyanın danışana görünürlüğü — clinical:write
  */
-import { Router, type Request } from 'express';
 import { prisma } from '../lib/db';
-import { badRequest, conflict, HttpError, notFound, parse } from '../lib/http';
+import { badRequest, body, conflict, HttpError, notFound, parse, router, type Ctx } from '../lib/http';
 import { audit } from '../lib/audit';
 import { decryptString, encryptString } from '../lib/crypto';
-import { requirePermission } from '../auth/session';
+import { authUser, requirePermission } from '../auth/session';
 import { accountInfo, staffLinkFor } from '../services/client-accounts';
 import {
   accountCreateSchema,
@@ -22,22 +21,22 @@ import {
   type StaffClientMessage,
 } from '../../shared/portal';
 
-export const clientPortalAdminRouter = Router({ mergeParams: true });
+export const clientPortalAdminRouter = router();
 
 const manage = requirePermission('portal:manage');
 const clinicalRead = requirePermission('clinical:read');
 const clinicalWrite = requirePermission('clinical:write');
 
-function param(req: Request, key: string) {
-  const v = (req.params as Record<string, string | undefined>)[key];
+function param(c: Ctx, key: string) {
+  const v = c.req.param(key);
   if (typeof v !== 'string' || v.length > 40) throw badRequest('Geçersiz kimlik');
   return v;
 }
 
-async function clientOr404(req: Request) {
-  const c = await prisma.client.findUnique({ where: { id: param(req, 'id') }, select: { id: true, firstName: true, email: true, status: true } });
-  if (!c) throw notFound('Danışan bulunamadı');
-  return c;
+async function clientOr404(c: Ctx) {
+  const client = await prisma.client.findUnique({ where: { id: param(c, 'id') }, select: { id: true, firstName: true, email: true, status: true } });
+  if (!client) throw notFound('Danışan bulunamadı');
+  return client;
 }
 
 async function emailTaken(email: string, exceptAccountId?: string) {
@@ -47,60 +46,60 @@ async function emailTaken(email: string, exceptAccountId?: string) {
 
 // ───────────────────────── Hesap ─────────────────────────
 
-clientPortalAdminRouter.get('/account', manage, async (req, res) => {
-  const c = await clientOr404(req);
-  const a = await prisma.clientAccount.findUnique({ where: { clientId: c.id } });
-  res.json({ account: a ? await accountInfo(a) : null, suggestedEmail: c.email });
+clientPortalAdminRouter.get('/account', manage, async (c) => {
+  const client = await clientOr404(c);
+  const a = await prisma.clientAccount.findUnique({ where: { clientId: client.id } });
+  return c.json({ account: a ? await accountInfo(a) : null, suggestedEmail: client.email });
 });
 
-clientPortalAdminRouter.post('/account', manage, async (req, res) => {
-  const c = await clientOr404(req);
-  if (c.status === 'ARCHIVED') throw new HttpError(409, 'CLIENT_ARCHIVED', 'Arşivlenmiş danışan için hesap açılamaz. Önce durumunu güncelleyin.');
-  const { email } = parse(accountCreateSchema, req.body);
-  if (await prisma.clientAccount.findUnique({ where: { clientId: c.id }, select: { id: true } })) throw conflict('ACCOUNT_EXISTS', 'Bu danışanın zaten bir hesabı var');
+clientPortalAdminRouter.post('/account', manage, async (c) => {
+  const client = await clientOr404(c);
+  if (client.status === 'ARCHIVED') throw new HttpError(409, 'CLIENT_ARCHIVED', 'Arşivlenmiş danışan için hesap açılamaz. Önce durumunu güncelleyin.');
+  const { email } = parse(accountCreateSchema, await body(c));
+  if (await prisma.clientAccount.findUnique({ where: { clientId: client.id }, select: { id: true } })) throw conflict('ACCOUNT_EXISTS', 'Bu danışanın zaten bir hesabı var');
   if (await emailTaken(email)) throw conflict('EMAIL_TAKEN', 'Bu e-posta başka bir danışan hesabında kullanılıyor', { fields: { email: 'Bu e-posta başka bir hesapta kullanılıyor' } });
-  const a = await prisma.clientAccount.create({ data: { clientId: c.id, email, createdById: req.user!.id } });
-  const link = await staffLinkFor(a, c.firstName);
-  await audit(req, 'portal_account.created', 'client', c.id, { accountId: a.id, emailed: link.emailed });
-  res.status(201).json({ account: await accountInfo(a), link });
+  const a = await prisma.clientAccount.create({ data: { clientId: client.id, email, createdById: authUser(c).id } });
+  const link = await staffLinkFor(a, client.firstName);
+  await audit(c, 'portal_account.created', 'client', client.id, { accountId: a.id, emailed: link.emailed });
+  return c.json({ account: await accountInfo(a), link }, 201);
 });
 
 /** Yeni bağlantı: etkinleştirilmemişse etkinleştirme, etkinse şifre sıfırlama bağlantısı (öncekiler geçersiz olur) */
-clientPortalAdminRouter.post('/account/link', manage, async (req, res) => {
-  const c = await clientOr404(req);
-  const a = await prisma.clientAccount.findUnique({ where: { clientId: c.id } });
+clientPortalAdminRouter.post('/account/link', manage, async (c) => {
+  const client = await clientOr404(c);
+  const a = await prisma.clientAccount.findUnique({ where: { clientId: client.id } });
   if (!a) throw notFound('Bu danışanın hesabı yok');
   if (!a.isActive) throw new HttpError(409, 'ACCOUNT_INACTIVE', 'Hesap kapalı. Bağlantı üretmek için önce hesabı açın.');
-  const link = await staffLinkFor(a, c.firstName);
-  await audit(req, 'portal_account.link_issued', 'client', c.id, { accountId: a.id, purpose: link.purpose, emailed: link.emailed });
-  res.json({ account: await accountInfo(a), link });
+  const link = await staffLinkFor(a, client.firstName);
+  await audit(c, 'portal_account.link_issued', 'client', client.id, { accountId: a.id, purpose: link.purpose, emailed: link.emailed });
+  return c.json({ account: await accountInfo(a), link });
 });
 
-clientPortalAdminRouter.patch('/account', manage, async (req, res) => {
-  const c = await clientOr404(req);
-  const a = await prisma.clientAccount.findUnique({ where: { clientId: c.id } });
+clientPortalAdminRouter.patch('/account', manage, async (c) => {
+  const client = await clientOr404(c);
+  const a = await prisma.clientAccount.findUnique({ where: { clientId: client.id } });
   if (!a) throw notFound('Bu danışanın hesabı yok');
-  const body = parse(accountUpdateSchema, req.body);
-  if (body.email && body.email !== a.email && (await emailTaken(body.email, a.id))) {
+  const input = parse(accountUpdateSchema, await body(c));
+  if (input.email && input.email !== a.email && (await emailTaken(input.email, a.id))) {
     throw conflict('EMAIL_TAKEN', 'Bu e-posta başka bir danışan hesabında kullanılıyor', { fields: { email: 'Bu e-posta başka bir hesapta kullanılıyor' } });
   }
   const updated = await prisma.$transaction(async (tx) => {
-    const u = await tx.clientAccount.update({ where: { id: a.id }, data: body });
+    const u = await tx.clientAccount.update({ where: { id: a.id }, data: input });
     // Kapatılan hesabın açık oturumları hemen düşer
-    if (body.isActive === false) await tx.clientSession.deleteMany({ where: { accountId: a.id } });
+    if (input.isActive === false) await tx.clientSession.deleteMany({ where: { accountId: a.id } });
     return u;
   });
-  const action = body.isActive === false ? 'portal_account.deactivated' : body.isActive === true && !a.isActive ? 'portal_account.activated' : 'portal_account.updated';
-  await audit(req, action, 'client', c.id, { accountId: a.id, fields: Object.keys(body) });
-  res.json({ account: await accountInfo(updated) });
+  const action = input.isActive === false ? 'portal_account.deactivated' : input.isActive === true && !a.isActive ? 'portal_account.activated' : 'portal_account.updated';
+  await audit(c, action, 'client', client.id, { accountId: a.id, fields: Object.keys(input) });
+  return c.json({ account: await accountInfo(updated) });
 });
 
-clientPortalAdminRouter.delete('/account', manage, async (req, res) => {
-  const c = await clientOr404(req);
-  const r = await prisma.clientAccount.deleteMany({ where: { clientId: c.id } }); // oturumlar ve bağlantılar cascade
+clientPortalAdminRouter.delete('/account', manage, async (c) => {
+  const client = await clientOr404(c);
+  const r = await prisma.clientAccount.deleteMany({ where: { clientId: client.id } }); // oturumlar ve bağlantılar cascade
   if (!r.count) throw notFound('Bu danışanın hesabı yok');
-  await audit(req, 'portal_account.deleted', 'client', c.id);
-  res.json({ ok: true });
+  await audit(c, 'portal_account.deleted', 'client', client.id);
+  return c.json({ ok: true });
 });
 
 // ───────────────────────── Danışana mesajlar ─────────────────────────
@@ -135,55 +134,55 @@ async function validAppointment(clientId: string, appointmentId: string | null |
   return a.id;
 }
 
-clientPortalAdminRouter.get('/messages', clinicalRead, async (req, res) => {
-  const c = await clientOr404(req);
-  const rows = await prisma.clientMessage.findMany({ where: { clientId: c.id }, orderBy: { createdAt: 'desc' }, include: msgInclude });
-  res.json({ items: rows.map(serialize) });
+clientPortalAdminRouter.get('/messages', clinicalRead, async (c) => {
+  const client = await clientOr404(c);
+  const rows = await prisma.clientMessage.findMany({ where: { clientId: client.id }, orderBy: { createdAt: 'desc' }, include: msgInclude });
+  return c.json({ items: rows.map(serialize) });
 });
 
-clientPortalAdminRouter.post('/messages', clinicalWrite, async (req, res) => {
-  const c = await clientOr404(req);
-  const body = parse(clientMessageSchema, req.body);
+clientPortalAdminRouter.post('/messages', clinicalWrite, async (c) => {
+  const client = await clientOr404(c);
+  const input = parse(clientMessageSchema, await body(c));
   const m = await prisma.clientMessage.create({
-    data: { clientId: c.id, appointmentId: await validAppointment(c.id, body.appointmentId), authorId: req.user!.id, contentEnc: encryptString(body.content) },
+    data: { clientId: client.id, appointmentId: await validAppointment(client.id, input.appointmentId), authorId: authUser(c).id, contentEnc: encryptString(input.content) },
     include: msgInclude,
   });
-  await audit(req, 'client_message.created', 'client', c.id, { messageId: m.id });
-  res.status(201).json({ message: serialize(m) });
+  await audit(c, 'client_message.created', 'client', client.id, { messageId: m.id });
+  return c.json({ message: serialize(m) }, 201);
 });
 
-clientPortalAdminRouter.patch('/messages/:messageId', clinicalWrite, async (req, res) => {
-  const c = await clientOr404(req);
-  const id = param(req, 'messageId');
-  const body = parse(clientMessageSchema, req.body);
-  const exists = await prisma.clientMessage.findFirst({ where: { id, clientId: c.id }, select: { id: true } });
+clientPortalAdminRouter.patch('/messages/:messageId', clinicalWrite, async (c) => {
+  const client = await clientOr404(c);
+  const id = param(c, 'messageId');
+  const input = parse(clientMessageSchema, await body(c));
+  const exists = await prisma.clientMessage.findFirst({ where: { id, clientId: client.id }, select: { id: true } });
   if (!exists) throw notFound('Mesaj bulunamadı');
   const m = await prisma.clientMessage.update({
     where: { id },
-    data: { contentEnc: encryptString(body.content), appointmentId: await validAppointment(c.id, body.appointmentId) },
+    data: { contentEnc: encryptString(input.content), appointmentId: await validAppointment(client.id, input.appointmentId) },
     include: msgInclude,
   });
-  await audit(req, 'client_message.updated', 'client', c.id, { messageId: id });
-  res.json({ message: serialize(m) });
+  await audit(c, 'client_message.updated', 'client', client.id, { messageId: id });
+  return c.json({ message: serialize(m) });
 });
 
-clientPortalAdminRouter.delete('/messages/:messageId', clinicalWrite, async (req, res) => {
-  const c = await clientOr404(req);
-  const id = param(req, 'messageId');
-  const r = await prisma.clientMessage.deleteMany({ where: { id, clientId: c.id } });
+clientPortalAdminRouter.delete('/messages/:messageId', clinicalWrite, async (c) => {
+  const client = await clientOr404(c);
+  const id = param(c, 'messageId');
+  const r = await prisma.clientMessage.deleteMany({ where: { id, clientId: client.id } });
   if (!r.count) throw notFound('Mesaj bulunamadı');
-  await audit(req, 'client_message.deleted', 'client', c.id, { messageId: id });
-  res.json({ ok: true });
+  await audit(c, 'client_message.deleted', 'client', client.id, { messageId: id });
+  return c.json({ ok: true });
 });
 
 // ───────────────────────── Dosya görünürlüğü ─────────────────────────
 
-clientPortalAdminRouter.patch('/files/:fileId/visibility', clinicalWrite, async (req, res) => {
-  const c = await clientOr404(req);
-  const fileId = param(req, 'fileId');
-  const { visibleToClient } = parse(fileVisibilitySchema, req.body);
-  const r = await prisma.clientFile.updateMany({ where: { id: fileId, clientId: c.id }, data: { visibleToClient } });
+clientPortalAdminRouter.patch('/files/:fileId/visibility', clinicalWrite, async (c) => {
+  const client = await clientOr404(c);
+  const fileId = param(c, 'fileId');
+  const { visibleToClient } = parse(fileVisibilitySchema, await body(c));
+  const r = await prisma.clientFile.updateMany({ where: { id: fileId, clientId: client.id }, data: { visibleToClient } });
   if (!r.count) throw notFound('Dosya bulunamadı');
-  await audit(req, visibleToClient ? 'clinical.file_shared' : 'clinical.file_hidden', 'client', c.id, { fileId });
-  res.json({ ok: true, visibleToClient });
+  await audit(c, visibleToClient ? 'clinical.file_shared' : 'clinical.file_hidden', 'client', client.id, { fileId });
+  return c.json({ ok: true, visibleToClient });
 });

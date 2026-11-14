@@ -1,8 +1,10 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
+'use client';
+
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { Logo, LogoMark } from '@/components/icons/Logo';
 import { useSiteImages } from '@/config/media';
 import { Picture } from '@/components/sections/Picture';

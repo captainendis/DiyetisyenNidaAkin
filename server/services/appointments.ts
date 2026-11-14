@@ -9,9 +9,8 @@
  *  - Onayda danışan eşleştirme / oluşturma
  *  - Tüm zaman yazan işlemler withAppointmentLock + assertSlotAllowed ile yapılır
  */
-import type { Request } from 'express';
 import { prisma, type Tx, type Prisma } from '../lib/db';
-import { badRequest, conflict, notFound } from '../lib/http';
+import { badRequest, conflict, notFound, type Ctx } from '../lib/http';
 import { audit } from '../lib/audit';
 import { notifyStaff } from './notifications';
 import { appointmentLocalParts, assertSlotAllowed, withAppointmentLock } from './availability';
@@ -104,7 +103,7 @@ export async function getAppointmentOr404(id: string, db: Tx | typeof prisma = p
  * Durum değişikliği. CONFIRMED'e geçişte kesin çakışma kontrolü yapılır ve
  * danışan kaydı yoksa eşleştirilir / oluşturulur.
  */
-export async function changeStatus(req: Request, id: string, to: AppointmentStatus, note: string | null | undefined) {
+export async function changeStatus(c: Ctx, id: string, to: AppointmentStatus, note: string | null | undefined) {
   let createdClient: { id: string; name: string } | null = null;
 
   const updated = await withAppointmentLock(async (tx) => {
@@ -157,9 +156,9 @@ export async function changeStatus(req: Request, id: string, to: AppointmentStat
       include: appointmentInclude,
     });
     await tx.appointmentStatusHistory.create({
-      data: { appointmentId: id, fromStatus: from, toStatus: to, note: note || null, changedById: req.user?.id ?? null },
+      data: { appointmentId: id, fromStatus: from, toStatus: to, note: note || null, changedById: c.var.user?.id ?? null },
     });
-    await audit(req, 'appointment.status_changed', 'appointment', id, { from, to }, tx);
+    await audit(c, 'appointment.status_changed', 'appointment', id, { from, to }, tx);
     return row;
   });
 
@@ -178,7 +177,7 @@ export async function changeStatus(req: Request, id: string, to: AppointmentStat
 
 /** Tarih/saat/süre değişikliği (yeniden planlama) */
 export async function reschedule(
-  req: Request,
+  c: Ctx,
   id: string,
   input: { date?: string; time?: string; durationMinutes?: number; allowOutsideHours?: boolean; extra?: Prisma.AppointmentUpdateInput },
 ) {
@@ -226,12 +225,12 @@ export async function reschedule(
           previousStartsAt: a.startsAt,
           newStartsAt: timeData.startsAt,
           note: 'Tarih/saat güncellendi',
-          changedById: req.user?.id ?? null,
+          changedById: c.var.user?.id ?? null,
         },
       });
-      await audit(req, 'appointment.rescheduled', 'appointment', id, {}, tx);
+      await audit(c, 'appointment.rescheduled', 'appointment', id, {}, tx);
     } else if (input.extra && Object.keys(input.extra).length) {
-      await audit(req, 'appointment.updated', 'appointment', id, { fields: Object.keys(input.extra) }, tx);
+      await audit(c, 'appointment.updated', 'appointment', id, { fields: Object.keys(input.extra) }, tx);
     }
     return row;
   });

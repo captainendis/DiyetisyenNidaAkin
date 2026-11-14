@@ -6,7 +6,7 @@
  * Her madde sunucuda gerçek veriden hesaplanır (GET /api/dashboard/setup); tamamlandıkça işaretlenir.
  */
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';

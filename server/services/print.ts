@@ -11,17 +11,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { createRequire } from 'node:module';
 import { renderPlanHtml, fitPlanToPage, MIN_SCALE, RECIPE_MIN_SCALE } from '../../shared/plan-template';
 import type { NutritionPlanData } from '../../shared/plan';
 import type { PrintRecipe } from '../../shared/recipe';
 
-const require = createRequire(import.meta.url);
-
 let fontCss: string | null = null;
 function getFontCss() {
   if (fontCss) return fontCss;
-  const dir = path.join(path.dirname(require.resolve('@fontsource-variable/manrope/package.json')), 'files');
+  // public/fonts (Next.js standalone çıktısında da sunucu klasörüyle birlikte kopyalanır; bkz. docs/DEPLOY.md)
+  const dir = path.join(process.cwd(), 'public', 'fonts');
   const face = (file: string, range: string) => {
     const data = fs.readFileSync(path.join(dir, file)).toString('base64');
     return `@font-face{font-family:'Manrope Variable';font-style:normal;font-weight:200 800;src:url(data:font/woff2;base64,${data}) format('woff2');unicode-range:${range};}`;

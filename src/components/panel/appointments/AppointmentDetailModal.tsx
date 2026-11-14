@@ -6,7 +6,7 @@
  * Diğer modüller /panel/randevular?id=<id> bağlantısıyla da açabilir.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import {
   CalendarClock, Check, CheckCheck, Globe, Mail, MapPin, MessageSquareText, Phone, Trash2, UserRound, UserX, Video, X,
 } from 'lucide-react';

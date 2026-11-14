@@ -10,14 +10,13 @@
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Router, type Request } from 'express';
 import { prisma } from '../lib/db';
 import { burnPasswordCheck, decryptBuffer, decryptJson, decryptString, hashPassword, sha256, verifyPassword } from '../lib/crypto';
-import { HttpError, badRequest, notFound, parse, unauthorized } from '../lib/http';
+import { HttpError, badRequest, body, notFound, parse, query, router, sendBuffer, unauthorized, type Ctx } from '../lib/http';
 import { audit } from '../lib/audit';
 import { PRIVATE_UPLOADS } from '../lib/storage';
 import { loginLimiter, passwordResetLimiter } from '../middleware/rate-limit';
-import { createClientSession, destroyClientSession, loadClientSession, requireClientAuth } from '../auth/client-session';
+import { createClientSession, destroyClientSession, loadClientSession, portalUser, requireClientAuth } from '../auth/client-session';
 import { emailAccountLink, issueAccountLink } from '../services/client-accounts';
 import { isEmailConfigured } from '../services/mailer';
 import { decryptContent } from '../services/recipe-content';
@@ -45,30 +44,30 @@ import {
 const MAX_FAILED = 5;
 const LOCK_MINUTES = 15;
 
-export const portalRouter = Router();
-portalRouter.use(loadClientSession);
+export const portalRouter = router();
+portalRouter.use('*', loadClientSession);
 
 /** Danışan eylemleri için denetim kaydı: personel kullanıcısı yok, kim olduğu metadata'da */
-function portalAudit(req: Request, action: string, accountId: string | null, meta: Record<string, unknown> = {}) {
-  return audit(req, action, 'client_account', accountId, { actor: 'client', ...meta });
+function portalAudit(c: Ctx, action: string, accountId: string | null, meta: Record<string, unknown> = {}) {
+  return audit(c, action, 'client_account', accountId, { actor: 'client', ...meta });
 }
 
-function idParam(req: Request, key = 'id') {
-  const v = req.params[key];
+function idParam(c: Ctx, key = 'id') {
+  const v = c.req.param(key);
   if (typeof v !== 'string' || v.length > 40) throw badRequest('Geçersiz kimlik');
   return v;
 }
 
 // ───────────────────────── Kimlik ─────────────────────────
 
-portalRouter.post('/auth/login', loginLimiter, async (req, res) => {
-  const { email, password, remember } = parse(portalLoginSchema, req.body);
+portalRouter.post('/auth/login', loginLimiter, async (c) => {
+  const { email, password, remember } = parse(portalLoginSchema, await body(c));
   const account = await prisma.clientAccount.findUnique({ where: { email }, include: { client: { select: { status: true } } } });
   const generic = new HttpError(401, 'INVALID_CREDENTIALS', 'E-posta adresi veya şifre hatalı');
 
   if (!account || !account.isActive || !account.passwordHash || account.client.status === 'ARCHIVED') {
     await burnPasswordCheck(password);
-    await portalAudit(req, 'portal.login_failed', account?.id ?? null, { reason: account ? 'inactive_or_not_activated' : 'unknown' });
+    await portalAudit(c, 'portal.login_failed', account?.id ?? null, { reason: account ? 'inactive_or_not_activated' : 'unknown' });
     throw generic;
   }
   if (account.lockedUntil && account.lockedUntil > new Date()) {
@@ -82,25 +81,26 @@ portalRouter.post('/auth/login', loginLimiter, async (req, res) => {
       where: { id: account.id },
       data: { failedLoginCount: lock ? 0 : failed, lockedUntil: lock ? new Date(Date.now() + LOCK_MINUTES * 60_000) : null },
     });
-    await portalAudit(req, lock ? 'portal.account_locked' : 'portal.login_failed', account.id);
+    await portalAudit(c, lock ? 'portal.account_locked' : 'portal.login_failed', account.id);
     throw generic;
   }
   await prisma.clientAccount.update({ where: { id: account.id }, data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() } });
-  await createClientSession(req, res, account.id, remember);
-  await portalAudit(req, 'portal.login', account.id, { remember });
-  res.json({ ok: true });
+  await createClientSession(c, account.id, remember);
+  await portalAudit(c, 'portal.login', account.id, { remember });
+  return c.json({ ok: true });
 });
 
-portalRouter.post('/auth/logout', async (req, res) => {
-  if (req.portalUser) await portalAudit(req, 'portal.logout', req.portalUser.accountId);
-  await destroyClientSession(req, res);
-  res.json({ ok: true });
+portalRouter.post('/auth/logout', async (c) => {
+  const current = c.var.portalUser;
+  if (current) await portalAudit(c, 'portal.logout', current.accountId);
+  await destroyClientSession(c);
+  return c.json({ ok: true });
 });
 
-portalRouter.get('/auth/me', (req, res) => {
-  const u = req.portalUser;
+portalRouter.get('/auth/me', (c) => {
+  const u = c.var.portalUser;
   if (!u) throw unauthorized();
-  res.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, csrfToken: u.csrfToken } });
+  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, csrfToken: u.csrfToken } });
 });
 
 async function findValidToken(token: string) {
@@ -115,15 +115,15 @@ async function findValidToken(token: string) {
 }
 
 /** Bağlantı sayfası açılırken: geçerli mi, kime ait (selamlama için yalnızca ad) */
-portalRouter.get('/auth/token', passwordResetLimiter, async (req, res) => {
-  const { token } = parse(portalTokenQuerySchema, req.query);
+portalRouter.get('/auth/token', passwordResetLimiter, async (c) => {
+  const { token } = parse(portalTokenQuerySchema, query(c));
   const t = await findValidToken(token);
-  res.json({ purpose: t.purpose, firstName: t.account.client.firstName, email: t.account.email });
+  return c.json({ purpose: t.purpose, firstName: t.account.client.firstName, email: t.account.email });
 });
 
 /** Etkinleştirme ya da sıfırlama: şifreyi belirler, eski oturumları kapatır ve danışanı oturum açmış hâle getirir */
-portalRouter.post('/auth/set-password', passwordResetLimiter, async (req, res) => {
-  const { token, password } = parse(portalSetPasswordSchema, req.body);
+portalRouter.post('/auth/set-password', passwordResetLimiter, async (c) => {
+  const { token, password } = parse(portalSetPasswordSchema, await body(c));
   const t = await findValidToken(token);
   const now = new Date();
   // Eski oturumlar aynı işlemde silinir; damga 1 sn geriden yazılır ki hemen ardından açılan yeni oturum
@@ -144,13 +144,13 @@ portalRouter.post('/auth/set-password', passwordResetLimiter, async (req, res) =
     prisma.clientAccountToken.updateMany({ where: { accountId: t.accountId, usedAt: null }, data: { usedAt: now } }),
     prisma.clientSession.deleteMany({ where: { accountId: t.accountId } }),
   ]);
-  await createClientSession(req, res, t.accountId, false);
-  await portalAudit(req, t.purpose === 'ACTIVATE' ? 'portal.activated' : 'portal.password_reset', t.accountId);
-  res.json({ ok: true });
+  await createClientSession(c, t.accountId, false);
+  await portalAudit(c, t.purpose === 'ACTIVATE' ? 'portal.activated' : 'portal.password_reset', t.accountId);
+  return c.json({ ok: true });
 });
 
-portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (req, res) => {
-  const { email } = parse(portalForgotSchema, req.body);
+portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (c) => {
+  const { email } = parse(portalForgotSchema, await body(c));
   const configured = isEmailConfigured();
   const response = {
     ok: true,
@@ -159,22 +159,22 @@ portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (req, res
       ? 'Bu adrese kayıtlı bir danışan hesabı varsa şifre sıfırlama bağlantısı gönderildi.'
       : 'Şifrenizi sıfırlamak için diyetisyeninizle iletişime geçin; size yeni bir giriş bağlantısı gönderebilir.',
   };
-  if (!configured) return res.json(response);
+  if (!configured) return c.json(response);
   const account = await prisma.clientAccount.findUnique({ where: { email }, include: { client: { select: { firstName: true, status: true } } } });
   // Hesabın varlığı yanıttan anlaşılmamalı
-  if (!account || !account.isActive || !account.passwordHash || account.client.status === 'ARCHIVED') return res.json(response);
+  if (!account || !account.isActive || !account.passwordHash || account.client.status === 'ARCHIVED') return c.json(response);
   const { link } = await issueAccountLink(account.id, 'RESET');
   await emailAccountLink(account.email, account.client.firstName, 'RESET', link);
-  await portalAudit(req, 'portal.password_reset_requested', account.id);
-  res.json(response);
+  await portalAudit(c, 'portal.password_reset_requested', account.id);
+  return c.json(response);
 });
 
 // ── Bundan sonraki her uç danışan oturumu gerektirir ──
-portalRouter.use(requireClientAuth);
+portalRouter.use('*', requireClientAuth);
 
-portalRouter.post('/auth/change-password', async (req, res) => {
-  const { currentPassword, newPassword } = parse(portalChangePasswordSchema, req.body);
-  const u = req.portalUser!;
+portalRouter.post('/auth/change-password', async (c) => {
+  const { currentPassword, newPassword } = parse(portalChangePasswordSchema, await body(c));
+  const u = portalUser(c);
   const account = await prisma.clientAccount.findUniqueOrThrow({ where: { id: u.accountId } });
   if (!account.passwordHash || !(await verifyPassword(currentPassword, account.passwordHash))) {
     throw new HttpError(422, 'VALIDATION_ERROR', 'Mevcut şifre hatalı', { fields: { currentPassword: 'Mevcut şifre hatalı' } });
@@ -184,9 +184,9 @@ portalRouter.post('/auth/change-password', async (req, res) => {
     prisma.clientAccount.update({ where: { id: account.id }, data: { passwordHash: await hashPassword(newPassword), passwordChangedAt: changedAt } }),
     prisma.clientSession.deleteMany({ where: { accountId: account.id } }),
   ]);
-  await createClientSession(req, res, account.id, false);
-  await portalAudit(req, 'portal.password_changed', account.id);
-  res.json({ ok: true });
+  await createClientSession(c, account.id, false);
+  await portalAudit(c, 'portal.password_changed', account.id);
+  return c.json({ ok: true });
 });
 
 // ───────────────────────── Yardımcılar ─────────────────────────
@@ -261,8 +261,8 @@ async function visibleRecipeIds(clientId: string) {
 
 // ───────────────────────── Özet ─────────────────────────
 
-portalRouter.get('/overview', async (req, res) => {
-  const clientId = req.portalUser!.clientId;
+portalRouter.get('/overview', async (c) => {
+  const clientId = portalUser(c).clientId;
   const [next, latestPlan, latestMessage, measurements, planCount, messageCount, fileCount, recipes] = await Promise.all([
     prisma.appointment.findFirst({
       where: { clientId, status: { in: ['CONFIRMED', 'PENDING'] }, startsAt: { gt: new Date() } },
@@ -288,28 +288,28 @@ portalRouter.get('/overview', async (req, res) => {
     weight: { current: last?.weightKg ?? null, first: weights[0]?.weightKg ?? null, target, measuredOn: last?.measuredOn ?? null },
     counts: { plans: planCount, recipes: recipes.ids.length, messages: messageCount, files: fileCount },
   };
-  res.json(out);
+  return c.json(out);
 });
 
 // ───────────────────────── Beslenme listeleri ─────────────────────────
 
-portalRouter.get('/plans', async (req, res) => {
+portalRouter.get('/plans', async (c) => {
   const rows = await prisma.nutritionPlan.findMany({
-    where: { clientId: req.portalUser!.clientId },
+    where: { clientId: portalUser(c).clientId },
     orderBy: { createdAt: 'desc' },
     select: { id: true, name: true, createdAt: true, updatedAt: true },
   });
-  res.json({ items: rows.map(toPlanItem) });
+  return c.json({ items: rows.map(toPlanItem) });
 });
 
-async function loadOwnPlan(req: Request) {
-  const plan = await prisma.nutritionPlan.findFirst({ where: { id: idParam(req), clientId: req.portalUser!.clientId } });
+async function loadOwnPlan(c: Ctx) {
+  const plan = await prisma.nutritionPlan.findFirst({ where: { id: idParam(c), clientId: portalUser(c).clientId } });
   if (!plan) throw notFound('Liste bulunamadı');
   return plan;
 }
 
-portalRouter.get('/plans/:id', async (req, res) => {
-  const plan = await loadOwnPlan(req);
+portalRouter.get('/plans/:id', async (c) => {
+  const plan = await loadOwnPlan(c);
   const { recipes: attached, ...data } = decodePlan(plan.dataEnc);
   const ids = (attached?.items ?? []).map((i) => i.recipeId);
   const rows = ids.length ? await prisma.recipe.findMany({ where: { id: { in: ids } }, select: { id: true, contentEnc: true } }) : [];
@@ -319,17 +319,16 @@ portalRouter.get('/plans/:id', async (req, res) => {
     data,
     recipes: (attached?.items ?? []).filter((i) => titles.has(i.recipeId)).map((i) => ({ id: i.recipeId, title: titles.get(i.recipeId)!, label: i.label })),
   };
-  res.json({ plan: out });
+  return c.json({ plan: out });
 });
 
 /** Listenin yazdırma sayfası (A4); danışan tarayıcıdan yazdırır ya da "PDF olarak kaydet" ile indirir */
-portalRouter.get('/plans/:id/print', async (req, res) => {
-  const plan = await loadOwnPlan(req);
+portalRouter.get('/plans/:id/print', async (c) => {
+  const plan = await loadOwnPlan(c);
   const data = decodePlan(plan.dataEnc);
-  const page = renderPlanPrintPage(data, data.title, await resolvePlanRecipes(data), { autoPrint: req.query.autoprint === '1' });
-  await portalAudit(req, 'portal.plan_print', req.portalUser!.accountId, { planId: plan.id });
-  res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': page.csp, 'Cache-Control': 'no-store' });
-  res.send(page.html);
+  const page = renderPlanPrintPage(data, data.title, await resolvePlanRecipes(data), { autoPrint: c.req.query('autoprint') === '1' });
+  await portalAudit(c, 'portal.plan_print', portalUser(c).accountId, { planId: plan.id });
+  return c.html(page.html, 200, { 'Content-Security-Policy': page.csp, 'Cache-Control': 'no-store' });
 });
 
 // ───────────────────────── Tarifler ─────────────────────────
@@ -339,74 +338,74 @@ const recipeSelect = {
   servings: true, prepMinutes: true, cookMinutes: true, kcal: true,
 } as const;
 
-portalRouter.get('/recipes', async (req, res) => {
-  const clientId = req.portalUser!.clientId;
+portalRouter.get('/recipes', async (c) => {
+  const clientId = portalUser(c).clientId;
   const { ids, inPlans } = await visibleRecipeIds(clientId);
   const rows = ids.length ? await prisma.recipe.findMany({ where: { id: { in: ids } }, select: recipeSelect, orderBy: { createdAt: 'desc' } }) : [];
   const items: PortalRecipeCard[] = rows.map((r) => {
-    const c = decryptContent(r.contentEnc);
+    const rc = decryptContent(r.contentEnc);
     return {
-      id: r.id, title: c.title, category: r.category, summary: c.summary, imageBase: r.imageBase,
+      id: r.id, title: rc.title, category: r.category, summary: rc.summary, imageBase: r.imageBase,
       personal: r.clientId === clientId, variantNote: decryptNote(r.variantNoteEnc), inPlans: inPlans.get(r.id) ?? [],
     };
   });
-  res.json({ items });
+  return c.json({ items });
 });
 
-portalRouter.get('/recipes/:id', async (req, res) => {
-  const clientId = req.portalUser!.clientId;
-  const id = idParam(req);
+portalRouter.get('/recipes/:id', async (c) => {
+  const clientId = portalUser(c).clientId;
+  const id = idParam(c);
   const { ids, inPlans } = await visibleRecipeIds(clientId);
   if (!ids.includes(id)) throw notFound('Tarif bulunamadı');
   const r = await prisma.recipe.findUnique({ where: { id }, select: recipeSelect });
   if (!r) throw notFound('Tarif bulunamadı');
-  const c = decryptContent(r.contentEnc);
+  const rc = decryptContent(r.contentEnc);
   const out: PortalRecipe = {
-    id: r.id, title: c.title, category: r.category, summary: c.summary, imageBase: r.imageBase,
+    id: r.id, title: rc.title, category: r.category, summary: rc.summary, imageBase: r.imageBase,
     personal: r.clientId === clientId, variantNote: decryptNote(r.variantNoteEnc), inPlans: inPlans.get(r.id) ?? [],
     servings: r.servings, prepMinutes: r.prepMinutes, cookMinutes: r.cookMinutes, kcal: r.kcal,
-    ingredients: c.ingredients, steps: c.steps, tip: c.tip,
+    ingredients: rc.ingredients, steps: rc.steps, tip: rc.tip,
   };
-  res.json({ recipe: out });
+  return c.json({ recipe: out });
 });
 
 // ───────────────────────── Randevular, ölçümler, mesajlar, dosyalar ─────────────────────────
 
-portalRouter.get('/appointments', async (req, res) => {
+portalRouter.get('/appointments', async (c) => {
   const rows = await prisma.appointment.findMany({
-    where: { clientId: req.portalUser!.clientId, startsAt: { not: null } },
+    where: { clientId: portalUser(c).clientId, startsAt: { not: null } },
     orderBy: { startsAt: 'desc' },
     select: apptSelect,
   });
-  res.json({ items: rows.map(toAppointment) });
+  return c.json({ items: rows.map(toAppointment) });
 });
 
-portalRouter.get('/measurements', async (req, res) => {
+portalRouter.get('/measurements', async (c) => {
   const rows = await prisma.measurement.findMany({
-    where: { clientId: req.portalUser!.clientId },
+    where: { clientId: portalUser(c).clientId },
     orderBy: [{ measuredOn: 'desc' }, { createdAt: 'desc' }],
     select: { id: true, measuredOn: true, dataEnc: true },
   });
-  res.json({ items: rows.map(toMeasurement) });
+  return c.json({ items: rows.map(toMeasurement) });
 });
 
-portalRouter.get('/messages', async (req, res) => {
-  const rows = await prisma.clientMessage.findMany({ where: { clientId: req.portalUser!.clientId }, orderBy: { createdAt: 'desc' }, include: messageInclude });
-  res.json({ items: rows.map(toMessage) });
+portalRouter.get('/messages', async (c) => {
+  const rows = await prisma.clientMessage.findMany({ where: { clientId: portalUser(c).clientId }, orderBy: { createdAt: 'desc' }, include: messageInclude });
+  return c.json({ items: rows.map(toMessage) });
 });
 
-portalRouter.get('/files', async (req, res) => {
+portalRouter.get('/files', async (c) => {
   const rows = await prisma.clientFile.findMany({
-    where: { clientId: req.portalUser!.clientId, visibleToClient: true },
+    where: { clientId: portalUser(c).clientId, visibleToClient: true },
     orderBy: { createdAt: 'desc' },
     select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true },
   });
   const items: PortalFile[] = rows.map((f) => ({ ...f, createdAt: f.createdAt.toISOString() }));
-  res.json({ items });
+  return c.json({ items });
 });
 
-portalRouter.get('/files/:id/download', async (req, res) => {
-  const f = await prisma.clientFile.findFirst({ where: { id: idParam(req), clientId: req.portalUser!.clientId, visibleToClient: true } });
+portalRouter.get('/files/:id/download', async (c) => {
+  const f = await prisma.clientFile.findFirst({ where: { id: idParam(c), clientId: portalUser(c).clientId, visibleToClient: true } });
   if (!f) throw notFound('Dosya bulunamadı');
   let buf: Buffer;
   try {
@@ -414,16 +413,16 @@ portalRouter.get('/files/:id/download', async (req, res) => {
   } catch {
     throw notFound('Dosya içeriği okunamadı');
   }
-  await portalAudit(req, 'portal.file_downloaded', req.portalUser!.accountId, { fileId: f.id });
+  await portalAudit(c, 'portal.file_downloaded', portalUser(c).accountId, { fileId: f.id });
   const ascii = f.originalName.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
-  res.set({
+  return sendBuffer(c, buf, {
     'Content-Type': f.mimeType,
-    'Content-Length': String(buf.length),
     'Content-Disposition': `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(f.originalName)}`,
     'X-Content-Type-Options': 'nosniff',
     'Cache-Control': 'no-store',
   });
-  res.end(buf);
 });
 
-portalRouter.use((_req, _res, next) => next(new HttpError(404, 'NOT_FOUND', 'Uç nokta bulunamadı')));
+portalRouter.all('*', () => {
+  throw new HttpError(404, 'NOT_FOUND', 'Uç nokta bulunamadı');
+});

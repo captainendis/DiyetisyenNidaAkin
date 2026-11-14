@@ -2,14 +2,14 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Bildirim merkezi — her kullanıcı yalnızca kendi bildirimlerini görür. */
-import { Router, type Request } from 'express';
 import { z } from 'zod';
 import { prisma, type Prisma } from '../lib/db';
-import { badRequest, notFound, parse } from '../lib/http';
+import { badRequest, notFound, parse, query, router, type Ctx } from '../lib/http';
+import { authUser } from '../auth/session';
 import { channelStatus } from '../services/notifications';
 import { NOTIFICATION_TYPES } from '../../shared/constants';
 
-export const notificationsRouter = Router();
+export const notificationsRouter = router();
 
 const listQuery = z.object({
   filter: z.enum(['all', 'unread']).default('all'),
@@ -20,54 +20,54 @@ const listQuery = z.object({
 
 const select = { id: true, type: true, title: true, body: true, appointmentId: true, clientId: true, readAt: true, createdAt: true } as const;
 
-notificationsRouter.get('/', async (req, res) => {
-  const q = parse(listQuery, req.query);
-  const where: Prisma.NotificationWhereInput = { userId: req.user!.id };
+notificationsRouter.get('/', async (c) => {
+  const q = parse(listQuery, query(c));
+  const where: Prisma.NotificationWhereInput = { userId: authUser(c).id };
   if (q.filter === 'unread') where.readAt = null;
   if (q.type) where.type = q.type;
   const [items, total, unread] = await Promise.all([
     prisma.notification.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (q.page - 1) * q.pageSize, take: q.pageSize, select }),
     prisma.notification.count({ where }),
-    prisma.notification.count({ where: { userId: req.user!.id, readAt: null } }),
+    prisma.notification.count({ where: { userId: authUser(c).id, readAt: null } }),
   ]);
-  res.json({ items, total, unread, page: q.page, pageSize: q.pageSize });
+  return c.json({ items, total, unread, page: q.page, pageSize: q.pageSize });
 });
 
-notificationsRouter.get('/unread-count', async (req, res) => {
-  const count = await prisma.notification.count({ where: { userId: req.user!.id, readAt: null } });
-  res.json({ count });
+notificationsRouter.get('/unread-count', async (c) => {
+  const count = await prisma.notification.count({ where: { userId: authUser(c).id, readAt: null } });
+  return c.json({ count });
 });
 
-notificationsRouter.get('/channels', (_req, res) => {
-  res.json({ channels: channelStatus() });
+notificationsRouter.get('/channels', (c) => {
+  return c.json({ channels: channelStatus() });
 });
 
-notificationsRouter.post('/read-all', async (req, res) => {
-  const r = await prisma.notification.updateMany({ where: { userId: req.user!.id, readAt: null }, data: { readAt: new Date() } });
-  res.json({ ok: true, updated: r.count });
+notificationsRouter.post('/read-all', async (c) => {
+  const r = await prisma.notification.updateMany({ where: { userId: authUser(c).id, readAt: null }, data: { readAt: new Date() } });
+  return c.json({ ok: true, updated: r.count });
 });
 
-function nid(req: Request) {
-  const id = req.params.id;
+function nid(c: Ctx) {
+  const id = c.req.param('id');
   if (typeof id !== 'string' || id.length > 40) throw badRequest('Geçersiz kimlik');
   return id;
 }
 
-async function setRead(req: Request, read: boolean) {
-  const r = await prisma.notification.updateMany({ where: { id: nid(req), userId: req.user!.id }, data: { readAt: read ? new Date() : null } });
+async function setRead(c: Ctx, read: boolean) {
+  const r = await prisma.notification.updateMany({ where: { id: nid(c), userId: authUser(c).id }, data: { readAt: read ? new Date() : null } });
   if (!r.count) throw notFound('Bildirim bulunamadı');
 }
 
-notificationsRouter.post('/:id/read', async (req, res) => {
-  await setRead(req, true);
-  res.json({ ok: true });
+notificationsRouter.post('/:id/read', async (c) => {
+  await setRead(c, true);
+  return c.json({ ok: true });
 });
-notificationsRouter.post('/:id/unread', async (req, res) => {
-  await setRead(req, false);
-  res.json({ ok: true });
+notificationsRouter.post('/:id/unread', async (c) => {
+  await setRead(c, false);
+  return c.json({ ok: true });
 });
-notificationsRouter.delete('/:id', async (req, res) => {
-  const r = await prisma.notification.deleteMany({ where: { id: nid(req), userId: req.user!.id } });
+notificationsRouter.delete('/:id', async (c) => {
+  const r = await prisma.notification.deleteMany({ where: { id: nid(c), userId: authUser(c).id } });
   if (!r.count) throw notFound('Bildirim bulunamadı');
-  res.json({ ok: true });
+  return c.json({ ok: true });
 });

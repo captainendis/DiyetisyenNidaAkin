@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { Sprig } from '@/components/icons/Botanical';
 import { cn } from '@/lib/text';
 import { RECIPE_CATEGORY_LABEL, recipeImageUrl, type PublicRecipeCard } from '@shared/recipe';

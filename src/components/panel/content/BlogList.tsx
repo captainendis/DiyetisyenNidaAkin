@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from '@/lib/router';
 import { FileText, Plus, Search, ShieldCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApi, useDebounced } from '@/hooks/useApi';

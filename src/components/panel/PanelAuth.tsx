@@ -3,7 +3,7 @@
 
 /** Panel kimlik doğrulama bağlamı: kullanıcı, izinler, CSRF token, okunmamış bildirim sayısı */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router';
+import { Navigate, useLocation, useNavigate } from '@/lib/router';
 import { api, ApiError, setCsrfToken, setUnauthorizedHandler } from '@/lib/api';
 
 export type Permission =

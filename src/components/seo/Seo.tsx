@@ -3,13 +3,15 @@
 
 /**
  * Sayfa başına SEO: title, description, canonical, Open Graph, Twitter Card, robots ve JSON-LD.
- * Sunucu (server/seo.ts) aynı etiketleri üretim HTML'ine enjekte eder; bu bileşen istemci gezintisinde günceller.
+ * Sunucu aynı etiketleri ilk HTML'e yazar (app/ → generateMetadata, server/seo.ts); bu bileşen istemci gezintisinde günceller.
  */
+'use client';
+
 import { useEffect } from 'react';
-import { useLocation } from 'react-router';
+import { useLocation } from '@/lib/router';
 import { useSite } from '@/data/SiteContext';
 
-export const SITE_URL = (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined)?.replace(/\/$/, '') ?? window.location.origin;
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/$/, '');
 
 function setMeta(attr: 'name' | 'property', key: string, content: string | null) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);

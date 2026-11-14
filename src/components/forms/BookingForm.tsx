@@ -9,7 +9,7 @@
  * Sonuç ekranı dürüsttür: talep "onay bekliyor" olarak alınır; kesin randevu gösterilmez.
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { DateTime } from 'luxon';
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, PhoneCall } from 'lucide-react';

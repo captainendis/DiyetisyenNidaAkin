@@ -6,6 +6,8 @@ generator client {
   provider     = "prisma-client"
   output       = "../server/generated/prisma"
   moduleFormat = "esm"
+  // Uzantısız içe aktarma: Next.js (Turbopack), tsx ve vitest aynı kaynağı çözebilsin
+  importFileExtension = ""
 }
 
 datasource db {

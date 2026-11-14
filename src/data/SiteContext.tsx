@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
+'use client';
+
 /**
  * Herkese açık site içeriği. Panelden yönetilen içerik /api/public/site'tan gelir.
  * API'ye ulaşılamazsa (ör. yalnızca statik önizleme) shared/ varsayılanlarıyla çizilir — site asla boş görünmez.
@@ -21,16 +23,18 @@ export const fallbackSite: SiteData = {
 
 const Ctx = createContext<{ site: SiteData; ready: boolean }>({ site: fallbackSite, ready: false });
 
-export function SiteProvider({ children }: { children: ReactNode }) {
-  const [site, setSite] = useState<SiteData>(fallbackSite);
-  const [ready, setReady] = useState(false);
+/** `initial`: sunucuda okunmuş site verisi (ilk HTML doğrudan güncel içerikle çizilir); yoksa istemcide çekilir */
+export function SiteProvider({ children, initial }: { children: ReactNode; initial?: SiteData | null }) {
+  const [site, setSite] = useState<SiteData>(initial ?? fallbackSite);
+  const [ready, setReady] = useState(!!initial);
   useEffect(() => {
+    if (initial) return;
     api
       .get<SiteData>('/public/site')
       .then(setSite)
       .catch(() => {})
       .finally(() => setReady(true));
-  }, []);
+  }, [initial]);
   return <Ctx.Provider value={{ site, ready }}>{children}</Ctx.Provider>;
 }
 

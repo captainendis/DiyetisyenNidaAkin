@@ -6,7 +6,7 @@
  * Sitede cam efekti (backdrop-blur) taşıyan tek öğe budur.
  */
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router';
+import { Link, NavLink, useLocation } from '@/lib/router';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Logo } from '@/components/icons/Logo';
 import { CtaButton } from '@/components/forms/Button';

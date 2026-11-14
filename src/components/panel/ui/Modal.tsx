@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { BodyPortal } from '@/components/BodyPortal';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/format';
 
@@ -61,7 +61,8 @@ export function Modal({
   if (!open) return null;
   const widths = { sm: 'sm:max-w-md', md: 'sm:max-w-xl', lg: 'sm:max-w-3xl', xl: 'sm:max-w-5xl' };
 
-  return createPortal(
+  return (
+    <BodyPortal>
     <div className="panel-root fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6">
       <div className="absolute inset-0 bg-espresso/45 animate-fade-in" onClick={closeOnBackdrop ? onClose : undefined} aria-hidden />
       <div
@@ -87,7 +88,7 @@ export function Modal({
         <div className="overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
         {footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-panel-line px-5 py-3.5 sm:px-6">{footer}</div>}
       </div>
-    </div>,
-    document.body,
+    </div>
+    </BodyPortal>
   );
 }

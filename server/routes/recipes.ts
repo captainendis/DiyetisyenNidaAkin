@@ -9,14 +9,12 @@
  *    yayınlanamaz ve danışan silinince birlikte silinir.
  * Fotoğraflar meta verisi silinerek /uploads/public/recipes altına WebP olarak yazılır.
  */
-import { Router } from 'express';
-import multer from 'multer';
 import { z } from 'zod';
 import { prisma, type Prisma } from '../lib/db';
 import { audit } from '../lib/audit';
-import { badRequest, HttpError, notFound, parse } from '../lib/http';
+import { badRequest, body, HttpError, notFound, param, parse, query, readUpload, router } from '../lib/http';
 import { sniffMime } from '../lib/storage';
-import { requirePermission } from '../auth/session';
+import { authUser, requirePermission } from '../auth/session';
 import { decryptNote, encryptNote } from '../services/recipe-notes';
 import { decryptContent, encryptContent } from '../services/recipe-content';
 import { copyRecipeImage, deleteRecipeImage, processRecipeImage, recipeImageDataUri } from '../services/images';
@@ -24,7 +22,7 @@ import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, recipeCreateSchema, recipeInpu
 import type { NutritionPlanData } from '../../shared/plan';
 import { slugify } from '../../shared/text';
 
-export const recipesRouter = Router();
+export const recipesRouter = router();
 const read = requirePermission('clinical:read');
 const write = requirePermission('clinical:write');
 
@@ -154,10 +152,10 @@ const fields = (b: RecipeInput) => ({
   variantNoteEnc: encryptNote(b.variantNote), clientId: b.clientId, isPublished: b.isPublished,
 });
 
-recipesRouter.get('/', read, async (req, res) => {
+recipesRouter.get('/', read, async (c) => {
   const q = parse(
     z.object({ q: z.string().trim().max(80).optional(), category: z.enum(RECIPE_CATEGORIES).optional(), clientId: z.string().max(40).optional() }),
-    req.query,
+    query(c),
   );
   const rows = await prisma.recipe.findMany({
     where: {
@@ -171,69 +169,69 @@ recipesRouter.get('/', read, async (req, res) => {
   // İçerik şifreli olduğu için arama çözüldükten sonra bellekte yapılır (kütüphane küçük; en fazla 500 tarif)
   const needle = q.q?.toLocaleLowerCase('tr-TR');
   const items = rows.map(toRecipe).filter((r) => !needle || `${r.title} ${r.summary}`.toLocaleLowerCase('tr-TR').includes(needle));
-  res.json({ items });
+  return c.json({ items });
 });
 
-recipesRouter.get('/:id', read, async (req, res) => {
-  res.json({ recipe: toRecipe(await load(String(req.params.id))) });
+recipesRouter.get('/:id', read, async (c) => {
+  return c.json({ recipe: toRecipe(await load(param(c))) });
 });
 
-recipesRouter.post('/', write, async (req, res) => {
-  const body = parse(recipeCreateSchema, req.body);
-  await validateRelations(body);
-  await validateFeatured(body);
+recipesRouter.post('/', write, async (c) => {
+  const input = parse(recipeCreateSchema, await body(c));
+  await validateRelations(input);
+  await validateFeatured(input);
   let parentId: string | null = null;
   let imageBase: string | null = null;
-  if (body.parentId) {
-    const parent = await prisma.recipe.findUnique({ where: { id: body.parentId }, select: { id: true, parentId: true, imageBase: true } });
+  if (input.parentId) {
+    const parent = await prisma.recipe.findUnique({ where: { id: input.parentId }, select: { id: true, parentId: true, imageBase: true } });
     if (!parent) throw notFound('Ana tarif bulunamadı');
     parentId = parent.parentId ?? parent.id; // varyasyonun varyasyonu da kök tarife bağlanır
-    if (body.copyImage) imageBase = await copyRecipeImage(parent.imageBase);
+    if (input.copyImage) imageBase = await copyRecipeImage(parent.imageBase);
   }
   const r = await prisma.recipe.create({
     data: {
-      ...fields(body),
+      ...fields(input),
       parentId,
       imageBase,
-      featuredAt: body.isFeatured ? new Date() : null,
-      createdById: req.user!.id,
-      ...(body.isPublished ? { slug: await uniqueSlug(body.title), publishedAt: new Date() } : {}),
+      featuredAt: input.isFeatured ? new Date() : null,
+      createdById: authUser(c).id,
+      ...(input.isPublished ? { slug: await uniqueSlug(input.title), publishedAt: new Date() } : {}),
     },
     include,
   });
-  await audit(req, parentId ? 'recipe.variant_created' : 'recipe.created', 'recipe', r.id, { parentId, personal: !!r.clientId });
-  if (r.isPublished) await audit(req, 'recipe.published', 'recipe', r.id);
-  res.status(201).json({ recipe: toRecipe(r) });
+  await audit(c, parentId ? 'recipe.variant_created' : 'recipe.created', 'recipe', r.id, { parentId, personal: !!r.clientId });
+  if (r.isPublished) await audit(c, 'recipe.published', 'recipe', r.id);
+  return c.json({ recipe: toRecipe(r) }, 201);
 });
 
-recipesRouter.patch('/:id', write, async (req, res) => {
-  const body = parse(recipeInputSchema, req.body);
-  const existing = await load(String(req.params.id));
-  await validateRelations(body);
-  await validateFeatured(body, existing.id);
-  const publishing = body.isPublished && !existing.isPublished;
+recipesRouter.patch('/:id', write, async (c) => {
+  const input = parse(recipeInputSchema, await body(c));
+  const existing = await load(param(c));
+  await validateRelations(input);
+  await validateFeatured(input, existing.id);
+  const publishing = input.isPublished && !existing.isPublished;
   const r = await prisma.recipe.update({
     where: { id: existing.id },
     data: {
-      ...fields(body),
+      ...fields(input),
       // Seçilme zamanı korunur (ana sayfadaki sıra değişmesin); yayından kalkan tarif ana sayfadan da çıkar
-      featuredAt: body.isFeatured && body.isPublished && !body.clientId ? (existing.featuredAt ?? new Date()) : null,
+      featuredAt: input.isFeatured && input.isPublished && !input.clientId ? (existing.featuredAt ?? new Date()) : null,
       // Adres ilk yayında atanır ve sonra değişmez (paylaşılan bağlantılar kırılmasın)
-      ...(publishing ? { slug: existing.slug ?? (await uniqueSlug(body.title, existing.id)), publishedAt: existing.publishedAt ?? new Date() } : {}),
+      ...(publishing ? { slug: existing.slug ?? (await uniqueSlug(input.title, existing.id)), publishedAt: existing.publishedAt ?? new Date() } : {}),
     },
     include,
   });
-  await audit(req, 'recipe.updated', 'recipe', r.id);
-  if (publishing) await audit(req, 'recipe.published', 'recipe', r.id);
-  if (!body.isPublished && existing.isPublished) await audit(req, 'recipe.unpublished', 'recipe', r.id);
-  if (!!r.featuredAt !== !!existing.featuredAt) await audit(req, r.featuredAt ? 'recipe.featured' : 'recipe.unfeatured', 'recipe', r.id);
-  res.json({ recipe: toRecipe(r) });
+  await audit(c, 'recipe.updated', 'recipe', r.id);
+  if (publishing) await audit(c, 'recipe.published', 'recipe', r.id);
+  if (!input.isPublished && existing.isPublished) await audit(c, 'recipe.unpublished', 'recipe', r.id);
+  if (!!r.featuredAt !== !!existing.featuredAt) await audit(c, r.featuredAt ? 'recipe.featured' : 'recipe.unfeatured', 'recipe', r.id);
+  return c.json({ recipe: toRecipe(r) });
 });
 
 /** Hızlı seçim: ana sayfada göster / çıkar (kütüphanedeki "Ana sayfa" kutusundan) */
-recipesRouter.put('/:id/featured', write, async (req, res) => {
-  const { featured } = parse(z.object({ featured: z.boolean() }), req.body);
-  const existing = await load(String(req.params.id));
+recipesRouter.put('/:id/featured', write, async (c) => {
+  const { featured } = parse(z.object({ featured: z.boolean() }), await body(c));
+  const existing = await load(param(c));
   if (featured && !existing.featuredAt) {
     await validateFeatured({ isFeatured: true, isPublished: existing.isPublished, clientId: existing.clientId }, existing.id);
   }
@@ -242,33 +240,23 @@ recipesRouter.put('/:id/featured', write, async (req, res) => {
     data: { featuredAt: featured ? (existing.featuredAt ?? new Date()) : null },
     include,
   });
-  if (!!r.featuredAt !== !!existing.featuredAt) await audit(req, featured ? 'recipe.featured' : 'recipe.unfeatured', 'recipe', r.id);
-  res.json({ recipe: toRecipe(r) });
+  if (!!r.featuredAt !== !!existing.featuredAt) await audit(c, featured ? 'recipe.featured' : 'recipe.unfeatured', 'recipe', r.id);
+  return c.json({ recipe: toRecipe(r) });
 });
 
-recipesRouter.delete('/:id', write, async (req, res) => {
-  const existing = await load(String(req.params.id));
+recipesRouter.delete('/:id', write, async (c) => {
+  const existing = await load(param(c));
   await prisma.recipe.delete({ where: { id: existing.id } }); // varyasyonlar kalır, ana tarif bağlantısı boşalır
   await deleteRecipeImage(existing.imageBase);
-  await audit(req, 'recipe.deleted', 'recipe', existing.id, { variants: existing._count.variants });
-  res.json({ ok: true });
+  await audit(c, 'recipe.deleted', 'recipe', existing.id, { variants: existing._count.variants });
+  return c.json({ ok: true });
 });
 
 // ───────────── Fotoğraf ─────────────
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024, files: 1 } });
-
-recipesRouter.post('/:id/image', write, (req, res, next) => {
-  upload.single('file')(req, res, (err: unknown) => {
-    if (err) {
-      const code = (err as { code?: string }).code;
-      return next(new HttpError(code === 'LIMIT_FILE_SIZE' ? 413 : 400, 'UPLOAD_ERROR', code === 'LIMIT_FILE_SIZE' ? 'Fotoğraf en fazla 15 MB olabilir.' : 'Fotoğraf yüklenemedi.'));
-    }
-    next();
-  });
-}, async (req, res) => {
-  const existing = await load(String(req.params.id));
-  const file = req.file;
+recipesRouter.post('/:id/image', write, async (c) => {
+  const file = await readUpload(c, { maxBytes: 15 * 1024 * 1024, tooLarge: new HttpError(413, 'UPLOAD_ERROR', 'Fotoğraf en fazla 15 MB olabilir.') });
+  const existing = await load(param(c));
   if (!file) throw badRequest('Fotoğraf seçilmedi');
   const mime = sniffMime(file.buffer);
   if (!mime || mime === 'application/pdf') throw badRequest('Yalnızca JPG, PNG, WebP veya AVIF fotoğraflar yüklenebilir.');
@@ -281,14 +269,14 @@ recipesRouter.post('/:id/image', write, (req, res, next) => {
   }
   const r = await prisma.recipe.update({ where: { id: existing.id }, data: { imageBase: base }, include });
   await deleteRecipeImage(existing.imageBase);
-  await audit(req, 'recipe.image_uploaded', 'recipe', r.id);
-  res.status(201).json({ recipe: toRecipe(r) });
+  await audit(c, 'recipe.image_uploaded', 'recipe', r.id);
+  return c.json({ recipe: toRecipe(r) }, 201);
 });
 
-recipesRouter.delete('/:id/image', write, async (req, res) => {
-  const existing = await load(String(req.params.id));
+recipesRouter.delete('/:id/image', write, async (c) => {
+  const existing = await load(param(c));
   const r = await prisma.recipe.update({ where: { id: existing.id }, data: { imageBase: null }, include });
   await deleteRecipeImage(existing.imageBase);
-  await audit(req, 'recipe.image_removed', 'recipe', r.id);
-  res.json({ recipe: toRecipe(r) });
+  await audit(c, 'recipe.image_removed', 'recipe', r.id);
+  return c.json({ recipe: toRecipe(r) });
 });

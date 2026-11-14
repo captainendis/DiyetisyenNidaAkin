@@ -3,7 +3,7 @@
 
 /** Yeni beslenme planı: danışan (isteğe bağlı) + kaynak (şablon / boş) */
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from '@/lib/router';
 import { api, ApiError } from '@/lib/api';
 import { useApi, useDebounced } from '@/hooks/useApi';
 import { Button, Checkbox, Input, Modal, Select, useFeedback } from '@/components/panel/ui';

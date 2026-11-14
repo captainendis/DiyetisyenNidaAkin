@@ -3,17 +3,18 @@
 
 /**
  * Danışan oturumu ("Hesabım") — personel oturumundan (session.ts) bilinçli olarak ayrıdır:
- *  - Ayrı tablo (client_sessions), ayrı cookie ("na_csid"). Danışan oturumu req.user'ı ASLA doldurmaz;
+ *  - Ayrı tablo (client_sessions), ayrı cookie ("na_csid"). Danışan oturumu c.var.user'ı ASLA doldurmaz;
  *    bu yüzden /api altındaki personel uçlarına (requireAuth/requirePermission) erişemez.
  *  - Aynı güvenlik kuralları: HttpOnly + SameSite=Strict cookie, DB'de yalnızca SHA-256 özeti,
  *    durum değiştiren isteklerde oturuma bağlı CSRF token, şifre değişince eski oturumlar geçersiz.
  *  - Danışan kaydı arşivlenmiş ya da hesap kapatılmışsa oturum düşer.
  */
-import type { NextFunction, Request, Response } from 'express';
+import { createMiddleware } from 'hono/factory';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { prisma } from '../lib/db';
 import { env } from '../lib/env';
 import { randomToken, safeEqual, sha256 } from '../lib/crypto';
-import { forbidden, unauthorized } from '../lib/http';
+import { clientIp, forbidden, unauthorized, userAgent, type AppEnv, type Ctx } from '../lib/http';
 
 export const CLIENT_SESSION_COOKIE = 'na_csid';
 
@@ -27,18 +28,9 @@ export interface PortalUser {
   csrfToken: string;
 }
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      portalUser?: PortalUser;
-    }
-  }
-}
+const cookieOpts = () => ({ httpOnly: true, secure: env.isProd, sameSite: 'Strict' as const, path: '/' });
 
-const cookieOpts = () => ({ httpOnly: true, secure: env.isProd, sameSite: 'strict' as const, path: '/' });
-
-export async function createClientSession(req: Request, res: Response, accountId: string, remember: boolean) {
+export async function createClientSession(c: Ctx, accountId: string, remember: boolean) {
   const token = randomToken(32);
   const csrfToken = randomToken(24);
   const ttlMs = remember ? env.SESSION_REMEMBER_DAYS * 864e5 : env.SESSION_TTL_HOURS * 36e5;
@@ -50,23 +42,23 @@ export async function createClientSession(req: Request, res: Response, accountId
       accountId,
       remember,
       expiresAt,
-      ip: req.ip ?? null,
-      userAgent: req.get('user-agent')?.slice(0, 300) ?? null,
+      ip: clientIp(c),
+      userAgent: userAgent(c),
     },
   });
-  res.cookie(CLIENT_SESSION_COOKIE, token, { ...cookieOpts(), ...(remember ? { expires: expiresAt } : {}) });
+  setCookie(c, CLIENT_SESSION_COOKIE, token, { ...cookieOpts(), ...(remember ? { expires: expiresAt } : {}) });
 }
 
-export async function destroyClientSession(req: Request, res: Response) {
-  const token = req.cookies?.[CLIENT_SESSION_COOKIE];
-  if (token && typeof token === 'string') await prisma.clientSession.deleteMany({ where: { tokenHash: sha256(token) } });
-  res.clearCookie(CLIENT_SESSION_COOKIE, cookieOpts());
+export async function destroyClientSession(c: Ctx) {
+  const token = getCookie(c, CLIENT_SESSION_COOKIE);
+  if (token) await prisma.clientSession.deleteMany({ where: { tokenHash: sha256(token) } });
+  deleteCookie(c, CLIENT_SESSION_COOKIE, cookieOpts());
 }
 
-/** Cookie varsa danışan oturumunu çözer ve req.portalUser'ı doldurur (zorunlu kılmaz) */
-export async function loadClientSession(req: Request, _res: Response, next: NextFunction) {
-  const token = req.cookies?.[CLIENT_SESSION_COOKIE];
-  if (!token || typeof token !== 'string') return next();
+/** Cookie varsa danışan oturumunu çözer ve c.var.portalUser'ı doldurur (zorunlu kılmaz) */
+export const loadClientSession = createMiddleware<AppEnv>(async (c, next) => {
+  const token = getCookie(c, CLIENT_SESSION_COOKIE);
+  if (!token) return next();
   const session = await prisma.clientSession.findUnique({
     where: { tokenHash: sha256(token) },
     include: { account: { include: { client: { select: { id: true, firstName: true, lastName: true, status: true } } } } },
@@ -87,7 +79,7 @@ export async function loadClientSession(req: Request, _res: Response, next: Next
   if (Date.now() - session.lastSeenAt.getTime() > 5 * 60_000) {
     await prisma.clientSession.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
   }
-  req.portalUser = {
+  c.set('portalUser', {
     accountId: a.id,
     clientId: a.client.id,
     email: a.email,
@@ -95,20 +87,28 @@ export async function loadClientSession(req: Request, _res: Response, next: Next
     lastName: a.client.lastName,
     sessionId: session.id,
     csrfToken: session.csrfToken,
-  };
-  next();
-}
+  });
+  return next();
+});
 
 /** Danışan oturumu zorunlu + durum değiştiren isteklerde CSRF doğrulaması */
-export function requireClientAuth(req: Request, _res: Response, next: NextFunction) {
-  if (!req.portalUser) return next(unauthorized());
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    const header = req.get('x-csrf-token') ?? '';
-    if (!header || !safeEqual(header, req.portalUser.csrfToken)) {
-      return next(forbidden('Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.'));
+export const requireClientAuth = createMiddleware<AppEnv>(async (c, next) => {
+  const pu = c.var.portalUser;
+  if (!pu) throw unauthorized();
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) {
+    const header = c.req.header('x-csrf-token') ?? '';
+    if (!header || !safeEqual(header, pu.csrfToken)) {
+      throw forbidden('Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar deneyin.');
     }
   }
-  next();
+  await next();
+});
+
+/** requireClientAuth sonrası danışan (her zaman dolu) */
+export function portalUser(c: Ctx): PortalUser {
+  const u = c.var.portalUser;
+  if (!u) throw unauthorized();
+  return u;
 }
 
 export async function purgeExpiredClientSessions() {

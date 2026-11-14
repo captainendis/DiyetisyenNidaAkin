@@ -2,31 +2,30 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Kullanıcı profili, bildirim tercihleri, oturumlar ve kullanıcı yönetimi */
-import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/db';
-import { badRequest, HttpError, notFound, parse } from '../lib/http';
+import { badRequest, body, HttpError, notFound, param, parse, router } from '../lib/http';
 import { audit } from '../lib/audit';
 import { hashPassword, randomToken, sha256, verifyPassword } from '../lib/crypto';
 import { env } from '../lib/env';
-import { requirePermission } from '../auth/session';
+import { authUser, requirePermission } from '../auth/session';
 import { notificationPrefsSchema, profileSchema } from '../../shared/schemas';
 import { channelStatus } from '../services/notifications';
 import { isEmailConfigured, sendMail } from '../services/mailer';
 import { emailSchema } from '../../shared/schemas';
 import { ROLE_LABEL } from '../../shared/constants';
 
-export const settingsRouter = Router();
+export const settingsRouter = router();
 
 const profileSelect = { id: true, email: true, firstName: true, lastName: true, salutation: true, lastLoginAt: true, role: { select: { key: true, name: true } } } as const;
 
-settingsRouter.get('/profile', async (req, res) => {
-  res.json({ profile: await prisma.user.findUniqueOrThrow({ where: { id: req.user!.id }, select: profileSelect }) });
+settingsRouter.get('/profile', async (c) => {
+  return c.json({ profile: await prisma.user.findUniqueOrThrow({ where: { id: authUser(c).id }, select: profileSelect }) });
 });
 
-settingsRouter.patch('/profile', async (req, res) => {
-  const data = parse(profileSchema.extend({ currentPassword: z.string().max(200).optional() }), req.body);
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.user!.id } });
+settingsRouter.patch('/profile', async (c) => {
+  const data = parse(profileSchema.extend({ currentPassword: z.string().max(200).optional() }), await body(c));
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: authUser(c).id } });
   const { currentPassword, ...profile } = data;
   if (profile.email !== user.email) {
     if (!currentPassword || !(await verifyPassword(currentPassword, user.passwordHash))) {
@@ -42,50 +41,50 @@ settingsRouter.patch('/profile', async (req, res) => {
     data: { ...profile, salutation: profile.salutation || null },
     select: profileSelect,
   });
-  await audit(req, 'user.profile_updated', 'user', user.id, { emailChanged: profile.email !== user.email || undefined });
-  res.json({ profile: updated });
+  await audit(c, 'user.profile_updated', 'user', user.id, { emailChanged: profile.email !== user.email || undefined });
+  return c.json({ profile: updated });
 });
 
-settingsRouter.get('/notification-prefs', async (req, res) => {
-  const u = await prisma.user.findUniqueOrThrow({ where: { id: req.user!.id }, select: { notificationPrefs: true } });
+settingsRouter.get('/notification-prefs', async (c) => {
+  const u = await prisma.user.findUniqueOrThrow({ where: { id: authUser(c).id }, select: { notificationPrefs: true } });
   const prefs = (u.notificationPrefs ?? {}) as { inApp?: Record<string, boolean>; email?: Record<string, boolean> };
-  res.json({ prefs: { inApp: prefs.inApp ?? {}, email: prefs.email ?? {} }, channels: channelStatus() });
+  return c.json({ prefs: { inApp: prefs.inApp ?? {}, email: prefs.email ?? {} }, channels: channelStatus() });
 });
 
-settingsRouter.patch('/notification-prefs', async (req, res) => {
-  const prefs = parse(notificationPrefsSchema, req.body);
-  await prisma.user.update({ where: { id: req.user!.id }, data: { notificationPrefs: prefs } });
-  await audit(req, 'user.notification_prefs_updated', 'user', req.user!.id);
-  res.json({ prefs });
+settingsRouter.patch('/notification-prefs', async (c) => {
+  const prefs = parse(notificationPrefsSchema, await body(c));
+  await prisma.user.update({ where: { id: authUser(c).id }, data: { notificationPrefs: prefs } });
+  await audit(c, 'user.notification_prefs_updated', 'user', authUser(c).id);
+  return c.json({ prefs });
 });
 
-settingsRouter.get('/channels', (_req, res) => {
-  res.json({ channels: channelStatus() });
+settingsRouter.get('/channels', (c) => {
+  return c.json({ channels: channelStatus() });
 });
 
-settingsRouter.get('/sessions', async (req, res) => {
+settingsRouter.get('/sessions', async (c) => {
   const sessions = await prisma.session.findMany({
-    where: { userId: req.user!.id, expiresAt: { gt: new Date() } },
+    where: { userId: authUser(c).id, expiresAt: { gt: new Date() } },
     orderBy: { lastSeenAt: 'desc' },
     select: { id: true, createdAt: true, lastSeenAt: true, ip: true, userAgent: true, remember: true, expiresAt: true },
   });
-  res.json({ sessions: sessions.map((s) => ({ ...s, current: s.id === req.user!.sessionId })) });
+  return c.json({ sessions: sessions.map((s) => ({ ...s, current: s.id === authUser(c).sessionId })) });
 });
 
-settingsRouter.delete('/sessions/:id', async (req, res) => {
-  if (String(req.params.id) === req.user!.sessionId) throw badRequest('Mevcut oturumu kapatmak için "Oturumu kapat" seçeneğini kullanın.');
-  const r = await prisma.session.deleteMany({ where: { id: String(req.params.id), userId: req.user!.id } });
+settingsRouter.delete('/sessions/:id', async (c) => {
+  if (param(c) === authUser(c).sessionId) throw badRequest('Mevcut oturumu kapatmak için "Oturumu kapat" seçeneğini kullanın.');
+  const r = await prisma.session.deleteMany({ where: { id: param(c), userId: authUser(c).id } });
   if (!r.count) throw notFound('Oturum bulunamadı');
-  await audit(req, 'auth.session_revoked', 'session', String(req.params.id));
-  res.json({ ok: true });
+  await audit(c, 'auth.session_revoked', 'session', param(c));
+  return c.json({ ok: true });
 });
 
-settingsRouter.get('/users', requirePermission('users:manage'), async (_req, res) => {
+settingsRouter.get('/users', requirePermission('users:manage'), async (c) => {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'asc' },
     select: { id: true, email: true, firstName: true, lastName: true, isActive: true, lastLoginAt: true, createdAt: true, role: { select: { key: true, name: true } } },
   });
-  res.json({ users });
+  return c.json({ users });
 });
 
 /** Yeni kullanıcının şifre belirleme bağlantısı: kullanıcı ekleyecek kişinin iletmesine zaman tanımak için 72 saat */
@@ -126,42 +125,42 @@ const userCreateSchema = z.object({
   role: z.enum(['ADMIN', 'DIETITIAN', 'ASSISTANT'], { message: 'Rol seçin' }),
 });
 
-settingsRouter.post('/users', requirePermission('users:manage'), async (req, res) => {
-  const body = parse(userCreateSchema, req.body);
-  if (await prisma.user.findUnique({ where: { email: body.email }, select: { id: true } })) {
+settingsRouter.post('/users', requirePermission('users:manage'), async (c) => {
+  const input = parse(userCreateSchema, await body(c));
+  if (await prisma.user.findUnique({ where: { email: input.email }, select: { id: true } })) {
     throw new HttpError(409, 'EMAIL_TAKEN', 'Bu e-posta ile bir kullanıcı zaten var', { fields: { email: 'Bu e-posta ile bir kullanıcı zaten var' } });
   }
-  const role = await prisma.role.findUnique({ where: { key: body.role } });
+  const role = await prisma.role.findUnique({ where: { key: input.role } });
   if (!role) throw notFound('Rol bulunamadı');
   // Kullanılamaz rastgele şifre: kullanıcı bağlantıyla kendi şifresini belirleyene kadar giriş yapılamaz
   const user = await prisma.user.create({
-    data: { email: body.email, firstName: body.firstName, lastName: body.lastName, roleId: role.id, passwordHash: await hashPassword(randomToken(32)) },
+    data: { email: input.email, firstName: input.firstName, lastName: input.lastName, roleId: role.id, passwordHash: await hashPassword(randomToken(32)) },
     select: { id: true, email: true, firstName: true, lastName: true, isActive: true, lastLoginAt: true, createdAt: true, role: { select: { key: true, name: true } } },
   });
   const link = await issueSetPasswordLink(user, true);
-  await audit(req, 'user.created', 'user', user.id, { role: body.role, roleLabel: ROLE_LABEL[body.role], emailed: link.emailed });
-  res.status(201).json({ user, link });
+  await audit(c, 'user.created', 'user', user.id, { role: input.role, roleLabel: ROLE_LABEL[input.role], emailed: link.emailed });
+  return c.json({ user, link }, 201);
 });
 
 /** Şifre belirleme bağlantısını yeniden üretir (bağlantı kaybolduysa ya da kullanıcı şifresini unuttuysa) */
-settingsRouter.post('/users/:id/link', requirePermission('users:manage'), async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: String(req.params.id) } });
+settingsRouter.post('/users/:id/link', requirePermission('users:manage'), async (c) => {
+  const user = await prisma.user.findUnique({ where: { id: param(c) } });
   if (!user) throw notFound('Kullanıcı bulunamadı');
   if (!user.isActive) throw new HttpError(409, 'USER_INACTIVE', 'Kullanıcı devre dışı. Önce etkinleştirin.');
   const link = await issueSetPasswordLink(user, false);
-  await audit(req, 'user.link_issued', 'user', user.id, { emailed: link.emailed });
-  res.json({ link });
+  await audit(c, 'user.link_issued', 'user', user.id, { emailed: link.emailed });
+  return c.json({ link });
 });
 
-settingsRouter.patch('/users/:id', requirePermission('users:manage'), async (req, res) => {
-  const { isActive } = parse(z.object({ isActive: z.boolean() }), req.body);
-  if (String(req.params.id) === req.user!.id) throw badRequest('Kendi hesabınızı devre dışı bırakamazsınız.');
-  const user = await prisma.user.findUnique({ where: { id: String(req.params.id) } });
+settingsRouter.patch('/users/:id', requirePermission('users:manage'), async (c) => {
+  const { isActive } = parse(z.object({ isActive: z.boolean() }), await body(c));
+  if (param(c) === authUser(c).id) throw badRequest('Kendi hesabınızı devre dışı bırakamazsınız.');
+  const user = await prisma.user.findUnique({ where: { id: param(c) } });
   if (!user) throw notFound('Kullanıcı bulunamadı');
   await prisma.$transaction([
     prisma.user.update({ where: { id: user.id }, data: { isActive } }),
     ...(isActive ? [] : [prisma.session.deleteMany({ where: { userId: user.id } })]),
   ]);
-  await audit(req, isActive ? 'user.activated' : 'user.deactivated', 'user', user.id);
-  res.json({ ok: true });
+  await audit(c, isActive ? 'user.activated' : 'user.deactivated', 'user', user.id);
+  return c.json({ ok: true });
 });

@@ -1,21 +1,24 @@
 # Canlıya alma (deploy)
 
-Bu belge, **çalışan bir siteyi güncellemek** içindir. İlk kurulum için README → [Üretim derlemesi ve dağıtım](../README.md#üretim-derlemesi-ve-dağıtım) bölümüne bakın.
+Bu belge, **çalışan bir siteyi güncellemek** ve **eski (PostgreSQL + Docker) kurulumdan yeni yapıya geçmek** içindir.
+İlk kurulum için README → [Üretim derlemesi ve dağıtım](../README.md#üretim-derlemesi-ve-dağıtım) bölümüne bakın.
 
 > ⚠️ **Dal:** Canlıya alınacak kod deponun **varsayılan dalındadır** (GitHub'da deponun ana sayfasında seçili olan dal).
 > Sunucunun hangi daldan çektiğini kontrol edin; eski kalmış bir daldan çekilirse güncellemeler gelmez.
+
+Yapı: **Next.js** (sayfalar + `/api`) tek Node süreci · **MySQL 8 / MariaDB** · Docker ve Chromium **gerekmez**.
+Paylaşımlı hostingde cPanel **Setup Node.js App** ile çalışır (Startup file: `app.cjs`).
 
 ---
 
 ## 0. Başlamadan önce
 
-- [ ] Sunucudaki `.env` dosyasında **`DATA_ENCRYPTION_KEY` değişmeyecek.** Bu anahtar değişirse beslenme planları,
-      görüşme notları, ölçümler, danışan dosyaları ve tarifler okunamaz hâle gelir.
+- [ ] Sunucudaki ortam değişkenlerinde (cPanel → Setup Node.js App → Environment variables ya da `.env`)
+      **`DATA_ENCRYPTION_KEY` değişmeyecek.** Bu anahtar değişirse beslenme planları, görüşme notları, ölçümler,
+      danışan dosyaları ve tarifler okunamaz hâle gelir.
 - [ ] Anahtarın bir kopyası veritabanı yedeğinden **ayrı**, güvenli bir yerde duruyor.
-- [ ] Sunucuda Chromium kurulu (plan PDF'leri için). Docker imajı bunu kendisi kuruyor; Docker kullanılmıyorsa
-      `.env` içinde `CHROMIUM_PATH` dolu olmalı.
-- [ ] Hangi yöntemin kullanıldığını biliyorsunuz: **Docker** (`docker compose`) mı, **doğrudan Node** (`npm start`,
-      pm2, systemd, hosting paneli) mi?
+- [ ] `UPLOAD_DIR` uygulama klasörünün **dışında** mutlak bir yol (ör. `/home/KULLANICI/nidaakin-storage`).
+      Göreli yol (`./storage`) derleme klasörünün içine düşer ve yeniden derlemede kaybolabilir.
 
 ## 1. Yedek al (atlamayın)
 
@@ -24,16 +27,10 @@ Güncellemeler veritabanında tablo ve sütun ekleyip kaldırabilir; geri dönme
 ```bash
 cd /uygulama/klasoru
 npm run backup
-# → backups/db-TARİH.dump ve backups/storage-TARİH.tar.gz
+# → backups/db-TARİH.sql.gz ve backups/storage-TARİH.tar.gz
 ```
 
-Docker'da veritabanı konteynerin içindeyse:
-
-```bash
-docker compose exec -T db pg_dump -U nida --format=custom nidaakin > backups/db-$(date +%Y%m%d-%H%M).dump
-docker compose exec -T app tar -czf - -C /app/storage . > backups/storage-$(date +%Y%m%d-%H%M).tar.gz
-```
-
+cPanel'de alternatif: **Backup → Download a MySQL Database Backup** + `UPLOAD_DIR` klasörünü **File Manager → Compress**.
 Yedekler kişisel veri içerir: erişimi kısıtlı, şifreli bir yerde saklayın; `DATA_ENCRYPTION_KEY` ile aynı yerde tutmayın.
 
 ## 2. Kodu güncelle
@@ -46,61 +43,54 @@ git pull origin <varsayılan-dal>
 git log --oneline -1    # beklenen son commit'i görün
 ```
 
-## 3A. Docker
+(cPanel → **Git Version Control** → depo → **Pull or Deploy** → *Update from Remote* da aynı işi yapar.)
 
-```bash
-docker compose up -d --build app
-docker compose logs -f app
-```
+## 3. Derle, veritabanını güncelle, yeniden başlat
 
-İmaj açılışta önce veritabanı güncellemelerini (`prisma migrate deploy`), sonra uygulamayı çalıştırır; ayrı bir komut gerekmez.
-
-## 3B. Doğrudan Node
+cPanel'de komutları **Setup Node.js App** sayfasının üstündeki "Enter to the virtual environment" komutuyla açılan
+terminalde çalıştırın (doğru Node sürümü ve ortam değişkenleri yüklü gelir).
 
 ```bash
 npm ci
-npx prisma generate
-npm run build
+npm run build            # → .next/standalone/ (çalışan uygulama) + dist-scripts/ (yönetim betikleri)
 npm run db:deploy        # bekleyen veritabanı güncellemelerini sırayla uygular
-# ardından uygulamayı yeniden başlatın: pm2 restart … / systemctl restart … / hosting panelindeki "yeniden başlat"
 ```
 
 `db:deploy` sonunda **"All migrations have been successfully applied."** yazmalı.
+Ardından uygulamayı yeniden başlatın: cPanel → Setup Node.js App → **Restart** (VPS'te `pm2 restart …` / `systemctl restart …`).
+
+> Hosting sunucusunda derleme bellek sınırına takılırsa (`JavaScript heap out of memory`), derlemeyi kendi
+> bilgisayarınızda yapıp `.next/` klasörünü sunucuya yükleyin; `npm ci` ve `npm run db:deploy` yine sunucuda çalışır.
 
 ## 4. Doğrula
 
-**Günlük (log):**
+**Günlük (log):** cPanel → Setup Node.js App → uygulamanın günlük dosyası (`stderr.log`).
 
-- `✓ API http://localhost:4000 (production)` satırı görünmeli.
-- Şifreli alanlara geçiş yapan bir güncellemeden sonra ilk açılışta `✓ N tarifin içeriği şifrelendi` /
-  `✓ N tarif varyasyon notu şifrelendi` satırları görünebilir; taşınacak kayıt yoksa görünmez. İkisi de normaldir.
-- `… şifrelenemedi` ya da `… çözülemedi` görürseniz durun: büyük olasılıkla `DATA_ENCRYPTION_KEY` yanlış.
+- `… çözülemedi` görürseniz durun: büyük olasılıkla `DATA_ENCRYPTION_KEY` yanlış.
+- `Ortam değişkenleri geçersiz` → eksik/yanlış değişken; satırda hangisi olduğu yazar.
 
 **Tarayıcıdan:**
 
 | Kontrol | Beklenen |
 | --- | --- |
 | `https://alanadiniz/api/health` | `{"ok":true}` |
+| Ana sayfa, bir blog yazısı, `/sitemap.xml` | Açılıyor; sayfa kaynağında `<title>` ve açıklama dolu |
+| Olmayan bir adres (ör. `/deneme-404`) | "Sayfa bulunamadı" (HTTP 404) |
 | Panel → giriş | Giriş yapılabiliyor |
-| Panel → **Tarifler** | Sayfa açılıyor |
-| Mevcut bir beslenme planı → **PDF indir** | PDF iniyor |
+| Panel → **Danışanlar** → bir danışan | Notlar ve ölçümler görünüyor (şifre çözme çalışıyor) |
+| Bir beslenme planı → **Yazdır / PDF** | Yeni sekmede A4 sayfa ve yazdırma penceresi açılıyor |
 | Danışan → **Verileri dışa aktar** | JSON iniyor |
-| Ana sayfa ve `/sitemap.xml` | Açılıyor |
-
-**İsteğe bağlı uçtan uca deneme:** panelden fotoğraflı bir deneme tarifi ekleyin, "Web sitesinde yayınla" ile
-yayınlayın; menüde "Tarifler" görünmeli ve sayfa açılmalı. Sonra tarifi silin.
+| Panel → İçerik → bir görsel yükle | Yükleniyor ve sitede görünüyor (`UPLOAD_DIR` yazılabilir) |
 
 ## 5. Geri dönüş
 
-Yalnızca eski koda dönmek **yetmez**; veritabanı yeni yapıya geçmiş olur. 1. adımdaki yedekle:
+Yalnızca eski koda dönmek **yetmez**; veritabanı yeni yapıya geçmiş olabilir. 1. adımdaki yedekle:
 
 ```bash
 git checkout <güncellemeden-önceki-commit>
-pg_restore --clean --no-owner -d "$DATABASE_URL" backups/db-TARİH.dump
-# Docker'da: docker compose exec -T db pg_restore --clean --no-owner -U nida -d nidaakin < backups/db-TARİH.dump
-tar -xzf backups/storage-TARİH.tar.gz -C storage/
-# Docker'da: docker compose exec -T app tar -xzf - -C /app/storage < backups/storage-TARİH.tar.gz
-npm ci && npx prisma generate && npm run build    # Docker'da: docker compose up -d --build app
+gunzip < backups/db-TARİH.sql.gz | mysql -u KULLANICI -p VERITABANI
+tar -xzf backups/storage-TARİH.tar.gz -C "$UPLOAD_DIR"
+npm ci && npm run build
 # uygulamayı yeniden başlatın
 ```
 
@@ -109,27 +99,46 @@ sorun varsa geri dönüşü güncellemeden hemen sonra yapın.
 
 ---
 
-## Sürüm notları
+## PostgreSQL'den MySQL'e geçiş (tek seferlik)
 
-### Tarifler (PR #2–#7)
+Eski sürüm (Express + Vite, PostgreSQL, Docker, Chromium ile PDF) çalışıyorsa veriler yeni MySQL veritabanına
+birebir kopyalanır. **Kaynakta hiçbir şey değiştirilmez**; geçiş başarısız olursa eski site olduğu gibi çalışmaya devam eder.
 
-Güncellemeden önceki son commit: `1bd198f` (geri dönüşte kullanılır).
+Geçişten önceki son commit (eski yapı, tüm açık dallar birleşik): `58c209c`.
 
-**Veritabanı güncellemeleri (6 adet, sırayla uygulanır):**
+1. **Eski kurulumu en güncel hâline getirin** (betik bunu denetler): eski sürümde `npm run db:deploy` →
+   son migration `20261109000000_client_portal` olmalı. Ardından eski sitenin **yedeğini** alın
+   (`pg_dump` + `storage/` arşivi).
+2. **Siteyi bakıma alın** (ya da eski uygulamayı durdurun), geçiş süresince yeni veri girilmesin.
+3. **MySQL veritabanı açın** (cPanel → MySQL Databases; karakter seti `utf8mb4_unicode_ci`).
+4. Yeni kodu alın, ortam değişkenlerini girin: `DATABASE_URL=mysql://…` ve **eski kurulumdaki aynı
+   `DATA_ENCRYPTION_KEY`**.
+5. Şemayı oluşturun — **seed ve yönetici oluşturmayı çalıştırmayın**, hedef boş olmalı:
 
-| Migration | Ne yapar |
-| --- | --- |
-| `20261108120000_recipes` | `recipes` tablosu |
-| `20261108150000_recipe_publish_variants` | Yayın, adres (slug), varyasyon ve danışan alanları |
-| `20261108180000_recipe_featured` | Ana sayfada gösterilecek tarif seçimi |
-| `20261108200000_recipe_variant_note_encrypted` | Şifreli varyasyon notu alanı |
-| `20261108210000_drop_plain_variant_note` | Eski düz metin not sütununu kaldırır (yalnızca boşsa) |
-| `20261108220000_recipe_content_encrypted` | Şifreli tarif içeriği alanı; eski düz metin sütunlarını kaldırır (yalnızca taşınmışsa) |
+   ```bash
+   npm ci
+   npm run db:deploy
+   ```
 
-**Beklenen davranış:**
+6. Verileri kopyalayın (PostgreSQL'e bu sunucudan erişilebilmeli; gerekirse SSH tüneli kullanın):
 
-- Canlıda daha önce tarif yoksa açılışta "şifrelendi" satırı çıkmaz.
-- Tarif yayınlanana kadar ana sayfadaki tarif bölümü ve menüdeki "Tarifler" bağlantısı **görünmez**; site eskisi gibi görünür.
-- Mevcut planlar değişmeden açılır; PDF'ler eskisi gibi tek sayfadır (plana tarif eklenince ek sayfa çıkar).
-- KVKK dışa aktarma dosyasında artık `nutritionPlans` ve `personalRecipes` bölümleri vardır.
-- Fotoğraflar `storage/public/recipes/` altına yazılır; `storage/` kalıcı diskte olmalı (Docker'da `storage` birimi).
+   ```bash
+   SOURCE_DATABASE_URL='postgresql://kullanici:sifre@eski-sunucu:5432/nidaakin' npm run data:migrate-pg
+   ```
+
+   Her tablo için kopyalanan satır sayısı listelenir; sonda `✓ Taşıma tamamlandı.` yazar. Hata olursa hiçbir şey
+   yazılmaz (tek transaction). Hedef boş değilse betik durur; yeniden denemek için `-- --force` ekleyin
+   (hedef tabloları boşaltıp yeniden doldurur).
+
+7. **Dosyaları taşıyın:** eski `storage/` klasörünün içeriğini (`public/` ve `private/`) yeni `UPLOAD_DIR`'e kopyalayın
+   (Docker'daysa: `docker compose exec -T app tar -czf - -C /app/storage . > storage.tar.gz`).
+8. `npm run build`, uygulamayı başlatın ve **4. Doğrula** tablosunu tek tek kontrol edin. Özellikle bir danışanın
+   notlarını, bir beslenme planını ve bir danışan dosyasını açın: bunlar açılıyorsa anahtar ve veri doğru taşınmıştır.
+9. Alan adını yeni uygulamaya yönlendirin. Eski sunucuyu ve PostgreSQL yedeğini bir süre (ör. 1 ay) silmeyin.
+
+**Değişenler (kullanıcı açısından):**
+
+- Plan PDF'i artık sunucuda üretilmiyor: **Yazdır / PDF** düğmesi planı yeni sekmede A4 olarak açar, yazdırma penceresinde
+  **“PDF olarak kaydet”** seçilir (kenar boşlukları: Yok, arka plan grafikleri: Açık). Danışan hesabında da aynı.
+- Oturumlar korunur (aynı tablo); kullanıcıların yeniden giriş yapması gerekmez.
+- Adresler, panel ve danışan hesabı aynıdır.

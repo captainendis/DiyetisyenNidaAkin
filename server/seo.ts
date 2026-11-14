@@ -2,17 +2,14 @@
 // Developed by PaperAxis · paperaxis.com
 
 /**
- * SEO uçları ve üretimde SPA servisi
- *  - GET /robots.txt   : /panel, /hesabim ve /api taranmaz
- *  - GET /sitemap.xml  : statik sayfalar + yayınlanmış hizmetler, blog yazıları ve tarifler
- *  - Üretimde (NODE_ENV=production): dist/ statik dosyaları + her rota için dist/index.html'e
- *    <!--seo:start--> … <!--seo:end--> arasına title/description/canonical/OG/Twitter/JSON-LD enjeksiyonu.
- *    Bilinmeyen rotalar 404 durum koduyla (SPA yine çizilir) döner; /panel rotaları noindex.
+ * SEO: sayfa meta bilgisi, robots.txt ve sitemap.xml
+ *  - resolveMeta(yol) → title/description/canonical/OG/Twitter/JSON-LD; Next.js sayfaları generateMetadata'da
+ *    toMetadata() ile kullanır (src/app/seo.ts). /panel ve /hesabim noindex.
+ *  - robotsTxt(): /panel, /hesabim ve /api taranmaz
+ *  - buildSitemap(): statik sayfalar + yayınlanmış hizmetler, blog yazıları ve tarifler
  * Schema.org verisine YALNIZCA doğrulanmış (panelde girilmiş, null olmayan) bilgiler yazılır.
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import express, { type Express, type Request, type Response } from 'express';
+import type { Metadata } from 'next';
 import { prisma } from './lib/db';
 import { env } from './lib/env';
 import { getSettings } from './services/settings';
@@ -52,7 +49,7 @@ export function escapeHtml(s: string) {
 }
 const escapeXml = escapeHtml;
 
-interface PageMeta {
+export interface PageMeta {
   title: string;
   description: string;
   canonicalPath: string;
@@ -232,33 +229,32 @@ export async function resolveMeta(pathname: string): Promise<PageMeta> {
   return { title: t('Sayfa bulunamadı'), description: seo.defaultDescription, canonicalPath: clean, noindex: true, status: 404 };
 }
 
-export function renderHead(meta: PageMeta) {
+/** PageMeta → Next.js Metadata (JSON-LD ayrıca <JsonLd> ile basılır) */
+export function toMetadata(meta: PageMeta): Metadata {
   const url = `${env.publicSiteUrl}${meta.canonicalPath === '/' ? '/' : meta.canonicalPath}`;
   const image = meta.image ?? `${env.publicSiteUrl}/og-image.jpg`;
-  const tags = [
-    `<title>${escapeHtml(meta.title)}</title>`,
-    `<meta name="description" content="${escapeHtml(meta.description)}" />`,
-    `<meta name="robots" content="${meta.noindex ? 'noindex, nofollow' : 'index, follow'}" />`,
-    `<link rel="canonical" href="${escapeHtml(url)}" />`,
-    `<meta property="og:type" content="${meta.type ?? 'website'}" />`,
-    `<meta property="og:site_name" content="Nida Akın Diyetisyen" />`,
-    `<meta property="og:locale" content="tr_TR" />`,
-    `<meta property="og:title" content="${escapeHtml(meta.title)}" />`,
-    `<meta property="og:description" content="${escapeHtml(meta.description)}" />`,
-    `<meta property="og:url" content="${escapeHtml(url)}" />`,
-    `<meta property="og:image" content="${escapeHtml(image)}" />`,
-    `<meta property="og:image:width" content="1200" />`,
-    `<meta property="og:image:height" content="630" />`,
-    `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${escapeHtml(meta.title)}" />`,
-    `<meta name="twitter:description" content="${escapeHtml(meta.description)}" />`,
-    `<meta name="twitter:image" content="${escapeHtml(image)}" />`,
-    ...(meta.jsonLd ?? []).map((ld) => `<script type="application/ld+json" data-seo-ld>${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`),
-  ];
-  return tags.join('\n    ');
+  return {
+    title: { absolute: meta.title },
+    description: meta.description,
+    robots: meta.noindex ? { index: false, follow: false } : { index: true, follow: true },
+    alternates: { canonical: url },
+    openGraph: {
+      type: meta.type ?? 'website',
+      siteName: 'Nida Akın Diyetisyen',
+      locale: 'tr_TR',
+      title: meta.title,
+      description: meta.description,
+      url,
+      images: [{ url: image, width: 1200, height: 630 }],
+    },
+    twitter: { card: 'summary_large_image', title: meta.title, description: meta.description, images: [image] },
+  };
 }
 
-async function buildSitemap() {
+/** JSON-LD bloklarını <script> içine güvenli biçimde yazmak için */
+export const serializeJsonLd = (ld: Record<string, unknown>) => JSON.stringify(ld).replace(/</g, '\\u003c');
+
+export async function buildSitemap() {
   const [services, posts, recipes] = await Promise.all([
     prisma.service.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true }, orderBy: { sortOrder: 'asc' } }),
     prisma.blogPost.findMany({ where: { status: 'PUBLISHED' }, select: { slug: true, updatedAt: true }, orderBy: { publishedAt: 'desc' } }),
@@ -279,45 +275,6 @@ async function buildSitemap() {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
 }
 
-export function registerSeo(app: Express) {
-  app.get('/robots.txt', (_req: Request, res: Response) => {
-    res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(
-      ['User-agent: *', 'Allow: /', 'Disallow: /panel', 'Disallow: /hesabim', 'Disallow: /api/', '', `Sitemap: ${env.publicSiteUrl}/sitemap.xml`, ''].join('\n'),
-    );
-  });
-
-  app.get('/sitemap.xml', async (_req: Request, res: Response) => {
-    res.type('application/xml').set('Cache-Control', 'public, max-age=3600').send(await buildSitemap());
-  });
-
-  if (!env.isProd) return;
-
-  const distDir = path.resolve('dist');
-  const indexPath = path.join(distDir, 'index.html');
-  if (!fs.existsSync(indexPath)) {
-    console.warn('⚠ dist/index.html bulunamadı — önce `npm run build` çalıştırın.');
-    return;
-  }
-  const template = fs.readFileSync(indexPath, 'utf8');
-
-  // Parmak izli varlıklar: 1 yıl, değişmez
-  app.use('/assets', express.static(path.join(distDir, 'assets'), { immutable: true, maxAge: '1y', fallthrough: false }));
-  // Diğer statik dosyalar (görseller, favicon); index.html'i otomatik servis etme
-  app.use(express.static(distDir, { index: false, maxAge: '7d' }));
-
-  app.get(/^(?!\/api\/|\/uploads\/).*/, async (req: Request, res: Response) => {
-    let meta: PageMeta;
-    try {
-      meta = await resolveMeta(req.path);
-    } catch (e) {
-      console.error('SEO meta üretilemedi', e);
-      meta = { title: 'Nida Akın — Diyetisyen', description: '', canonicalPath: req.path };
-    }
-    const html = template.replace(/<!--seo:start-->[\s\S]*?<!--seo:end-->/, `<!--seo:start-->\n    ${renderHead(meta)}\n    <!--seo:end-->`);
-    res
-      .status(meta.status ?? 200)
-      .set('Cache-Control', 'no-cache')
-      .type('html')
-      .send(html);
-  });
+export function robotsTxt() {
+  return ['User-agent: *', 'Allow: /', 'Disallow: /panel', 'Disallow: /hesabim', 'Disallow: /api/', '', `Sitemap: ${env.publicSiteUrl}/sitemap.xml`, ''].join('\n');
 }

@@ -3,7 +3,7 @@
 
 /** Beslenme planı düzenleyici formu (kontrollü bileşen) */
 import { useId, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { ArrowDown, ArrowUp, Check, CookingPot, GitBranch, Plus, Trash2, X } from 'lucide-react';
 import { Button, Input, Switch, Textarea } from '@/components/panel/ui';
 import { cn } from '@/lib/format';

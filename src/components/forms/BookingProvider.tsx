@@ -6,10 +6,10 @@
  * Masaüstü: sol koyu bilgi şeridi + sağ form. Mobil: tam yükseklikte alt sayfa.
  */
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { BodyPortal } from '@/components/BodyPortal';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { X } from 'lucide-react';
-import { useLocation } from 'react-router';
+import { useLocation } from '@/lib/router';
 import { StepIndicator } from './StepIndicator';
 
 // Form (zod doğrulama + luxon takvim) yalnızca randevu penceresi açıldığında yüklenir
@@ -110,7 +110,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   return (
     <BookingCtx.Provider value={{ open, close }}>
       {children}
-      {createPortal(<AnimatePresence>{state.open && <BookingDialog key="booking" serviceId={state.serviceId} onClose={close} />}</AnimatePresence>, document.body)}
+      <BodyPortal><AnimatePresence>{state.open && <BookingDialog key="booking" serviceId={state.serviceId} onClose={close} />}</AnimatePresence></BodyPortal>
     </BookingCtx.Provider>
   );
 }

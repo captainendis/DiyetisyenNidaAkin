@@ -1,14 +1,13 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { Router } from 'express';
 import { prisma } from '../lib/db';
 import { env } from '../lib/env';
 import { burnPasswordCheck, hashPassword, randomToken, sha256, verifyPassword } from '../lib/crypto';
-import { HttpError, parse, unauthorized } from '../lib/http';
+import { body, HttpError, parse, router, unauthorized } from '../lib/http';
 import { audit } from '../lib/audit';
 import { changePasswordSchema, forgotPasswordSchema, loginSchema, resetPasswordSchema } from '../../shared/schemas';
-import { createSession, destroySession, requireAuth } from '../auth/session';
+import { authUser, createSession, destroySession, requireAuth } from '../auth/session';
 import { loginLimiter, passwordResetLimiter } from '../middleware/rate-limit';
 import { isEmailConfigured, sendMail } from '../services/mailer';
 
@@ -16,16 +15,16 @@ const MAX_FAILED = 5;
 const LOCK_MINUTES = 15;
 const RESET_TTL_MIN = 30;
 
-export const authRouter = Router();
+export const authRouter = router();
 
-authRouter.post('/login', loginLimiter, async (req, res) => {
-  const { email, password, remember } = parse(loginSchema, req.body);
+authRouter.post('/login', loginLimiter, async (c) => {
+  const { email, password, remember } = parse(loginSchema, await body(c));
   const user = await prisma.user.findUnique({ where: { email }, include: { role: true } });
   const generic = new HttpError(401, 'INVALID_CREDENTIALS', 'E-posta adresi veya şifre hatalı');
 
   if (!user || !user.isActive) {
     await burnPasswordCheck(password);
-    await audit(req, 'auth.login_failed', 'user', null, { reason: 'unknown_or_inactive' });
+    await audit(c, 'auth.login_failed', 'user', null, { reason: 'unknown_or_inactive' });
     throw generic;
   }
   if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -43,35 +42,37 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
         lockedUntil: lock ? new Date(Date.now() + LOCK_MINUTES * 60_000) : null,
       },
     });
-    await audit(req, lock ? 'auth.account_locked' : 'auth.login_failed', 'user', user.id);
+    await audit(c, lock ? 'auth.account_locked' : 'auth.login_failed', 'user', user.id);
     throw generic;
   }
   await prisma.user.update({
     where: { id: user.id },
     data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() },
   });
-  await createSession(req, res, user.id, remember);
+  await createSession(c, user.id, remember);
   // Oturum bu istekte henüz yüklenmedi; denetim kaydı için kullanıcıyı geçici olarak bağla
-  req.user = { id: user.id } as never;
-  await audit(req, 'auth.login', 'user', user.id, { remember });
-  req.user = undefined;
-  res.json({ ok: true });
+  c.set('user', { id: user.id } as never);
+  await audit(c, 'auth.login', 'user', user.id, { remember });
+  c.set('user', undefined);
+  return c.json({ ok: true });
 });
 
-authRouter.post('/logout', async (req, res) => {
-  if (req.user) await audit(req, 'auth.logout', 'user', req.user.id);
-  await destroySession(req, res);
-  res.json({ ok: true });
+authRouter.post('/logout', async (c) => {
+  const current = c.var.user;
+  if (current) await audit(c, 'auth.logout', 'user', current.id);
+  await destroySession(c);
+  return c.json({ ok: true });
 });
 
-authRouter.get('/me', (req, res) => {
-  if (!req.user) throw unauthorized();
-  const { sessionId: _s, ...user } = req.user;
-  res.json({ user, demoMode: env.DEMO_MODE });
+authRouter.get('/me', (c) => {
+  const current = c.var.user;
+  if (!current) throw unauthorized();
+  const { sessionId: _s, ...user } = current;
+  return c.json({ user, demoMode: env.DEMO_MODE });
 });
 
-authRouter.post('/forgot-password', passwordResetLimiter, async (req, res) => {
-  const { email } = parse(forgotPasswordSchema, req.body);
+authRouter.post('/forgot-password', passwordResetLimiter, async (c) => {
+  const { email } = parse(forgotPasswordSchema, await body(c));
   const user = await prisma.user.findUnique({ where: { email } });
   // Kullanıcının var olup olmadığı yanıttan anlaşılmamalı
   const response = {
@@ -81,14 +82,14 @@ authRouter.post('/forgot-password', passwordResetLimiter, async (req, res) => {
       ? 'Bu adrese kayıtlı bir hesap varsa şifre sıfırlama bağlantısı gönderildi.'
       : 'E-posta gönderimi henüz yapılandırılmadı. Şifrenizi sıfırlamak için sistem yöneticinize başvurun (README → "Şifre sıfırlama").',
   };
-  if (!user || !user.isActive) return res.json(response);
+  if (!user || !user.isActive) return c.json(response);
 
   const token = randomToken(32);
   await prisma.passwordResetToken.create({
     data: { tokenHash: sha256(token), userId: user.id, expiresAt: new Date(Date.now() + RESET_TTL_MIN * 60_000) },
   });
   const link = `${env.publicSiteUrl}/panel/sifre-sifirla?token=${token}`;
-  await audit(req, 'auth.password_reset_requested', 'user', user.id);
+  await audit(c, 'auth.password_reset_requested', 'user', user.id);
   if (isEmailConfigured()) {
     await sendMail({
       to: user.email,
@@ -99,11 +100,11 @@ authRouter.post('/forgot-password', passwordResetLimiter, async (req, res) => {
     // Yalnızca geliştirme ortamında: bağlantı sunucu konsoluna yazılır
     console.info(`\n[DEV] Şifre sıfırlama bağlantısı (${user.email}):\n${link}\n`);
   }
-  res.json(response);
+  return c.json(response);
 });
 
-authRouter.post('/reset-password', passwordResetLimiter, async (req, res) => {
-  const { token, password } = parse(resetPasswordSchema, req.body);
+authRouter.post('/reset-password', passwordResetLimiter, async (c) => {
+  const { token, password } = parse(resetPasswordSchema, await body(c));
   const record = await prisma.passwordResetToken.findUnique({ where: { tokenHash: sha256(token) } });
   if (!record || record.usedAt || record.expiresAt < new Date()) {
     throw new HttpError(400, 'INVALID_TOKEN', 'Bağlantı geçersiz veya süresi dolmuş. Yeni bir sıfırlama isteği oluşturun.');
@@ -117,13 +118,13 @@ authRouter.post('/reset-password', passwordResetLimiter, async (req, res) => {
     prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
     prisma.session.deleteMany({ where: { userId: record.userId } }),
   ]);
-  await audit(req, 'auth.password_reset', 'user', record.userId);
-  res.json({ ok: true });
+  await audit(c, 'auth.password_reset', 'user', record.userId);
+  return c.json({ ok: true });
 });
 
-authRouter.post('/change-password', requireAuth, async (req, res) => {
-  const { currentPassword, newPassword } = parse(changePasswordSchema, req.body);
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: req.user!.id } });
+authRouter.post('/change-password', requireAuth, async (c) => {
+  const { currentPassword, newPassword } = parse(changePasswordSchema, await body(c));
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: authUser(c).id } });
   if (!(await verifyPassword(currentPassword, user.passwordHash))) {
     throw new HttpError(422, 'VALIDATION_ERROR', 'Mevcut şifre hatalı', { fields: { currentPassword: 'Mevcut şifre hatalı' } });
   }
@@ -131,7 +132,7 @@ authRouter.post('/change-password', requireAuth, async (req, res) => {
   // passwordChangedAt'ten önce oluşturulan tüm oturumlar geçersiz olur → mevcut oturumu yeniden oluştur
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash, passwordChangedAt: new Date() } });
   await prisma.session.deleteMany({ where: { userId: user.id } });
-  const { csrfToken } = await createSession(req, res, user.id, false);
-  await audit(req, 'auth.password_changed', 'user', user.id);
-  res.json({ ok: true, csrfToken });
+  const { csrfToken } = await createSession(c, user.id, false);
+  await audit(c, 'auth.password_changed', 'user', user.id);
+  return c.json({ ok: true, csrfToken });
 });

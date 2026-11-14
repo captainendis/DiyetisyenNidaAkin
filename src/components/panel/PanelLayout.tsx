@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation } from '@/lib/router';
 import {
   BarChart3, Bell, CalendarDays, ClipboardList, CalendarCog, CookingPot, ExternalLink, FileText, LayoutDashboard, Leaf, LogOut, Menu, Settings, UserRound, Users, X,
 } from 'lucide-react';

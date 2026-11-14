@@ -1,6 +1,10 @@
 node_modules
 dist
-dist-server
+dist-scripts
+.next
+next-env.d.ts
+*.tsbuildinfo
+backups
 storage
 server/generated
 .env

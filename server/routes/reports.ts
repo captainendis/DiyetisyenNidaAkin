@@ -5,18 +5,17 @@
  * Raporlar — yalnızca randevu ve danışan sayıları. Finansal rapor yoktur
  * (ödeme takibi modülü olmadan gelir gösterilmez).
  */
-import { Router } from 'express';
 import { DateTime } from 'luxon';
 import { prisma } from '../lib/db';
-import { badRequest, parse } from '../lib/http';
+import { badRequest, parse, query, router } from '../lib/http';
 import { audit } from '../lib/audit';
 import { requirePermission } from '../auth/session';
 import { reportQuerySchema } from '../../shared/schemas';
 import { APPOINTMENT_STATUS_LABEL, MEETING_TYPE_LABEL, TIME_ZONE, type AppointmentStatus, type MeetingType } from '../../shared/constants';
 import { eachDay, endOfDayExclusive, startOfDay, toDateStr, toTimeStr } from '../../shared/time';
 
-export const reportsRouter = Router();
-reportsRouter.use(requirePermission('reports:read'));
+export const reportsRouter = router();
+reportsRouter.use('*', requirePermission('reports:read'));
 
 function range(query: unknown) {
   const { from, to } = parse(reportQuerySchema, query);
@@ -38,8 +37,8 @@ function add(b: Bucket, status: AppointmentStatus) {
   else b.pending++;
 }
 
-reportsRouter.get('/', async (req, res) => {
-  const { from, to, start, end } = range(req.query);
+reportsRouter.get('/', async (c) => {
+  const { from, to, start, end } = range(query(c));
   const [appts, untimed, newClients, completedInRange] = await Promise.all([
     prisma.appointment.findMany({
       where: { startsAt: { gte: start, lt: end } },
@@ -95,7 +94,7 @@ reportsRouter.get('/', async (req, res) => {
     bySource[a.source as 'WEBSITE' | 'PANEL']++;
   }
 
-  res.json({
+  return c.json({
     range: { from, to, days: days.length },
     totals,
     daily: [...daily.values()],
@@ -113,8 +112,8 @@ function csvCell(v: string | number | null | undefined) {
   return /[";\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
-reportsRouter.get('/export.csv', async (req, res) => {
-  const { from, to, start, end } = range(req.query);
+reportsRouter.get('/export.csv', async (c) => {
+  const { from, to, start, end } = range(query(c));
   const rows = await prisma.appointment.findMany({
     where: { startsAt: { gte: start, lt: end } },
     orderBy: { startsAt: 'asc' },
@@ -141,11 +140,10 @@ reportsRouter.get('/export.csv', async (req, res) => {
         .join(';'),
     );
   }
-  await audit(req, 'report.export', 'report', null, { from, to, rows: rows.length });
-  res.set({
+  await audit(c, 'report.export', 'report', null, { from, to, rows: rows.length });
+  return c.body('﻿' + lines.join('\r\n'), 200, {
     'Content-Type': 'text/csv; charset=utf-8',
     'Content-Disposition': `attachment; filename="randevu-raporu-${from}_${to}.csv"`,
     'Cache-Control': 'no-store',
   });
-  res.send('﻿' + lines.join('\r\n'));
 });

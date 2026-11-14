@@ -3,7 +3,7 @@
 
 /** Danışan detayı → Beslenme Planları sekmesi */
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { CookingPot, Printer, FileText, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';

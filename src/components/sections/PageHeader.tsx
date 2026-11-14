@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { FadeIn, StaggerLines } from '@/components/motion/Reveal';
 import type { Crumb } from '@/components/seo/Seo';
 

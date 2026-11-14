@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { formatDate, formatDayStr, formatPhone, formatTime } from '@/lib/format';
 import { MEETING_TYPE_LABEL } from '@shared/constants';
 import { Card, CardHeader, StatusBadge } from '@/components/panel/ui';

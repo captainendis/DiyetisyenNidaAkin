@@ -2,12 +2,11 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Panel — randevu yönetimi */
-import { Router } from 'express';
 import { z } from 'zod';
 import { prisma, type Prisma } from '../lib/db';
-import { HttpError, conflict, notFound, parse } from '../lib/http';
+import { HttpError, body, conflict, notFound, param, parse, query, router } from '../lib/http';
 import { audit } from '../lib/audit';
-import { requirePermission } from '../auth/session';
+import { authUser, requirePermission } from '../auth/session';
 import { assertSlotAllowed, getDayPlans, getSlots, withAppointmentLock } from '../services/availability';
 import {
   appointmentInclude,
@@ -28,7 +27,7 @@ import {
 import { HARD_CONFLICT_STATUSES, SLOT_HOLDING_STATUSES, type AppointmentStatus } from '../../shared/constants';
 import { addDays, endOfDayExclusive, isoWeekday, startOfDay } from '../../shared/time';
 
-export const appointmentsRouter = Router();
+export const appointmentsRouter = router();
 const canRead = requirePermission('appointments:read');
 const canWrite = requirePermission('appointments:write');
 
@@ -39,17 +38,17 @@ const slotsQuery = z.object({
   duration: z.coerce.number().int().min(10).max(240).optional(),
   ignoreId: z.string().max(40).optional(),
 });
-appointmentsRouter.get('/slots', canRead, async (req, res) => {
-  const q = parse(slotsQuery, req.query);
+appointmentsRouter.get('/slots', canRead, async (c) => {
+  const q = parse(slotsQuery, query(c));
   const { plan, slots } = await getSlots(q.date, { durationMinutes: q.duration, ignoreAppointmentId: q.ignoreId });
-  res.json({ date: q.date, closedReason: plan.isWorking ? null : plan.closedReason, slotMinutes: plan.slotMinutes, slots });
+  return c.json({ date: q.date, closedReason: plan.isWorking ? null : plan.closedReason, slotMinutes: plan.slotMinutes, slots });
 });
 
 const rangeQuery = z.object({ from: dateStr, to: dateStr }).refine((v) => v.from <= v.to && v.to <= addDays(v.from, 62), 'Geçersiz aralık');
-appointmentsRouter.get('/day-plans', canRead, async (req, res) => {
-  const q = parse(rangeQuery, req.query);
+appointmentsRouter.get('/day-plans', canRead, async (c) => {
+  const q = parse(rangeQuery, query(c));
   const plans = await getDayPlans(q.from, q.to);
-  res.json({
+  return c.json({
     days: [...plans.values()].map((p) => ({
       date: p.date,
       isWorking: p.isWorking,
@@ -62,8 +61,8 @@ appointmentsRouter.get('/day-plans', canRead, async (req, res) => {
 
 // ───────────── Liste ─────────────
 
-appointmentsRouter.get('/', canRead, async (req, res) => {
-  const q = parse(appointmentListQuerySchema, req.query);
+appointmentsRouter.get('/', canRead, async (c) => {
+  const q = parse(appointmentListQuerySchema, query(c));
   const statuses = q.status ? (Array.isArray(q.status) ? q.status : [q.status]) : undefined;
   const and: Prisma.AppointmentWhereInput[] = [];
 
@@ -110,13 +109,13 @@ appointmentsRouter.get('/', canRead, async (req, res) => {
       include: appointmentInclude,
     }),
   ]);
-  res.json({ items: rows.map(toDTO), total, page: q.page, pageSize: q.pageSize });
+  return c.json({ items: rows.map(toDTO), total, page: q.page, pageSize: q.pageSize });
 });
 
 // ───────────── Oluşturma ─────────────
 
-appointmentsRouter.post('/', canWrite, async (req, res) => {
-  const input = parse(panelAppointmentCreateSchema, req.body);
+appointmentsRouter.post('/', canWrite, async (c) => {
+  const input = parse(panelAppointmentCreateSchema, await body(c));
   if (!input.clientId && (!input.contactName || !input.contactPhone)) {
     throw new HttpError(422, 'VALIDATION_ERROR', 'Danışan seçin veya ad ve telefon girin', {
       fields: { ...(!input.contactName ? { contactName: 'Ad soyad gerekli' } : {}), ...(!input.contactPhone ? { contactPhone: 'Telefon gerekli' } : {}) },
@@ -172,14 +171,14 @@ appointmentsRouter.post('/', canWrite, async (req, res) => {
         status: input.status,
         source: 'PANEL',
         internalNote: input.internalNote ?? null,
-        createdById: req.user!.id,
+        createdById: authUser(c).id,
       },
       include: appointmentInclude,
     });
     await tx.appointmentStatusHistory.create({
-      data: { appointmentId: a.id, toStatus: input.status, note: input.allowOutsideHours ? 'Panelden özel randevu' : 'Panelden oluşturuldu', changedById: req.user!.id },
+      data: { appointmentId: a.id, toStatus: input.status, note: input.allowOutsideHours ? 'Panelden özel randevu' : 'Panelden oluşturuldu', changedById: authUser(c).id },
     });
-    await audit(req, 'appointment.created', 'appointment', a.id, { status: input.status, outsideHours: input.allowOutsideHours }, tx);
+    await audit(c, 'appointment.created', 'appointment', a.id, { status: input.status, outsideHours: input.allowOutsideHours }, tx);
     return a;
   });
 
@@ -187,19 +186,19 @@ appointmentsRouter.post('/', canWrite, async (req, res) => {
     const c = newClient as { id: string; name: string };
     await notifyStaff('CLIENT_CREATED', { title: `Yeni danışan kaydı: ${c.name}`, body: 'Panelden randevu oluşturulurken eklendi.', clientId: c.id, appointmentId: created.id });
   }
-  res.status(201).json({ appointment: toDTO(created) });
+  return c.json({ appointment: toDTO(created) }, 201);
 });
 
 // ───────────── Tekil ─────────────
 
-appointmentsRouter.get('/:id', canRead, async (req, res) => {
-  const a = await getAppointmentOr404(String(req.params.id));
+appointmentsRouter.get('/:id', canRead, async (c) => {
+  const a = await getAppointmentOr404(param(c));
   const history = await prisma.appointmentStatusHistory.findMany({
     where: { appointmentId: a.id },
     orderBy: { changedAt: 'desc' },
     include: { changedBy: { select: { firstName: true, lastName: true } } },
   });
-  res.json({
+  return c.json({
     appointment: {
       ...toDTO(a),
       statusHistory: history.map((h) => ({
@@ -216,36 +215,36 @@ appointmentsRouter.get('/:id', canRead, async (req, res) => {
   });
 });
 
-appointmentsRouter.patch('/:id', canWrite, async (req, res) => {
-  const input = parse(panelAppointmentUpdateSchema, req.body);
-  const id = String(req.params.id);
+appointmentsRouter.patch('/:id', canWrite, async (c) => {
+  const input = parse(panelAppointmentUpdateSchema, await body(c));
+  const id = param(c);
   const extra: Prisma.AppointmentUpdateInput = {};
   if (input.meetingType !== undefined) extra.meetingType = input.meetingType;
   if (input.internalNote !== undefined) extra.internalNote = input.internalNote;
   if (input.serviceId !== undefined) extra.service = input.serviceId ? { connect: { id: input.serviceId } } : { disconnect: true };
   if (input.clientId !== undefined) extra.client = input.clientId ? { connect: { id: input.clientId } } : { disconnect: true };
-  const row = await reschedule(req, id, {
+  const row = await reschedule(c, id, {
     date: input.date,
     time: input.time,
     durationMinutes: input.durationMinutes,
     allowOutsideHours: input.allowOutsideHours,
     extra,
   });
-  res.json({ appointment: toDTO(row) });
+  return c.json({ appointment: toDTO(row) });
 });
 
-appointmentsRouter.post('/:id/status', canWrite, async (req, res) => {
-  const { status, note } = parse(appointmentStatusChangeSchema, req.body);
-  const row = await changeStatus(req, String(req.params.id), status as AppointmentStatus, note);
-  res.json({ appointment: toDTO(row) });
+appointmentsRouter.post('/:id/status', canWrite, async (c) => {
+  const { status, note } = parse(appointmentStatusChangeSchema, await body(c));
+  const row = await changeStatus(c, param(c), status as AppointmentStatus, note);
+  return c.json({ appointment: toDTO(row) });
 });
 
-appointmentsRouter.delete('/:id', canWrite, async (req, res) => {
-  const a = await prisma.appointment.findUnique({ where: { id: String(req.params.id) }, select: { id: true, status: true, startsAt: true } });
+appointmentsRouter.delete('/:id', canWrite, async (c) => {
+  const a = await prisma.appointment.findUnique({ where: { id: param(c) }, select: { id: true, status: true, startsAt: true } });
   if (!a) throw notFound('Randevu bulunamadı');
   if (a.status === 'COMPLETED') throw conflict('NOT_DELETABLE', 'Tamamlanmış randevular silinemez; kayıt geçmişi için saklanır.');
   await prisma.appointment.delete({ where: { id: a.id } });
-  await audit(req, 'appointment.deleted', 'appointment', a.id, { status: a.status, past: a.startsAt ? a.startsAt < new Date() : null });
-  res.json({ ok: true });
+  await audit(c, 'appointment.deleted', 'appointment', a.id, { status: a.status, past: a.startsAt ? a.startsAt < new Date() : null });
+  return c.json({ ok: true });
 });
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { useSite } from '@/data/SiteContext';
 import { Reveal } from '@/components/motion/Reveal';
 import { ServiceIcon } from '@/components/icons/ServiceIcon';

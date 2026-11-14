@@ -3,7 +3,7 @@
 
 /** Danışan hesabı (Hesabım) kimlik bağlamı — panelden bağımsız: ayrı istemci (portalApi), ayrı CSRF token */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router';
+import { Navigate, useLocation, useNavigate } from '@/lib/router';
 import { ApiError, portalApi } from '@/lib/api';
 import type { PortalMe } from '@shared/portal';
 

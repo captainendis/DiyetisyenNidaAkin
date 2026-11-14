@@ -6,7 +6,7 @@
  * Zemin ivory, metin espresso/cocoa; açık zeminde vurgu için yalnızca "-ink" tonları (bkz. index.css kontrast kuralı).
  */
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { cn } from '@/lib/text';
 
 export function PortalPageHeader({ title, lead, back, actions }: { title: ReactNode; lead?: ReactNode; back?: { to: string; label: string }; actions?: ReactNode }) {

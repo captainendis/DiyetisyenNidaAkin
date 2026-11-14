@@ -1,14 +1,16 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-/** Express uygulaması — API, statik dosyalar ve SPA servisi */
-import express, { type NextFunction, type Request, type Response } from 'express';
-import helmet from 'helmet';
-import compression from 'compression';
-import cookieParser from 'cookie-parser';
+/**
+ * API uygulaması (Hono) — tüm uçlar /api altında.
+ *  - Next.js içinde: app/api/[[...path]]/route.ts → api.fetch
+ *  - Testlerde: createApp() aynı uygulamayı Node HTTP dinleyicisine çevirir (supertest)
+ * Güvenlik başlıkları (CSP vb.) Next.js tarafında uygulanır: proxy.ts ve next.config.ts.
+ */
+import { Hono } from 'hono';
+import { getRequestListener } from '@hono/node-server';
 import { ZodError } from 'zod';
-import { env } from './lib/env';
-import { HttpError, validationError } from './lib/http';
+import { HttpError, validationError, type AppEnv } from './lib/http';
 import { loadSession, requireAuth } from './auth/session';
 import { apiLimiter } from './middleware/rate-limit';
 import { authRouter } from './routes/auth';
@@ -28,97 +30,65 @@ import { plansRouter } from './routes/plans';
 import { recipesRouter } from './routes/recipes';
 import { portalRouter } from './routes/portal';
 import { clientPortalAdminRouter } from './routes/client-portal-admin';
-import { registerSeo } from './seo';
-import { PUBLIC_UPLOADS } from './lib/storage';
 
+/** Oturum + CSRF gerektiren personel uçları */
+const STAFF: [string, Hono<AppEnv>][] = [
+  ['/dashboard', dashboardRouter],
+  ['/appointments', appointmentsRouter],
+  ['/availability', availabilityRouter],
+  // Danışan hesabı yönetimi (/clients/:id/account, /clients/:id/messages …) — clientsRouter'dan önce
+  ['/clients/:id', clientPortalAdminRouter],
+  ['/clients', clientsRouter],
+  ['/notifications', notificationsRouter],
+  ['/reports', reportsRouter],
+  ['/services', servicesRouter],
+  ['/content', contentRouter],
+  ['/settings', settingsRouter],
+  ['/audit-logs', auditRouter],
+  ['/plans', plansRouter],
+  ['/recipes', recipesRouter],
+];
 
-export function createApp() {
-  const app = express();
-  app.disable('x-powered-by');
-  if (env.TRUST_PROXY) app.set('trust proxy', env.TRUST_PROXY);
+function build() {
+  const api = new Hono<AppEnv>().basePath('/api');
 
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-          'default-src': ["'self'"],
-          'script-src': ["'self'"],
-          'style-src': ["'self'", "'unsafe-inline'"],
-          'img-src': ["'self'", 'data:', 'blob:'],
-          'font-src': ["'self'", 'data:'],
-          'frame-src': ['https://www.google.com'],
-          'connect-src': ["'self'"],
-          'form-action': ["'self'"],
-          'frame-ancestors': ["'none'"],
-          'upgrade-insecure-requests': env.isProd ? [] : null,
-        },
-      },
-      crossOriginEmbedderPolicy: false,
-      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-    }),
-  );
-  app.use(compression());
-  app.use(cookieParser());
-  app.use(express.json({ limit: '1mb' }));
-
-  // ── API ──
-  const api = express.Router();
-  api.use(apiLimiter);
-  api.use(loadSession);
-  api.use((_req, res, next) => {
-    res.set('Cache-Control', 'no-store');
-    next();
+  // Ara katmanlar route'lardan ÖNCE kaydedilmeli (Hono kayıt sırasını izler)
+  api.use('*', async (c, next) => {
+    await next();
+    if (!c.res.headers.has('Cache-Control')) c.res.headers.set('Cache-Control', 'no-store');
   });
-  api.get('/health', (_req, res) => res.json({ ok: true }));
-  api.use('/auth', authRouter);
-  api.use('/public', publicContentRouter);
-  api.use('/public', publicAppointmentsRouter);
+  api.use('*', apiLimiter);
+  api.use('*', loadSession);
+  // '/x/*' kalıbı '/x'in kendisini de kapsar
+  for (const [prefix] of STAFF) api.use(`${prefix}/*`, requireAuth);
+
+  api.get('/health', (c) => c.json({ ok: true }));
+  api.route('/auth', authRouter);
+  api.route('/public', publicContentRouter);
+  api.route('/public', publicAppointmentsRouter);
   // Danışan hesabı (Hesabım): kendi oturumu (na_csid) ve CSRF'i var; personel oturumu gerektirmez, personel uçlarına da erişemez
-  api.use('/portal', portalRouter);
-  // Bundan sonraki tüm uçlar oturum + CSRF gerektirir
-  api.use(requireAuth);
-  api.use('/dashboard', dashboardRouter);
-  api.use('/appointments', appointmentsRouter);
-  api.use('/availability', availabilityRouter);
-  api.use('/clients/:id', clientPortalAdminRouter);
-  api.use('/clients', clientsRouter);
-  api.use('/notifications', notificationsRouter);
-  api.use('/reports', reportsRouter);
-  api.use('/services', servicesRouter);
-  api.use('/content', contentRouter);
-  api.use('/settings', settingsRouter);
-  api.use('/audit-logs', auditRouter);
-  api.use('/plans', plansRouter);
-  api.use('/recipes', recipesRouter);
-  api.use((_req, _res, next) => next(new HttpError(404, 'NOT_FOUND', 'Uç nokta bulunamadı')));
-  app.use('/api', api);
+  api.route('/portal', portalRouter);
+  for (const [prefix, r] of STAFF) api.route(prefix, r);
 
-  // ── Herkese açık yüklemeler (blog görselleri). Özel dosyalar ASLA statik servis edilmez. ──
-  app.use(
-    '/uploads/public',
-    express.static(PUBLIC_UPLOADS, {
-      maxAge: '30d',
-      setHeaders: (res) => res.set('X-Content-Type-Options', 'nosniff'),
-    }),
-  );
+  api.notFound((c) => c.json({ error: { code: 'NOT_FOUND', message: 'Uç nokta bulunamadı' } }, 404));
 
-  // ── SEO (robots, sitemap) + üretimde SPA ──
-  registerSeo(app);
-
-  // ── Hata yakalayıcı ──
-  app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
-    let e = err;
+  api.onError((err, c) => {
+    let e: unknown = err;
     if (e instanceof ZodError) e = validationError(e);
     if (e instanceof HttpError) {
-      return res.status(e.status).json({ error: { code: e.code, message: e.message, details: e.details } });
+      return c.json({ error: { code: e.code, message: e.message, details: e.details } }, e.status as 400);
     }
-    if ((e as { type?: string })?.type === 'entity.too.large') {
-      return res.status(413).json({ error: { code: 'PAYLOAD_TOO_LARGE', message: 'İstek çok büyük' } });
-    }
-    console.error(`[${req.method} ${req.originalUrl}]`, e);
-    res.status(500).json({ error: { code: 'INTERNAL', message: 'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.' } });
+    console.error(`[${c.req.method} ${c.req.path}]`, e);
+    return c.json({ error: { code: 'INTERNAL', message: 'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.' } }, 500);
   });
 
-  return app;
+  return api;
+}
+
+/** Tekil API uygulaması (Next.js route handler'ı bunu kullanır) */
+export const api = build();
+
+/** Node HTTP dinleyicisi — testler (supertest) ve araçlar için */
+export function createApp() {
+  return getRequestListener(api.fetch);
 }
