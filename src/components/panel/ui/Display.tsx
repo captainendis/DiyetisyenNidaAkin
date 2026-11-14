@@ -122,9 +122,18 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
   );
 }
 
-export function Tabs<T extends string>({ tabs, value, onChange, className }: { tabs: { value: T; label: ReactNode; count?: number }[]; value: T; onChange: (v: T) => void; className?: string }) {
+/**
+ * Sekmeler. Dar ekranda yatay kaydırılır; dikey kaydırma kapalıdır.
+ * Alt çizgi kenarlık değil içe gölge ile çizilir: sekmeler kutunun dışına taşmadığı için
+ * (eskiden -mb-px ile taşıyordu) tarayıcı 1 piksellik dikey kaydırma çubuğu göstermez.
+ * underline={false}: altında zaten çizgi olan kartlarda (ör. tablo üstü) alt çizgiyi kaldırır.
+ */
+export function Tabs<T extends string>({ tabs, value, onChange, className, underline = true }: { tabs: { value: T; label: ReactNode; count?: number }[]; value: T; onChange: (v: T) => void; className?: string; underline?: boolean }) {
   return (
-    <div role="tablist" className={cn('-mx-1 flex gap-1 overflow-x-auto border-b border-panel-line px-1', className)}>
+    <div
+      role="tablist"
+      className={cn('-mx-1 flex gap-1 overflow-x-auto overflow-y-hidden px-1', underline && 'shadow-[inset_0_-1px_0_var(--color-panel-line)]', className)}
+    >
       {tabs.map((t) => (
         <button
           key={t.value}
@@ -133,7 +142,7 @@ export function Tabs<T extends string>({ tabs, value, onChange, className }: { t
           aria-selected={value === t.value}
           onClick={() => onChange(t.value)}
           className={cn(
-            '-mb-px flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors',
+            'flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors',
             value === t.value ? 'border-cocoa text-espresso' : 'border-transparent text-panel-muted hover:text-cocoa',
           )}
         >
