@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
   // cPanel "Node.js App" için tek klasörlük çıktı: .next/standalone/server.js
   output: 'standalone',
   poweredByHeader: false,
+  // Paylaşımlı hostingde süreç sınırı (EAGAIN): derleme tek işçiyle yapılır
+  experimental: { cpus: 1 },
   // Dağıtılan sürüm (CI: commit SHA) — /api/health yanıtında döner; dağıtım sonrası doğrulamada kullanılır
   env: { APP_REVISION: process.env.APP_REVISION ?? 'dev' },
   reactStrictMode: true,
