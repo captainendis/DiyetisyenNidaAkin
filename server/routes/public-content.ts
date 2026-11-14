@@ -111,6 +111,7 @@ const toCard = ({ contentEnc, variantNoteEnc, ...r }: CardRow): PublicRecipeCard
     ...r,
     title: c.title,
     summary: c.summary,
+    dietTags: c.dietTags,
     variantNote: decryptNote(variantNoteEnc),
     slug: r.slug!,
     publishedAt: r.publishedAt?.toISOString() ?? null,

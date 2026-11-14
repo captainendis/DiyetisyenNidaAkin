@@ -10,11 +10,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ExternalLink, GitBranch, ImagePlus, Plus, Trash2, X } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
-import { Button, Input, Modal, Select, Switch, Textarea, useFeedback } from '@/components/panel/ui';
+import { Button, Checkbox, Input, Modal, Select, Switch, Textarea, useFeedback } from '@/components/panel/ui';
 import { ClientPicker, type ClientRef } from './ClientPicker';
 import { cn } from '@/lib/format';
 import {
-  MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, recipeImageUrl, type Recipe, type RecipeCategory, type RecipeInput,
+  DIET_TAGS, DIET_TAG_LABEL, DIET_TAG_NOTE, MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, normalizeDietTags, recipeImageUrl, type DietTag, type Recipe, type RecipeCategory, type RecipeInput,
 } from '@shared/recipe';
 
 const MAX_UPLOAD = 15 * 1024 * 1024;
@@ -30,6 +30,7 @@ interface Draft {
   ingredients: string;
   steps: string[];
   tip: string;
+  dietTags: DietTag[];
   isPublished: boolean;
   isFeatured: boolean;
   variantNote: string;
@@ -51,6 +52,7 @@ const toDraft = (r?: Recipe | null, category?: RecipeCategory): Draft => ({
   ingredients: r?.ingredients.join('\n') ?? '',
   steps: r?.steps.length ? [...r.steps] : [''],
   tip: r?.tip ?? '',
+  dietTags: r?.dietTags ?? [],
 });
 
 const num = (v: string) => {
@@ -122,6 +124,9 @@ export function RecipeFormModal({
   };
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }));
+  // Vegan işaretlenince vejetaryen de işaretlenir; vejetaryen, vegan açıkken kapatılamaz
+  const toggleDiet = (t: DietTag, on: boolean) =>
+    setD((p) => ({ ...p, dietTags: normalizeDietTags(on ? [...p.dietTags, t] : p.dietTags.filter((x) => x !== t)) }));
   const setStep = (i: number, v: string) => setD((p) => ({ ...p, steps: p.steps.map((s, j) => (j === i ? v : s)) }));
   const moveStep = (i: number, to: number) =>
     setD((p) => {
@@ -150,6 +155,7 @@ export function RecipeFormModal({
       ingredients: d.ingredients.split('\n').map((l) => l.replace(/^\s*[-•*]\s*/, '').trim()).filter(Boolean),
       steps: d.steps.map((s) => s.trim()).filter(Boolean),
       tip: d.tip.trim(),
+      dietTags: normalizeDietTags(d.dietTags),
       isPublished: d.client ? false : d.isPublished,
       isFeatured: !d.client && d.isPublished && d.isFeatured,
       variantNote: d.variantNote.trim(),
@@ -343,6 +349,21 @@ export function RecipeFormModal({
               </a>
             )}
           </div>
+          <fieldset className="rounded-md border border-panel-line p-4">
+            <legend className="px-1 text-[0.8rem] font-semibold text-cocoa">Diyet türü</legend>
+            <div className="space-y-3">
+              {DIET_TAGS.map((t) => (
+                <Checkbox
+                  key={t}
+                  label={DIET_TAG_LABEL[t]}
+                  description={DIET_TAG_NOTE[t]}
+                  checked={d.dietTags.includes(t)}
+                  disabled={t === 'VEGETARIAN' && d.dietTags.includes('VEGAN')}
+                  onChange={(e) => toggleDiet(t, e.target.checked)}
+                />
+              ))}
+            </div>
+          </fieldset>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2">
             <Input label="Porsiyon" inputMode="numeric" value={d.servings} error={err.servings} placeholder="1" onChange={(e) => set('servings', e.target.value.replace(/\D/g, '').slice(0, 2))} />
             <Input label="Kalori (porsiyon)" inputMode="numeric" value={d.kcal} error={err.kcal} placeholder="kcal" onChange={(e) => set('kcal', e.target.value.replace(/\D/g, '').slice(0, 4))} />

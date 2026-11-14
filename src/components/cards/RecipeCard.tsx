@@ -3,6 +3,7 @@
 
 import { Link } from '@/lib/router';
 import { Sprig } from '@/components/icons/Botanical';
+import { DietBadges } from '@/components/recipes/DietBadges';
 import { cn } from '@/lib/text';
 import { RECIPE_CATEGORY_LABEL, recipeImageUrl, type PublicRecipeCard } from '@shared/recipe';
 
@@ -45,6 +46,7 @@ export function PublicRecipeCardView({ recipe }: { recipe: PublicRecipeCard }) {
         </div>
         <h3 className="mt-3 font-display text-[1.6rem] leading-[1.12] font-medium text-espresso transition-colors group-hover:text-cocoa">{recipe.title}</h3>
         {recipe.variantNote && <p className="mt-1 text-[0.85rem] font-semibold text-cocoa/80">{recipe.variantNote}</p>}
+        <DietBadges tags={recipe.dietTags} className="mt-3" />
         {recipe.summary && <p className="mt-3 text-[0.95rem] leading-relaxed text-cocoa/75">{recipe.summary}</p>}
       </Link>
     </article>

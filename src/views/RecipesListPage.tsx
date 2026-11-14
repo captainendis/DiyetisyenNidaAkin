@@ -13,12 +13,15 @@ import { Reveal } from '@/components/motion/Reveal';
 import { Seo, SITE_URL } from '@/components/seo/Seo';
 import { Sprig } from '@/components/icons/Botanical';
 import { cn } from '@/lib/text';
-import { RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, type PublicRecipeCard, type RecipeCategory } from '@shared/recipe';
+import { DIET_TAGS, DIET_TAG_LABEL, RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, type DietTag, type PublicRecipeCard, type RecipeCategory } from '@shared/recipe';
 
 export default function RecipesListPage() {
   const [params] = useSearchParams();
   const raw = params.get('kategori') ?? '';
   const category = (RECIPE_CATEGORIES as readonly string[]).includes(raw.toUpperCase()) ? (raw.toUpperCase() as RecipeCategory) : undefined;
+  // Diyet türü şifreli içerikte durduğu için süzme, gelen liste üzerinde istemcide yapılır
+  const rawDiet = (params.get('diyet') ?? '').toUpperCase();
+  const diet = (DIET_TAGS as readonly string[]).includes(rawDiet) ? (rawDiet as DietTag) : undefined;
   const [data, setData] = useState<{ recipes: PublicRecipeCard[]; counts: Partial<Record<RecipeCategory, number>> } | null>(null);
   const [error, setError] = useState(false);
 
@@ -36,7 +39,13 @@ export default function RecipesListPage() {
 
   const crumbs = [{ name: 'Tarifler', path: '/tarifler' }];
   const cats = RECIPE_CATEGORIES.filter((c) => data?.counts[c]);
-  const recipes = data?.recipes ?? [];
+  const all = data?.recipes ?? [];
+  const diets = DIET_TAGS.filter((t) => all.some((r) => r.dietTags?.includes(t)));
+  const recipes = diet ? all.filter((r) => r.dietTags?.includes(diet)) : all;
+  const href = (c?: RecipeCategory, d?: DietTag) => {
+    const q = [c && `kategori=${c.toLowerCase()}`, d && `diyet=${d.toLowerCase()}`].filter(Boolean).join('&');
+    return q ? `/tarifler?${q}` : '/tarifler';
+  };
 
   return (
     <>
@@ -67,11 +76,32 @@ export default function RecipesListPage() {
                   return (
                     <li key={c ?? 'all'}>
                       <Link
-                        to={c ? `/tarifler?kategori=${c.toLowerCase()}` : '/tarifler'}
+                        to={href(c, diet)}
                         aria-current={active ? 'page' : undefined}
                         className={cn('-mb-px block border-b py-4 text-[0.92rem] transition-colors', active ? 'border-espresso text-espresso' : 'border-transparent text-taupe hover:text-espresso')}
                       >
                         {c ? RECIPE_CATEGORY_LABEL[c] : 'Tümü'}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          )}
+          {(diets.length > 1 || diet) && (
+            <nav aria-label="Diyet türü" className={cn('-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0', cats.length > 1 && 'mt-6')}>
+              <ul className="flex min-w-max items-center gap-6">
+                <li className="text-[0.9rem] text-taupe">Diyet türü:</li>
+                {[undefined, ...diets].map((t) => {
+                  const active = t === diet;
+                  return (
+                    <li key={t ?? 'all'}>
+                      <Link
+                        to={href(category, t)}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn('block border-b py-1 text-[0.9rem] transition-colors', active ? 'border-espresso text-espresso' : 'border-transparent text-taupe hover:text-espresso')}
+                      >
+                        {t ? DIET_TAG_LABEL[t] : 'Tümü'}
                       </Link>
                     </li>
                   );
@@ -90,7 +120,7 @@ export default function RecipesListPage() {
               <div className="mx-auto flex max-w-lg flex-col items-center py-16 text-center">
                 <Sprig className="w-24 text-gold" />
                 <p className="mt-8 font-display text-[2.2rem] leading-tight">Tarifler hazırlanıyor.</p>
-                <p className="mt-3 text-[1rem] leading-relaxed text-taupe">Bu bölümde henüz yayınlanmış bir tarif yok.</p>
+                <p className="mt-3 text-[1rem] leading-relaxed text-taupe">{diet ? 'Bu diyet türünde yayınlanmış bir tarif yok.' : 'Bu bölümde henüz yayınlanmış bir tarif yok.'}</p>
               </div>
             ) : (
               <div className="grid gap-x-10 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">

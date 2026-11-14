@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { emailSchema, passwordPolicy } from './schemas';
 import type { AppointmentStatus, MeetingType } from './constants';
 import type { NutritionPlanData } from './plan';
-import type { RecipeCategory } from './recipe';
+import type { DietTag, RecipeCategory } from './recipe';
 
 /** Etkinleştirme bağlantısının geçerlilik süresi (WhatsApp/SMS ile iletileceği için birkaç gün) */
 export const ACTIVATION_TTL_HOURS = 72;
@@ -111,6 +111,7 @@ export interface PortalRecipeCard {
   title: string;
   category: RecipeCategory;
   summary: string;
+  dietTags: DietTag[];
   imageBase: string | null;
   /** Danışana özel varyasyon mu */
   personal: boolean;

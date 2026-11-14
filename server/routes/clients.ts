@@ -550,6 +550,7 @@ clientsRouter.get('/:id/export', canRead, async (c) => {
       basedOn: r.parent ? decryptContent(r.parent.contentEnc).title : null,
       variantNote: decryptNote(r.variantNoteEnc),
       summary: c.summary,
+      dietTags: c.dietTags,
       servings: r.servings,
       prepMinutes: r.prepMinutes,
       cookMinutes: r.cookMinutes,

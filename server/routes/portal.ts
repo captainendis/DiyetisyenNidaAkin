@@ -346,7 +346,7 @@ portalRouter.get('/recipes', async (c) => {
   const items: PortalRecipeCard[] = rows.map((r) => {
     const rc = decryptContent(r.contentEnc);
     return {
-      id: r.id, title: rc.title, category: r.category, summary: rc.summary, imageBase: r.imageBase,
+      id: r.id, title: rc.title, category: r.category, summary: rc.summary, dietTags: rc.dietTags, imageBase: r.imageBase,
       personal: r.clientId === clientId, variantNote: decryptNote(r.variantNoteEnc), inPlans: inPlans.get(r.id) ?? [],
     };
   });
@@ -362,7 +362,7 @@ portalRouter.get('/recipes/:id', async (c) => {
   if (!r) throw notFound('Tarif bulunamadı');
   const rc = decryptContent(r.contentEnc);
   const out: PortalRecipe = {
-    id: r.id, title: rc.title, category: r.category, summary: rc.summary, imageBase: r.imageBase,
+    id: r.id, title: rc.title, category: r.category, summary: rc.summary, dietTags: rc.dietTags, imageBase: r.imageBase,
     personal: r.clientId === clientId, variantNote: decryptNote(r.variantNoteEnc), inPlans: inPlans.get(r.id) ?? [],
     servings: r.servings, prepMinutes: r.prepMinutes, cookMinutes: r.cookMinutes, kcal: r.kcal,
     ingredients: rc.ingredients, steps: rc.steps, tip: rc.tip,

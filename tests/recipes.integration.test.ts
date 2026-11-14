@@ -269,6 +269,15 @@ describe('tarifler', () => {
     expect((await prisma.recipe.findUniqueOrThrow({ where: { id: row.id } })).variantNoteEnc).toBeNull();
   });
 
+  it('diyet türleri şifreli içerikte saklanır, vegan vejetaryeni de getirir', async () => {
+    const res = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send({ ...body, dietTags: ['GLUTEN_FREE', 'VEGAN'] });
+    expect(res.status).toBe(201);
+    recipeIds.push(res.body.recipe.id);
+    expect(res.body.recipe.dietTags).toEqual(['VEGAN', 'VEGETARIAN', 'GLUTEN_FREE']);
+    const raw = await prisma.$queryRaw<Record<string, unknown>[]>`SELECT * FROM recipes WHERE id = ${res.body.recipe.id}`;
+    expect(JSON.stringify(raw[0])).not.toContain('GLUTEN_FREE');
+  });
+
   it('tarif içeriği (ad, açıklama, malzemeler, adımlar, ipucu) veritabanında yalnızca şifreli durur; arama çalışır', async () => {
     const secret = { ...body, title: 'Test Glutensiz Kek', summary: 'Çölyak için', tip: 'Laktozsuz sütle', ingredients: ['glutensiz un'], steps: ['karıştır'] };
     const res = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send(secret);

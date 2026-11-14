@@ -31,6 +31,45 @@ export const RECIPE_DEFAULT_LABEL: Record<RecipeCategory, string> = {
   DRINK: 'İçecek önerisi',
 };
 
+/** Diyet türü etiketleri (tarif içeriğiyle birlikte şifreli saklanır; ayrı sütun yok) */
+export const DIET_TAGS = ['VEGAN', 'VEGETARIAN', 'GLUTEN_FREE', 'LACTOSE_FREE'] as const;
+export type DietTag = (typeof DIET_TAGS)[number];
+
+export const DIET_TAG_LABEL: Record<DietTag, string> = {
+  VEGAN: 'Vegan',
+  VEGETARIAN: 'Vejetaryen',
+  GLUTEN_FREE: 'Glutensiz',
+  LACTOSE_FREE: 'Laktozsuz',
+};
+
+export const DIET_TAG_NOTE: Record<DietTag, string> = {
+  VEGAN: 'Hayvansal ürün içermez: et, balık, süt ürünü, yumurta ve bal yok.',
+  VEGETARIAN: 'Et, tavuk ve balık içermez; süt ürünü ve yumurta içerebilir.',
+  GLUTEN_FREE: 'Malzemelerde buğday, arpa, çavdar ve yulaf yok. Çölyak hastalığında paketli ürünlerin etiketini ayrıca kontrol edin.',
+  LACTOSE_FREE: 'Süt ve süt ürünü içermez.',
+};
+
+/** schema.org suitableForDiet değerleri */
+export const DIET_TAG_SCHEMA: Record<DietTag, string> = {
+  VEGAN: 'https://schema.org/VeganDiet',
+  VEGETARIAN: 'https://schema.org/VegetarianDiet',
+  GLUTEN_FREE: 'https://schema.org/GlutenFreeDiet',
+  LACTOSE_FREE: 'https://schema.org/LowLactoseDiet',
+};
+
+/** Tekilleştirir, vegan ise vejetaryeni de ekler (vegan ⊂ vejetaryen) ve DIET_TAGS sırasına dizer */
+export function normalizeDietTags(tags: readonly DietTag[]): DietTag[] {
+  const set = new Set<DietTag>(tags);
+  if (set.has('VEGAN')) set.add('VEGETARIAN');
+  return DIET_TAGS.filter((t) => set.has(t));
+}
+
+/** Gösterimde vegan varsa vejetaryen ayrıca yazılmaz */
+export function visibleDietTags(tags: readonly DietTag[] | undefined): DietTag[] {
+  const list = normalizeDietTags(tags ?? []);
+  return list.includes('VEGAN') ? list.filter((t) => t !== 'VEGETARIAN') : list;
+}
+
 /** Ana sayfada aynı anda gösterilebilecek en fazla tarif */
 export const MAX_FEATURED_RECIPES = 3;
 
@@ -48,6 +87,8 @@ export const recipeInputSchema = z.object({
   ingredients: z.array(z.string().trim().min(1).max(120)).min(1, 'En az bir malzeme ekleyin').max(30, 'En fazla 30 malzeme'),
   steps: z.array(z.string().trim().min(1).max(500)).min(1, 'En az bir adım ekleyin').max(15, 'En fazla 15 adım'),
   tip: z.string().trim().max(300).default(''),
+  /** Diyet türleri (vegan seçiliyse vejetaryen otomatik eklenir) */
+  dietTags: z.array(z.enum(DIET_TAGS)).max(4).default([]).transform(normalizeDietTags),
   /** Web sitesinde /tarifler altında yayınlansın mı (kişiye özel varyasyonlarda her zaman false) */
   isPublished: z.boolean().default(false),
   /** Ana sayfadaki "Mutfaktan" şeridinde göster (yalnızca yayındaki, kişiye özel olmayan tarifler; en fazla MAX_FEATURED) */
@@ -92,6 +133,7 @@ export interface PublicRecipeCard {
   prepMinutes: number | null;
   cookMinutes: number | null;
   kcal: number | null;
+  dietTags: DietTag[];
   imageBase: string | null;
   publishedAt: string | null;
 }
