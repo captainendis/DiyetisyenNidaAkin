@@ -24,7 +24,10 @@ ask()  { local p="$1" d="${2:-}" v; read -rp "$p${d:+ [$d]}: " v; printf '%s' "$
 step "Uygulama klasörü"
 APP_ROOT="${1:-}"
 if [ -z "$APP_ROOT" ]; then
-  mapfile -t FOUND < <(find "$HOME" -maxdepth 3 -name app.cjs -not -path '*/node_modules/*' -not -path '*/.deploy/*' -not -path '*/nodevenv/*' 2>/dev/null | xargs -r -n1 dirname | sort -u)
+  # Not: "< <(...)" kullanılmaz — CloudLinux CageFS'te /dev/fd bulunmayabilir
+  FOUND_LIST="$(find "$HOME" -maxdepth 3 -name app.cjs -not -path '*/node_modules/*' -not -path '*/.deploy/*' -not -path '*/nodevenv/*' 2>/dev/null | xargs -r -n1 dirname | sort -u)"
+  FOUND=()
+  while IFS= read -r line; do [ -n "$line" ] && FOUND+=("$line"); done <<< "$FOUND_LIST"
   if [ "${#FOUND[@]}" -eq 1 ]; then
     APP_ROOT="$(ask "Bulunan klasör doğru mu? (Enter = evet, değilse tam yolu yazın)" "${FOUND[0]}")"
   else
