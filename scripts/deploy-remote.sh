@@ -93,6 +93,30 @@ case "${UPLOAD_DIR:-./storage}" in
   *) export UPLOAD_DIR="$APP_ROOT/${UPLOAD_DIR:-./storage}" ;;
 esac
 
+# Migration: .env'deki adresle dene; "veritabanına ulaşılamadı" (P1001) olursa önce 127.0.0.1 (Node "localhost"u IPv6 ::1
+# olarak çözebilir, cPanel MySQL çoğu zaman yalnızca IPv4/soket dinler), sonra yerel MySQL soket dosyası denenir.
+# Yalnızca bu komutun ortamı değişir; .env ve site etkilenmez.
+migrate_deploy() {
+  local out url sock
+  if out="$(npx --no-install prisma migrate deploy 2>&1)"; then printf '%s\n' "$out"; return 0; fi
+  printf '%s\n' "$out"
+  printf '%s' "$out" | grep -q 'P1001' || return 1
+  url="$(node -e 'const u=new URL(process.env.DATABASE_URL);if(u.hostname!=="localhost")process.exit(1);u.hostname="127.0.0.1";process.stdout.write(u.toString())' 2>/dev/null || true)"
+  if [ -n "$url" ]; then
+    echo "→ localhost yerine 127.0.0.1 ile deneniyor"
+    if out="$(DATABASE_URL="$url" npx --no-install prisma migrate deploy 2>&1)"; then printf '%s\n' "$out"; return 0; fi
+    printf '%s\n' "$out"
+  fi
+  for sock in /var/lib/mysql/mysql.sock /run/mysqld/mysqld.sock /var/run/mysqld/mysqld.sock /tmp/mysql.sock; do
+    [ -S "$sock" ] || continue
+    url="$(SOCK="$sock" node -e 'const u=new URL(process.env.DATABASE_URL);u.searchParams.set("socket",process.env.SOCK);process.stdout.write(u.toString())')"
+    echo "→ MySQL soketi ile deneniyor: $sock"
+    if DATABASE_URL="$url" npx --no-install prisma migrate deploy; then return 0; fi
+  done
+  echo "✖ Veritabanına ulaşılamadı. .env'deki DATABASE_URL'i kontrol edin (cPanel → MySQL Databases)." >&2
+  return 1
+}
+
 restart() {
   if [ -n "${RESTART_CMD:-}" ]; then
     step "Yeniden başlatılıyor: $RESTART_CMD"
@@ -176,7 +200,7 @@ case "$ACTION" in
     fi
 
     step "Veritabanı güncellemeleri (prisma migrate deploy)"
-    npx --no-install prisma migrate deploy
+    migrate_deploy
 
     step "Yeni derlemeye geçiliyor"
     swap_in "$REL"

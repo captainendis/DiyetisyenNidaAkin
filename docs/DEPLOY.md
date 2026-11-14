@@ -107,6 +107,7 @@ ve `npm ci` yapılır (birkaç dakika). Sonrakiler genelde 1–2 dakika sürer.
 | `DATA_ENCRYPTION_KEY değişmiş!` | `.env`'deki anahtar ilk dağıtımdakinden farklı. Doğru anahtarı geri koyun. Anahtarı bilerek değiştirmediyseniz `.deploy/key.sha256`'yı **silmeyin**. |
 | Migration hatası (`P3018` vb.) | Site eski sürümde çalışmaya devam eder. Hatayı düzeltin; Prisma başarısız migration'ı kaydettiği için sunucuda `npx prisma migrate resolve --rolled-back <migration_adı>` gerekebilir. MySQL'de DDL transaction içinde çalışmaz; yarım kalan değişiklik varsa yedekten dönün. |
 | İlk dağıtım uzun sürüyor (`npm ci`) | Paylaşımlı hostingde ilk kurulum 10–20 dk sürebilir; sonraki dağıtımlarda atlanır. Sunucudaki iş SSH'tan bağımsız arka planda çalışır: GitHub işi kesilse de sunucuda tamamlanır. Canlı günlük: `tail -f .deploy/logs/<commit>.log` (çıkış kodu `<commit>.log.exit`). |
+| `P1001: Can't reach database server at localhost:3306` | Dağıtım betiği otomatik olarak önce `127.0.0.1`, sonra yerel MySQL soket dosyasıyla yeniden dener. Hepsi başarısızsa `.env`'deki `DATABASE_URL`'i kontrol edin. |
 | `Başka bir dağıtım sürüyor` | Önceki dağıtım bitmeden ikincisi başladı; Actions zaten sıraya koyar. Elle çalıştırmada bekleyin. |
 | Doğrulama zaman aşımı → otomatik geri dönüş | cPanel → Setup Node.js App → `stderr.log`'a bakın (çoğunlukla eksik ortam değişkeni). |
 | `Eksik ayar: …` | Adım 5'teki secret/variable eksik. |
