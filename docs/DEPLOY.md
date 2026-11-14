@@ -38,6 +38,10 @@ canlıya çıkmaz. PR'larda ve diğer dallarda yalnızca CI çalışır.
 
 ### Bir kerelik kurulum
 
+> **Kısa yol:** Adım 1–4'ü sunucuda tek komutla yapabilirsiniz: `scripts/server-setup.sh` dosyasını sunucuya kopyalayıp
+> `bash server-setup.sh` çalıştırın. Anahtarı üretir ve yetkilendirir, `.env`'i cPanel değişkenlerinden oluşturur,
+> parmak izini alır ve GitHub'a girilecek tüm değerleri ekrana yazar. Ardından yalnızca adım 5 kalır.
+
 **1. Sunucuda SSH erişimi.** cPanel → **SSH Access** (Hosting Dünyam'da paket SSH içermiyorsa destekten açtırın).
 
 **2. Dağıtım anahtarı** (kendi bilgisayarınızda; parola koymayın — GitHub Actions kullanacak):
