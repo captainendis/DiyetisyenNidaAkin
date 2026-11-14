@@ -325,7 +325,7 @@ export function RecipeFormModal({
               disabled={!!d.client}
               onChange={(v) => set('isPublished', v)}
             />
-            {err.isPublished && <p className="mt-1.5 text-[0.78rem] text-danger" role="alert">{err.isPublished}</p>}
+            {err.isPublished && <p className="mt-1.5 text-[0.78rem] text-danger-ink" role="alert">{err.isPublished}</p>}
             {!d.client && d.isPublished && (
               <div className="mt-3 border-t border-panel-line pt-3">
                 <Switch
@@ -334,7 +334,7 @@ export function RecipeFormModal({
                   checked={d.isFeatured}
                   onChange={(v) => set('isFeatured', v)}
                 />
-                {err.isFeatured && <p className="mt-1.5 text-[0.78rem] text-danger" role="alert">{err.isFeatured}</p>}
+                {err.isFeatured && <p className="mt-1.5 text-[0.78rem] text-danger-ink" role="alert">{err.isFeatured}</p>}
               </div>
             )}
             {editing?.isPublished && editing.slug && d.isPublished && (
@@ -366,7 +366,7 @@ export function RecipeFormModal({
           />
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <p className="text-[0.8rem] font-semibold text-cocoa">Hazırlanışı<span className="ml-0.5 text-danger" aria-hidden>*</span></p>
+              <p className="text-[0.8rem] font-semibold text-cocoa">Hazırlanışı<span className="ml-0.5 text-danger-ink" aria-hidden>*</span></p>
               {d.steps.length < 15 && (
                 <Button variant="ghost" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => set('steps', [...d.steps, ''])}>Adım ekle</Button>
               )}
@@ -384,7 +384,7 @@ export function RecipeFormModal({
                 </li>
               ))}
             </ol>
-            {err.steps && <p className={cn('mt-1.5 text-[0.78rem] text-danger')} role="alert">{err.steps}</p>}
+            {err.steps && <p className={cn('mt-1.5 text-[0.78rem] text-danger-ink')} role="alert">{err.steps}</p>}
           </div>
           <Textarea label="İpucu (isteğe bağlı)" rows={2} value={d.tip} maxLength={300} error={err.tip} placeholder="Akşamdan hazırlayıp buzdolabında saklayabilirsin." onChange={(e) => set('tip', e.target.value)} />
         </div>

@@ -6,8 +6,8 @@ import { z } from 'zod';
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().default(4000),
-  PUBLIC_SITE_URL: z.string().url().default('http://localhost:5173'),
+  PORT: z.coerce.number().default(3000),
+  PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL gerekli'),
   DATA_ENCRYPTION_KEY: z
     .string()
@@ -23,8 +23,6 @@ const schema = z.object({
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
   MAIL_FROM: z.string().optional().default(''),
-  /** PDF üretimi için Chromium yolu (boşsa Playwright'ın kurulu tarayıcısı aranır) */
-  CHROMIUM_PATH: z.string().optional().default(''),
   DEMO_MODE: z.string().optional().default('false').transform((v) => v === 'true'),
 });
 

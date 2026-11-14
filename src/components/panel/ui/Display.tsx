@@ -27,10 +27,10 @@ export function CardHeader({ title, description, action, className }: { title: R
 export type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'accent' | 'dark';
 const badgeTones: Record<BadgeTone, string> = {
   neutral: 'bg-panel-bg text-cocoa ring-panel-line',
-  success: 'bg-success/12 text-[#4d7357] ring-success/25',
-  warning: 'bg-warning/15 text-[#93682a] ring-warning/30',
-  danger: 'bg-danger/12 text-[#a14f4f] ring-danger/25',
-  info: 'bg-info/12 text-[#56677d] ring-info/25',
+  success: 'bg-success/12 text-success-ink ring-success/25',
+  warning: 'bg-warning/15 text-warning-ink ring-warning/30',
+  danger: 'bg-danger/12 text-danger-ink ring-danger/25',
+  info: 'bg-info/12 text-info-ink ring-info/25',
   accent: 'bg-rose/25 text-[#8d5646] ring-rose/40',
   dark: 'bg-cocoa text-ivory ring-cocoa',
 };
@@ -55,10 +55,10 @@ export const STATUS_TONE: Record<AppointmentStatus, BadgeTone> = {
 /** Takvim blokları için arka plan / kenar renkleri */
 export const STATUS_BLOCK: Record<AppointmentStatus, string> = {
   NEW_REQUEST: 'bg-rose/30 border-rose-deep text-[#6f4336]',
-  PENDING: 'bg-warning/20 border-warning text-[#7d5720]',
-  CONFIRMED: 'bg-success/18 border-success text-[#3e5f47]',
+  PENDING: 'bg-warning/20 border-warning text-warning-ink',
+  CONFIRMED: 'bg-success/18 border-success text-success-ink',
   COMPLETED: 'bg-cocoa/10 border-cocoa text-cocoa',
-  CANCELLED: 'bg-danger/10 border-danger/60 text-[#9a4d4d] line-through decoration-danger/50',
+  CANCELLED: 'bg-danger/10 border-danger/60 text-danger-ink line-through decoration-danger/50',
   NO_SHOW: 'bg-panel-bg border-panel-muted text-panel-muted',
 };
 
@@ -90,7 +90,7 @@ export function SkeletonRows({ rows = 5 }: { rows?: number }) {
 export function EmptyState({ icon, title, description, action, className }: { icon?: ReactNode; title: string; description?: ReactNode; action?: ReactNode; className?: string }) {
   return (
     <div className={cn('flex flex-col items-center justify-center px-6 py-14 text-center', className)}>
-      {icon && <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-panel-bg text-cocoa/60">{icon}</div>}
+      {icon && <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-panel-bg text-cocoa/75">{icon}</div>}
       <p className="font-display text-[1.35rem] font-medium text-espresso">{title}</p>
       {description && <p className="mt-1.5 max-w-sm text-sm text-panel-muted">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
@@ -101,7 +101,7 @@ export function EmptyState({ icon, title, description, action, className }: { ic
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-12 text-center" role="alert">
-      <AlertCircle className="mb-3 h-6 w-6 text-danger" aria-hidden />
+      <AlertCircle className="mb-3 h-6 w-6 text-danger-ink" aria-hidden />
       <p className="text-sm font-semibold text-espresso">Veriler yüklenemedi</p>
       <p className="mt-1 max-w-sm text-sm text-panel-muted">{message ?? 'Bağlantınızı kontrol edip tekrar deneyin.'}</p>
       {onRetry && <Button variant="secondary" size="sm" className="mt-4" onClick={onRetry}>Tekrar dene</Button>}
@@ -122,9 +122,18 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
   );
 }
 
-export function Tabs<T extends string>({ tabs, value, onChange, className }: { tabs: { value: T; label: ReactNode; count?: number }[]; value: T; onChange: (v: T) => void; className?: string }) {
+/**
+ * Sekmeler. Dar ekranda yatay kaydırılır; dikey kaydırma kapalıdır.
+ * Alt çizgi kenarlık değil içe gölge ile çizilir: sekmeler kutunun dışına taşmadığı için
+ * (eskiden -mb-px ile taşıyordu) tarayıcı 1 piksellik dikey kaydırma çubuğu göstermez.
+ * underline={false}: altında zaten çizgi olan kartlarda (ör. tablo üstü) alt çizgiyi kaldırır.
+ */
+export function Tabs<T extends string>({ tabs, value, onChange, className, underline = true }: { tabs: { value: T; label: ReactNode; count?: number }[]; value: T; onChange: (v: T) => void; className?: string; underline?: boolean }) {
   return (
-    <div role="tablist" className={cn('-mx-1 flex gap-1 overflow-x-auto border-b border-panel-line px-1', className)}>
+    <div
+      role="tablist"
+      className={cn('-mx-1 flex gap-1 overflow-x-auto overflow-y-hidden px-1', underline && 'shadow-[inset_0_-1px_0_var(--color-panel-line)]', className)}
+    >
       {tabs.map((t) => (
         <button
           key={t.value}
@@ -133,7 +142,7 @@ export function Tabs<T extends string>({ tabs, value, onChange, className }: { t
           aria-selected={value === t.value}
           onClick={() => onChange(t.value)}
           className={cn(
-            '-mb-px flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors',
+            'flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors',
             value === t.value ? 'border-cocoa text-espresso' : 'border-transparent text-panel-muted hover:text-cocoa',
           )}
         >

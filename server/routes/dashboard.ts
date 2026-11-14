@@ -4,11 +4,10 @@
 /**
  * Dashboard — tüm sayılar canlı veritabanından hesaplanır. Karşılaştırma dönemleri yanıtta adıyla döner.
  */
-import { Router } from 'express';
 import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { prisma } from '../lib/db';
-import { parse } from '../lib/http';
+import { parse, query, router } from '../lib/http';
 import { requirePermission } from '../auth/session';
 import { appointmentInclude, toDTO } from '../services/appointments';
 import { getSettings } from '../services/settings';
@@ -16,8 +15,8 @@ import { dateStr } from '../../shared/schemas';
 import { TIME_ZONE, type AppointmentStatus } from '../../shared/constants';
 import { addDays, eachDay, endOfDayExclusive, startOfDay, toDateStr, todayStr } from '../../shared/time';
 
-export const dashboardRouter = Router();
-dashboardRouter.use(requirePermission('dashboard:read'));
+export const dashboardRouter = router();
+dashboardRouter.use('*', requirePermission('dashboard:read'));
 
 /** "Gerçekleşen/planlanan" görüşme: iptal edilmemiş, saati belli randevular */
 const ACTIVE: AppointmentStatus[] = ['PENDING', 'CONFIRMED', 'COMPLETED', 'NO_SHOW'];
@@ -33,7 +32,7 @@ function bucket(dates: (Date | null)[], days: string[]) {
   return days.map((date) => ({ date, value: m.get(date)! }));
 }
 
-dashboardRouter.get('/stats', async (_req, res) => {
+dashboardRouter.get('/stats', async (c) => {
   const today = todayStr();
   const days7 = eachDay(addDays(today, -6), today);
   const from7 = startOfDay(days7[0]);
@@ -65,7 +64,7 @@ dashboardRouter.get('/stats', async (_req, res) => {
     prisma.appointment.findMany({ where: { status: { in: MEETING }, startsAt: { gte: from7, lt: to7 } }, select: { startsAt: true } }),
   ]);
 
-  res.json({
+  return c.json({
     generatedAt: new Date().toISOString(),
     seriesLabel: 'Son 7 gün',
     cards: {
@@ -95,8 +94,8 @@ dashboardRouter.get('/stats', async (_req, res) => {
 
 const agendaQuery = z.object({ date: dateStr.optional() });
 
-dashboardRouter.get('/agenda', async (req, res) => {
-  const q = parse(agendaQuery, req.query);
+dashboardRouter.get('/agenda', async (c) => {
+  const q = parse(agendaQuery, query(c));
   const date = q.date ?? todayStr();
   const [items, pendingRequests, pendingTotal] = await Promise.all([
     prisma.appointment.findMany({
@@ -112,10 +111,10 @@ dashboardRouter.get('/agenda', async (req, res) => {
     }),
     prisma.appointment.count({ where: { status: { in: ['PENDING', 'NEW_REQUEST'] } } }),
   ]);
-  res.json({ date, items: items.map(toDTO), pendingRequests: pendingRequests.map(toDTO), pendingTotal });
+  return c.json({ date, items: items.map(toDTO), pendingRequests: pendingRequests.map(toDTO), pendingTotal });
 });
 
-dashboardRouter.get('/weekly', async (_req, res) => {
+dashboardRouter.get('/weekly', async (c) => {
   const today = todayStr();
   const days = eachDay(addDays(today, -6), today);
   const rows = await prisma.appointment.findMany({
@@ -130,7 +129,7 @@ dashboardRouter.get('/weekly', async (_req, res) => {
     else if (r.status === 'CANCELLED' || r.status === 'NO_SHOW') d.cancelled++;
     else if (r.status === 'PENDING' || r.status === 'CONFIRMED') d.open++;
   }
-  res.json({
+  return c.json({
     days: [...map.values()],
     definitions: {
       completed: 'Tamamlandı olarak işaretlenen',
@@ -144,7 +143,7 @@ dashboardRouter.get('/weekly', async (_req, res) => {
  * Kurulum kontrol listesi — sitenin yayına hazır olması için panelden doldurulması gerekenler.
  * Her madde gerçek veriden hesaplanır; tamamlandıkça otomatik işaretlenir.
  */
-dashboardRouter.get('/setup', async (_req, res) => {
+dashboardRouter.get('/setup', async (c) => {
   const s = await getSettings(['contact', 'social', 'media', 'about', 'kvkk', 'business']);
   const [workingDays, services, publishedPosts] = await Promise.all([
     prisma.availabilityRule.count({ where: { isWorking: true } }),
@@ -166,5 +165,5 @@ dashboardRouter.get('/setup', async (_req, res) => {
     { key: 'legalName', group: 'KVKK', label: 'Veri sorumlusu (resmî unvan)', done: !!s.business.legalName, href: '/panel/ayarlar?sekme=isletme' },
     { key: 'legal', group: 'KVKK', label: 'Yasal metinler hukuk uzmanınca incelendi', done: s.kvkk.legalReviewCompleted, href: '/panel/ayarlar?sekme=kvkk' },
   ];
-  res.json({ items, done: items.filter((i) => i.done).length, total: items.length });
+  return c.json({ items, done: items.filter((i) => i.done).length, total: items.length });
 });

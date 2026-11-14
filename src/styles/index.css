@@ -17,6 +17,11 @@
  *   rose      #DDAFA0  vurgu (yalnızca CTA ve kilit anlar)
  *   gold      #B99569  ince çizgiler, numaralar, ikincil vurgu
  *   mist      #B9A99A  koyu zeminde ikincil metin
+ *
+ *  Kontrast kuralı (WCAG 2.1 AA): açık zeminde (ivory/cream/sand/beyaz/panel-bg)
+ *  metin ve anlam taşıyan ikon için gold, rose, rose-deep ve durum renkleri
+ *  KULLANILMAZ — bunların "-ink" tonu kullanılır (hepsi ≥ 4,5:1). Ana renkler
+ *  koyu zeminde metin, açık zeminde yalnızca dolgu/çizgi/süs içindir.
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -31,16 +36,23 @@
   --color-rose-deep: #c99282;
   --color-gold: #b99569;
   --color-mist: #b9a99a;
-  --color-taupe: #7a6555;
+  --color-taupe: #6e5a4b;
+  /* Açık zeminde metin tonları */
+  --color-gold-ink: #7f6239;
+  --color-rose-ink: #9a5646;
 
   /* Panel */
   --color-panel-bg: #f5f1ea;
   --color-panel-line: #e7dfd3;
-  --color-panel-muted: #8a7a6d;
+  --color-panel-muted: #6b5c50;
   --color-success: #6c9275;
   --color-warning: #d5a35b;
   --color-danger: #c56f6f;
   --color-info: #7d8fa6;
+  --color-success-ink: #3d6447;
+  --color-warning-ink: #85591b;
+  --color-danger-ink: #a2403b;
+  --color-info-ink: #4a5c74;
 
   --font-display: 'Cormorant Garamond Variable', 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-sans: 'Manrope Variable', Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -86,6 +98,18 @@
   }
   .panel-root :focus-visible {
     outline-color: var(--color-cocoa);
+  }
+  /* Panel içindeki koyu bölgeler (yan menü, giriş ekranının sol paneli): koyu halka orada kayboluyordu (1,2:1) */
+  .panel-root :is(.bg-espresso, .bg-cocoa, .bg-umber) :focus-visible {
+    outline-color: var(--color-rose);
+  }
+  /* Gül odak halkası açık zeminde 1,8:1 kalıyordu (WCAG 2.2 için ≥ 3:1). Açık zeminlerde koyu halka.
+     Halka öğenin DIŞINA (üst zemine) çizilir; bu yüzden sınır koyu kutunun kendisi değil İÇİNDEKİLERDİR:
+     koyu buton açık zeminde koyu halka alır, koyu kutunun içindeki bağlantılar gül halkayı korur. */
+  @scope (.bg-ivory, .bg-cream, .bg-sand, .bg-white) to (:is(.bg-espresso, .bg-cocoa, .bg-umber) > *) {
+    :focus-visible {
+      outline-color: var(--color-espresso);
+    }
   }
   /* Telefon numaraları: eski stil rakamlar yerine düz (lining) rakamlar — okunabilirlik için */
   a[href^="tel:"] {
@@ -162,10 +186,12 @@
     height: 1px;
     background: var(--color-gold);
   }
-  .prose-editorial ol { @apply my-6 list-decimal space-y-2 pl-6 marker:text-gold; }
+  .prose-editorial ol { @apply my-6 list-decimal space-y-2 pl-6 marker:text-gold-ink; }
   .prose-editorial a { @apply text-espresso underline decoration-gold/60 underline-offset-4 hover:decoration-espresso; }
   .prose-editorial strong { @apply font-semibold text-espresso; }
 
   /* Panel: tablo sayıları */
   .tabular { font-variant-numeric: tabular-nums; }
+  /* Başlık yazı tipinde (Cormorant) saat, kilo, tarih: eski stil yerine düz rakam — satırdan sarkmasın */
+  .nums { font-variant-numeric: lining-nums tabular-nums; }
 }

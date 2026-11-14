@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { useEffect, useRef, useState, type ComponentType } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation } from '@/lib/router';
 import {
   BarChart3, Bell, CalendarDays, ClipboardList, CalendarCog, CookingPot, ExternalLink, FileText, LayoutDashboard, Leaf, LogOut, Menu, Settings, UserRound, Users, X,
 } from 'lucide-react';
@@ -61,7 +61,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           if (!items.length) return null;
           return (
             <div key={g.group}>
-              <p className="px-3 pb-2 text-[0.65rem] font-semibold tracking-[0.18em] text-mist/70 uppercase">{g.group}</p>
+              <p className="px-3 pb-2 text-[0.65rem] font-semibold tracking-[0.18em] text-mist uppercase">{g.group}</p>
               <ul className="space-y-0.5">
                 {items.map((i) => (
                   <li key={i.to}>
@@ -102,7 +102,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <button type="button" onClick={() => void logout()} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[0.85rem] text-cream/70 hover:bg-cream/[0.05] hover:text-ivory">
           <LogOut className="h-4 w-4 text-mist" /> Oturumu kapat
         </button>
-        {user && <p className="truncate px-3 pt-2 text-[0.72rem] text-mist/70">{user.email}</p>}
+        {user && <p className="truncate px-3 pt-2 text-[0.72rem] text-mist">{user.email}</p>}
       </div>
     </div>
   );

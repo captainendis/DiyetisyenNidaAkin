@@ -14,7 +14,7 @@ export function ConsentGate({ client, onChanged, what }: { client: Client; onCha
   const [open, setOpen] = useState(false);
   return (
     <Card className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:p-8">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-warning/15 text-[#93682a]"><ShieldAlert className="h-5 w-5" /></span>
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-warning/15 text-warning-ink"><ShieldAlert className="h-5 w-5" /></span>
       <div className="flex-1">
         <p className="font-display text-[1.4rem] leading-tight text-espresso">Açık rıza kaydı olmadan {what} tutulamaz</p>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-panel-muted">

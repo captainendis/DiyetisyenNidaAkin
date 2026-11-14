@@ -7,7 +7,7 @@
  * İkincil: alt çizgili metin bağlantısı.
  */
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { Link, type LinkProps } from 'react-router';
+import { Link, type LinkProps } from '@/lib/router';
 import { CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/text';
 

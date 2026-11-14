@@ -20,7 +20,7 @@ export function Approach() {
             {rest.length > 0 && (
               <>
                 <br />
-                <em className="font-normal text-rose-deep">{rest.join(',').trim()}</em>
+                <em className="font-normal text-rose-ink">{rest.join(',').trim()}</em>
               </>
             )}
           </h2>

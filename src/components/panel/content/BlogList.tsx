@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from '@/lib/router';
 import { FileText, Plus, Search, ShieldCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApi, useDebounced } from '@/hooks/useApi';
@@ -92,7 +92,7 @@ export function BlogList() {
                 cell: (r) => (
                   <span className="inline-flex items-center gap-1.5">
                     <Badge tone={POST_TONE[r.status]}>{POST_STATUS_LABEL[r.status]}</Badge>
-                    {r.expertReviewed && <ShieldCheck className="h-4 w-4 text-success" aria-label="Uzman onaylı" />}
+                    {r.expertReviewed && <ShieldCheck className="h-4 w-4 text-success-ink" aria-label="Uzman onaylı" />}
                   </span>
                 ),
               },

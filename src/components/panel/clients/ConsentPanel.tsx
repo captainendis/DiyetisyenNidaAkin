@@ -107,7 +107,7 @@ export function ConsentPanel({ client, onChanged }: { client: Client; onChanged:
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 py-3.5">
           <div className="flex items-start gap-2.5">
-            {client.healthConsentAt ? <ShieldCheck className="mt-0.5 h-4 w-4 text-success" aria-hidden /> : <ShieldAlert className="mt-0.5 h-4 w-4 text-warning" aria-hidden />}
+            {client.healthConsentAt ? <ShieldCheck className="mt-0.5 h-4 w-4 text-success-ink" aria-hidden /> : <ShieldAlert className="mt-0.5 h-4 w-4 text-warning-ink" aria-hidden />}
             <div>
               <dt className="font-semibold text-espresso">Sağlık verisi açık rızası</dt>
               <dd className="mt-0.5 text-panel-muted">

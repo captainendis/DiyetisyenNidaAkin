@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { useRef, useState, type DragEvent } from 'react';
-import { Download, FileText, ImageIcon, Lock, Trash2, UploadCloud } from 'lucide-react';
+import { Download, Eye, EyeOff, FileText, ImageIcon, Lock, Trash2, UploadCloud } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { cn, formatDateTime } from '@/lib/format';
@@ -46,6 +46,16 @@ export function FilesTab({ client, onClientChanged }: { client: Client; onClient
     if (input.current) input.current.value = '';
   }
 
+  async function toggleVisible(f: ClientFile) {
+    try {
+      await api.patch(`/clients/${client.id}/files/${f.id}/visibility`, { visibleToClient: !f.visibleToClient });
+      setData((d) => ({ items: (d?.items ?? []).map((x) => (x.id === f.id ? { ...x, visibleToClient: !f.visibleToClient } : x)) }));
+      success(f.visibleToClient ? 'Dosya danışandan gizlendi' : 'Dosya danışanla paylaşıldı', f.originalName);
+    } catch (e) {
+      toastError('Değiştirilemedi', (e as Error).message);
+    }
+  }
+
   async function remove(f: ClientFile) {
     if (!(await confirm({ title: 'Dosya silinsin mi?', description: `"${f.originalName}" kalıcı olarak silinecek.`, confirmLabel: 'Sil', tone: 'danger' }))) return;
     try {
@@ -73,7 +83,7 @@ export function FilesTab({ client, onClientChanged }: { client: Client; onClient
           onDrop={onDrop}
           className={cn('flex flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors', drag ? 'border-cocoa bg-white' : 'border-panel-line bg-white/50')}
         >
-          <UploadCloud className="mb-3 h-7 w-7 text-cocoa/60" aria-hidden />
+          <UploadCloud className="mb-3 h-7 w-7 text-cocoa/75" aria-hidden />
           <p className="text-sm font-semibold text-espresso">{uploading ? `Yükleniyor: ${uploading}` : 'Dosyaları buraya sürükleyin'}</p>
           <p className="mt-1 text-[0.8rem] text-panel-muted">PDF, JPG, PNG veya WEBP · en fazla 10 MB · şifreli saklanır</p>
           <button type="button" disabled={!!uploading} onClick={() => input.current?.click()} className="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-cocoa ring-1 ring-panel-line ring-inset hover:bg-panel-bg disabled:opacity-50">
@@ -97,19 +107,27 @@ export function FilesTab({ client, onClientChanged }: { client: Client; onClient
                   {f.mimeType === 'application/pdf' ? <FileText className="h-4 w-4" /> : <ImageIcon className="h-4 w-4" />}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-espresso">{f.originalName}</p>
+                  <p className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm font-semibold text-espresso">{f.originalName}</span>
+                    <span className={cn('shrink-0 rounded px-1.5 py-px text-[0.68rem] font-semibold', f.visibleToClient ? 'bg-success/12 text-success-ink' : 'bg-panel-bg text-panel-muted')}>{f.visibleToClient ? 'Danışan görür' : 'Gizli'}</span>
+                  </p>
                   <p className="tabular text-[0.75rem] text-panel-muted">
                     {size(f.sizeBytes)} · {formatDateTime(f.createdAt)}{f.uploadedBy ? ` · ${f.uploadedBy.firstName} ${f.uploadedBy.lastName}` : ''}
                   </p>
                 </div>
                 <IconButton label={`${f.originalName} indir`} onClick={() => api.download(`/clients/${client.id}/files/${f.id}/download`)}><Download className="h-4 w-4" /></IconButton>
+                {can('clinical:write') && (
+                  <IconButton label={f.visibleToClient ? `${f.originalName} danışandan gizle` : `${f.originalName} danışanla paylaş`} onClick={() => void toggleVisible(f)}>
+                    {f.visibleToClient ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </IconButton>
+                )}
                 {can('clinical:write') && <IconButton label={`${f.originalName} sil`} onClick={() => void remove(f)}><Trash2 className="h-4 w-4" /></IconButton>}
               </li>
             ))}
           </ul>
         )}
       </Card>
-      <p className="flex items-center gap-1.5 text-[0.75rem] text-panel-muted"><Lock className="h-3.5 w-3.5" /> Dosyalar sunucuda şifrelenmiş olarak saklanır; yalnızca yetkili kullanıcılar indirebilir ve her indirme kayıt altına alınır.</p>
+      <p className="flex items-center gap-1.5 text-[0.75rem] text-panel-muted"><Lock className="h-3.5 w-3.5" /> Dosyalar sunucuda şifrelenmiş olarak saklanır ve her indirme kayıt altına alınır. “Danışan görür” işaretli dosyaları danışan kendi hesabından indirebilir; göz simgesiyle gizleyebilirsiniz.</p>
     </div>
   );
 }

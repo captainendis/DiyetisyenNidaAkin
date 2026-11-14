@@ -34,50 +34,57 @@ Diyetisyen Nida Akın için geliştirilmiş, **premium editorial tasarımlı her
 
 | Katman | Seçim |
 | --- | --- |
-| Ön yüz | React 19 · TypeScript · Vite · Tailwind CSS v4 · Motion · Lucide (yalnızca panelde) |
-| Arka uç | Node.js (≥ 20.19) · Express 5 · Zod |
-| Veritabanı | PostgreSQL 16 · Prisma ORM 7 (`@prisma/adapter-pg`) |
+| Uygulama | Next.js 16 (App Router, sunucu tarafı render) · React 19 · TypeScript · Tailwind CSS v4 · Motion · Lucide (yalnızca panelde) |
+| API | Hono (Next.js route handler içinde, `/api/*`) · Zod |
+| Veritabanı | MySQL 8.0.16+ / MariaDB 10.6+ · Prisma ORM 7 (`@prisma/adapter-mariadb`) |
 | Kimlik doğrulama | Sunucu taraflı oturum (HttpOnly + SameSite=Strict cookie) · CSRF token · scrypt parola özeti |
 | Şifreleme | AES-256-GCM (görüşme notları, ölçümler, danışan dosyaları, beslenme planları, tarif içerikleri ve varyasyon notları) |
-| Saat dilimi | Tüm iş kuralları `Europe/Istanbul`; veritabanında `timestamptz` (UTC) |
+| Saat dilimi | Tüm iş kuralları `Europe/Istanbul`; veritabanında `DATETIME(3)` (UTC) |
 
-Tek bir Node süreci hem API'yi hem de derlenmiş siteyi sunar (üretimde). Geliştirmede Vite (5173) API'ye (4000) proxy yapar.
+Tek bir Node süreci (Next.js) hem sayfaları hem API'yi sunar; Docker gerekmez. Paylaşımlı hostingde cPanel
+**Node.js App** ile çalışır (bkz. [Üretim derlemesi ve dağıtım](#üretim-derlemesi-ve-dağıtım)).
 
 ## Proje yapısı
 
 ```
 ├── prisma/
 │   ├── schema.prisma          # Veritabanı şeması (roller, kullanıcılar, randevular, danışanlar, …)
-│   ├── migrations/            # SQL migration'ları (onaylı randevu çakışma kısıtı dahil)
+│   ├── migrations/            # MySQL migration'ları
 │   ├── seed.ts                # İlk kurulum verisi (idempotent)
 │   └── seed-demo.ts           # Yalnızca DEMO_MODE=true iken örnek veri
 ├── shared/                    # İstemci + sunucu ortak kodu
 │   ├── site-config.ts         # ★ MERKEZİ YAPILANDIRMA (iletişim, sosyal medya, işletme bilgisi — hepsi null)
 │   ├── settings.ts            # İçerik şemaları + varsayılan metinler
 │   ├── schemas.ts             # Zod doğrulama şemaları (form + API)
+│   ├── plan-template.ts       # Beslenme planı A4 şablonu (önizleme + yazdırma)
 │   ├── constants.ts           # Durum etiketleri, sabitler
 │   ├── seed-content.ts        # Hizmet / blog / SSS taslakları
 │   └── time.ts                # Europe/Istanbul tarih yardımcıları
-├── server/
-│   ├── index.ts / app.ts      # Express uygulaması, güvenlik başlıkları, periyodik işler
+├── server/                    # Sunucu kodu (yalnızca Node'da çalışır)
+│   ├── app.ts                 # API uygulaması (Hono): oturum, hız sınırı, hata yakalama, route'lar
+│   ├── jobs.ts                # Periyodik işler (oturum temizliği, randevu hatırlatıcıları)
 │   ├── auth/                  # Oturum, CSRF, rol-izin eşlemesi
 │   ├── routes/                # REST uç noktaları (modül başına bir dosya)
-│   ├── services/              # Müsaitlik/çakışma, randevu iş kuralları, bildirimler, e-posta, ayarlar
-│   ├── lib/                   # env, db, crypto, audit, storage, http hataları
-│   └── seo.ts                 # robots.txt, sitemap.xml, sunucu taraflı meta enjeksiyonu
+│   ├── services/              # Müsaitlik/çakışma, randevu iş kuralları, bildirimler, e-posta, yazdırma sayfası
+│   ├── lib/                   # env, db, crypto, audit, storage, http yardımcıları
+│   └── seo.ts                 # Sayfa meta bilgisi, robots.txt, sitemap.xml
 ├── src/
-│   ├── components/            # layout, navigation, sections, cards, forms, ui, icons, panel, seo, motion
-│   ├── pages/                 # Herkese açık sayfalar + pages/panel/*
+│   ├── app/                   # Next.js App Router: sayfalar, layout'lar, /api, /uploads, robots, sitemap
+│   ├── proxy.ts               # Sayfa istekleri için CSP (istek başına nonce)
+│   ├── instrumentation.ts     # Sunucu açılışında periyodik işleri başlatır
+│   ├── views/                 # Sayfa bileşenleri (herkese açık + views/panel/* + views/portal/*)
+│   ├── components/            # layout, navigation, sections, cards, forms, ui, icons, panel, portal, seo, motion
 │   ├── data/                  # SiteContext (panelden yönetilen içerik)
-│   ├── config/ lib/ hooks/ styles/
-├── scripts/                   # create-admin, reset-password, retention, backup, prepare-images
-├── public/images/             # Optimize mekân görselleri (AVIF + WebP)
+│   ├── lib/router.tsx         # Link / useNavigate / useParams … (next/navigation üzerinde)
+│   ├── config/ hooks/ styles/
+├── scripts/                   # create-admin, reset-password, retention, backup, migrate-pg-to-mysql, prepare-images
+├── public/                    # Statik dosyalar: görseller (AVIF + WebP), favicon, yazdırma fontları
 └── assets-src/                # Kaynak görseller
 ```
 
 ## Hızlı kurulum (geliştirme)
 
-Gereksinimler: Node.js ≥ 20.19 (önerilen 22), PostgreSQL ≥ 14, (görseller için isteğe bağlı) Python 3 + Pillow.
+Gereksinimler: Node.js ≥ 20.19 (önerilen 22), MySQL 8.0.16+ veya MariaDB 10.6+, (görseller için isteğe bağlı) Python 3 + Pillow.
 
 ```bash
 # 1) Bağımlılıklar
@@ -88,9 +95,10 @@ cp .env.example .env
 # DATA_ENCRYPTION_KEY üretin ve .env'e yazın:
 node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-# 3) Veritabanı (örnek)
-createuser -P nida            # şifre: .env'deki ile aynı
-createdb -O nida nidaakin
+# 3) Veritabanı (örnek; utf8mb4 şart)
+mysql -u root -p -e "CREATE DATABASE nidaakin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  CREATE USER 'nida'@'localhost' IDENTIFIED BY 'nida_dev_pw';
+  GRANT ALL ON nidaakin.* TO 'nida'@'localhost';"
 
 # 4) Şema + istemci + ilk veriler
 npx prisma migrate deploy     # (geliştirmede şema değiştirirseniz: npm run db:migrate)
@@ -101,8 +109,11 @@ npm run db:seed
 npm run admin:create
 
 # 6) Çalıştır
-npm run dev                   # Site: http://localhost:5173  ·  Panel: http://localhost:5173/panel
+npm run dev                   # Site: http://localhost:3000  ·  Panel: http://localhost:3000/panel
 ```
+
+`npm run db:migrate` (yeni migration üretme) gölge veritabanı açtığı için veritabanı kullanıcısının
+`CREATE DATABASE` yetkisi olmalıdır; paylaşımlı hostingde yalnızca `db:deploy` kullanılır.
 
 ## Ortam değişkenleri
 
@@ -110,14 +121,14 @@ Tam liste ve açıklamalar `.env.example` içindedir.
 
 | Değişken | Zorunlu | Açıklama |
 | --- | --- | --- |
-| `DATABASE_URL` | ✔ | PostgreSQL bağlantı adresi |
+| `DATABASE_URL` | ✔ | MySQL/MariaDB bağlantı adresi: `mysql://kullanici:sifre@sunucu:3306/veritabani` (şifredeki özel karakterler URL kodlu) |
 | `DATA_ENCRYPTION_KEY` | ✔ | 32 baytlık base64 anahtar. Klinik veriler bununla şifrelenir. **Kaybedilirse veri çözülemez; değiştirilirse eski veri okunamaz.** Yedeklerden ayrı, güvenli bir kasada saklayın. |
 | `PUBLIC_SITE_URL` | ✔ (üretim) | Canonical, sitemap, Open Graph ve e-posta bağlantıları için kök adres (ör. `https://nidaakin.com`) |
-| `NODE_ENV` | | `production` iken cookie'ler `Secure` olur ve sunucu derlenmiş siteyi servis eder |
-| `PORT` | | Varsayılan 4000 |
+| `NODE_ENV` | | `production` iken cookie'ler `Secure` olur, CSP sıkılaşır |
+| `PORT` | | Varsayılan 3000 (cPanel Node.js App kendisi atar) |
 | `TRUST_PROXY` | | Ters vekil arkasında `1` (gerçek istemci IP'si → hız sınırlama doğru çalışır) |
 | `SESSION_TTL_HOURS` / `SESSION_REMEMBER_DAYS` | | Oturum süreleri (varsayılan 12 saat / "Beni hatırla" 30 gün) |
-| `UPLOAD_DIR` | | Yüklemeler (varsayılan `./storage`). `private/` alt klasörü şifreli danışan dosyalarıdır, asla statik servis edilmez |
+| `UPLOAD_DIR` | ✔ (üretim) | Yüklemeler (varsayılan `./storage`). Üretimde uygulama klasörünün **dışında mutlak bir yol** verin (derlemede silinmesin). `private/` alt klasörü şifreli danışan dosyalarıdır, asla statik servis edilmez |
 | `SMTP_*`, `MAIL_FROM` | | İsteğe bağlı. Boşsa e-posta **gönderilmez** ve sistem gönderiyormuş gibi davranmaz |
 | `DEMO_MODE` | | `true` ise panelde "Demo modu" uyarısı görünür ve demo seed çalıştırılabilir |
 
@@ -133,10 +144,15 @@ npm run db:seed        # temel verileri yazar; mevcut içeriği EZMEZ, tekrar ç
 Tablolar: `users`, `roles`, `sessions`, `password_reset_tokens`, `clients`, `appointments`,
 `appointment_status_history`, `services`, `availability_rules`, `blocked_dates`, `notifications`,
 `notification_deliveries`, `consultation_notes`, `measurements`, `client_files`, `blog_categories`,
-`blog_posts`, `faqs`, `media_assets`, `website_settings`, `nutrition_plans`, `recipes`, `audit_logs`.
+`blog_posts`, `faqs`, `media_assets`, `website_settings`, `nutrition_plans`, `recipes`, `audit_logs`,
+`client_accounts`, `client_account_tokens`, `client_sessions`, `client_messages`, `app_locks`.
 
-`appointments_no_overlap_confirmed` adlı PostgreSQL **exclusion constraint**, onaylanmış/tamamlanmış randevuların
-zaman aralıklarının çakışmasını veritabanı seviyesinde de engeller (uygulama katmanındaki kilitli kontrolün yedeği).
+Randevu yazımları `app_locks` tablosundaki satır kilidiyle (`INSERT … ON DUPLICATE KEY UPDATE`, `READ COMMITTED`
+transaction) serileştirilir: aynı anda gelen iki onay/oluşturma isteği aynı boşluğu kapatamaz. `appointments_time_order`
+CHECK kısıtı bitişin başlangıçtan sonra olmasını veritabanı seviyesinde de zorunlu kılar.
+
+**PostgreSQL'den geçiş:** Eski (PostgreSQL) kurulumdaki veriler `npm run data:migrate-pg` ile yeni MySQL
+veritabanına birebir kopyalanır; adımlar için [docs/DEPLOY.md](docs/DEPLOY.md#postgresqlden-mysqle-geçiş-tek-seferlik).
 
 ## Yönetici hesabı oluşturma
 
@@ -192,7 +208,7 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   stüdyonun üst katındaki danışmanlık alanında yapılır; vitrindeki pilates/yoga vb. stüdyonun hizmetleridir ve sitede
   diyetisyenin hizmeti olarak gösterilmez.
 
-## Beslenme planları (tek sayfa PDF)
+## Beslenme planları (A4, yazdır / PDF)
 
 **Panel → Beslenme Planları** veya **Danışan → Beslenme Planları** sekmesi.
 
@@ -201,14 +217,14 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
 - Danışan seçilince başlık Türkçe ekle otomatik oluşur (“Ömer’in / Ayşe’nin / Nida’nın beslenme planı”).
 - **Şablonlar:** Danışana bağlı olmayan listeler. Kurulumda örnek plandan oluşturulan “1. ay, 1. liste” şablonu gelir;
   yeni planlar bir şablondan kopyalanarak başlar. Her plan “Şablon olarak kaydet” ile şablona dönüştürülebilir.
-- **Canlı önizleme** PDF ile aynı şablonu kullanır (`shared/plan-template.ts`). İçerik uzarsa tüm ölçüler orantılı
-  küçültülerek **tek A4 sayfaya sığdırılır**; yazı %85'in altına inerse uyarı verilir, sığmazsa (%72 sınırı) indirmede bildirilir.
-- **PDF** sunucuda Chromium ile üretilir: vektör metin (telefonda yakınlaştırınca net kalır, aranabilir), gömülü Manrope
-  yazı tipi, etiketli (erişilebilir) PDF, renkler baskıda korunur. PDF diske yazılmaz, doğrudan indirilir.
+- **Canlı önizleme** yazdırma sayfasıyla aynı şablonu kullanır (`shared/plan-template.ts`). İçerik uzarsa tüm ölçüler orantılı
+  küçültülerek **tek A4 sayfaya sığdırılır**; yazı %85'in altına inerse uyarı verilir, sığmazsa (%72 sınırı) önizlemede bildirilir.
+- **Yazdır / PDF:** Sunucuda PDF üretilmez (Chromium gerekmez). Plan, aynı şablonla bağımsız bir A4 yazdırma sayfası
+  olarak yeni sekmede açılır ve yazdırma penceresi gelir; **“PDF olarak kaydet”** seçilerek PDF alınır (kenar boşlukları:
+  Yok, arka plan grafikleri: Açık). Yazı tipi sayfaya gömülüdür, sayfa dış kaynak yüklemez; tek betiği nonce'lu sıkı
+  CSP ile çalışır. Danışanlar da Hesabım → Listelerim'den aynı şekilde yazdırır.
 - Plan içerikleri sağlık verisi niteliği taşıyabileceğinden **şifreli** saklanır; yalnızca klinik yetkili roller erişir,
-  görüntüleme ve PDF indirme denetim kaydına yazılır.
-- Sunucuda Chromium gerekir: Docker imajında otomatik kurulur; diğer ortamlarda `CHROMIUM_PATH` ile yolu verin
-  (boşsa Playwright'ın kurulu tarayıcısı aranır).
+  görüntüleme ve yazdırma denetim kaydına yazılır.
 
 ## Tarifler ve plan ek sayfası
 
@@ -223,11 +239,11 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   8 tarif eklenir (seçim penceresinden yeni tarif de oluşturulabilir). Her tarifin danışanın göreceği bir etiketi vardır;
   plandaki öğün adına göre otomatik önerilir (“Kahvaltı için öneri”, “Ara öğün için öneri” …) ve değiştirilebilir. Sıra
   değiştirilebilir, ek sayfa başlığı düzenlenebilir.
-- **PDF:** 1. sayfa plan olarak kalır (altyazıda “Tarif önerileri sonraki sayfada.” notu çıkar); tarifler fotoğraflarıyla
+- **Yazdırma:** 1. sayfa plan olarak kalır (altyazıda “Tarif önerileri sonraki sayfada.” notu çıkar); tarifler fotoğraflarıyla
   ek A4 sayfalara **otomatik dağıtılır** (sığdığı kadar sayfa başına, genelde 2 tarif). Tek başına sayfayı aşan uzun bir
   tarif %70'e kadar küçültülür; yine sığmazsa önizlemede ve indirmede uyarı verilir. Canlı önizleme tüm sayfaları gösterir.
-- Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planların PDF'i güncel hâliyle basılır; silinen tarif
-  planlarda “silinmiş” olarak işaretlenir ve PDF'e basılmaz.
+- Planlar tarife **referansla** bağlanır: tarif sonradan düzenlenirse planlar güncel hâliyle basılır; silinen tarif
+  planlarda “silinmiş” olarak işaretlenir ve basılmaz.
 - **Şifreleme:** kişiye özel tarifler sağlık bilgisi içerebildiği için (“Glutensiz …”, “laktozsuz süt”) **tüm tariflerde**
   ad, kısa açıklama, malzemeler, adımlar ve ipucu tek bir alanda (`recipes.contentEnc`), **varyasyon notu** ayrı bir alanda
   (`recipes.variantNoteEnc`) **AES-256-GCM ile şifreli** saklanır (`DATA_ENCRYPTION_KEY`). Bir tarif sonradan danışana
@@ -265,7 +281,7 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
   **varyasyon notu** (“Laktozsuz süt ve peynirle”) yazılır. Ana tarif değişmez; varyasyonun varyasyonu da kök tarife bağlanır.
 - Varyasyon bir **danışana bağlanabilir** (kişiye özel). Kişiye özel tarifler:
   - **asla yayınlanamaz** (sunucu reddeder),
-  - yalnızca o danışanın planlarında tarif seçicide görünür, PDF'te tarif adının altında **“Sana özel.”** notuyla basılır,
+  - yalnızca o danışanın planlarında tarif seçicide görünür, çıktıda tarif adının altında **“Sana özel.”** notuyla basılır,
   - danışan profilinde (Beslenme Planları sekmesi) listelenir,
   - danışan silindiğinde (panelden veya saklama süresi betiğiyle) fotoğraflarıyla birlikte **silinir**.
 - **Plan düzenleyiciden hızlı uyarlama:** danışan planındaki bir tarifin yanındaki dal simgesi (“Ayşe için uyarla”)
@@ -281,7 +297,7 @@ Demo danışanların e-postası `@demo.invalid` ile biter. Demo betiği çalış
    **sahte bir onay gösterilmez**; talebin incelendiği ve iletişime geçileceği söylenir.
 3. Panelde bildirim oluşur, bildirim sayacı ve dashboard güncellenir.
 4. Diyetisyen onaylar / reddeder / tarihi-saati değiştirir. Onay ve saat değişikliğinde çakışma kontrolü
-   **PostgreSQL advisory lock + transaction** içinde yeniden yapılır; ayrıca veritabanı kısıtı vardır.
+   **satır kilidi (`app_locks`) + transaction** içinde yeniden yapılır.
 5. Onaylanan talep, telefon/e-posta ile eşleşen danışana bağlanır; yoksa danışan kaydı oluşturulur.
 6. Yaklaşan (24 saat içindeki) onaylı randevular için sunucu her 5 dakikada bir hatırlatma bildirimi üretir.
 
@@ -361,7 +377,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | Çalışma takvimi | `GET/PUT /api/availability/rules` · `GET/POST /api/availability/blocked-dates` · `DELETE /blocked-dates/:id` |
 | İçerik | `GET /api/content/settings` · `PUT /settings/:key` · `POST /site-images` (görsel işleme) · `/posts` (CRUD) · `POST /posts/:id/status` · `GET /categories` · `/faqs` (CRUD + `/reorder`) · `/media` (yükle/listele/sil) |
 | Ayarlar | `GET/PATCH /api/settings/profile` · `/notification-prefs` · `GET /channels` · `GET /sessions` · `DELETE /sessions/:id` · `GET /users` · `PATCH /users/:id` |
-| Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/pdf` |
+| Beslenme planları | `GET/POST /api/plans` (`?clientId`, `?templates=1`) · `GET/PATCH/DELETE /:id` · `GET /:id/print` (A4 yazdırma sayfası, `?autoprint=1`) |
 | Tarifler | `GET/POST /api/recipes` (`?category`, `?q`, `?clientId`; POST'ta `parentId`, `copyImage`) · `GET/PATCH/DELETE /:id` · `POST/DELETE /:id/image` · `PUT /:id/featured` |
 | Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/home` · `GET /api/public/recipes/:slug` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
@@ -370,8 +386,8 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 ## Test
 
 ```bash
-npm test               # vitest: 15 test — müsaitlik birim testleri + çakışma/eşzamanlılık entegrasyon testleri (veritabanı gerekir)
-npm run typecheck      # istemci + sunucu tip kontrolü
+npm test               # vitest: birim testleri + API entegrasyon testleri (MySQL/MariaDB veritabanı ve yönetici hesabı gerekir)
+npm run typecheck      # tüm proje tip kontrolü
 ```
 
 ## Üretim derlemesi ve dağıtım
@@ -379,46 +395,52 @@ npm run typecheck      # istemci + sunucu tip kontrolü
 > Çalışan bir siteyi **güncellemek** için adım adım kontrol listesi (yedek, migration, doğrulama, geri dönüş):
 > [docs/DEPLOY.md](docs/DEPLOY.md).
 
+Docker gerekmez. Derleme `.next/standalone/` altında **tek başına çalışan** bir klasör üretir (`server.js` +
+yalnızca gereken `node_modules` + `public/` + `.next/static/`).
+
 ```bash
 npm ci
-npx prisma generate
-npm run build          # dist/ (site) + dist-server/ (API ve CLI betikleri)
-npm run db:deploy
+npm run build          # Next.js derlemesi → .next/standalone/  +  CLI betikleri → dist-scripts/
+npm run db:deploy      # bekleyen migration'lar
 npm run prod:seed      # yalnızca ilk kurulumda
 npm run prod:admin:create
-npm start              # NODE_ENV=production, PORT=4000
+npm start              # = node .next/standalone/server.js  (PORT, varsayılan 3000)
 ```
 
-Üretimde tek süreç: `/api/*` API, diğer tüm yollar derlenmiş site (sunucu, her sayfa için başlık, açıklama,
-canonical, Open Graph ve JSON-LD'yi HTML'e enjekte eder; `/robots.txt` ve `/sitemap.xml` dinamik üretilir).
+**cPanel (Hosting Dünyam vb.) — "Setup Node.js App":**
 
-**Docker:**
+1. cPanel → **MySQL Databases**: veritabanı + kullanıcı oluşturun, kullanıcıya tüm yetkileri verin
+   (karakter seti utf8mb4 / `utf8mb4_unicode_ci`).
+2. Kodu sunucuya alın (Git Version Control veya dosya yükleme), terminalde `npm ci && npm run build`
+   (ya da derlemeyi kendi bilgisayarınızda yapıp `.next/standalone/` klasörünü yükleyin).
+3. **Setup Node.js App**: Node.js 22 · Application mode: Production · Application root: projenin klasörü ·
+   Startup file: `app.cjs` (standalone sunucuyu başlatan küçük CommonJS dosyası).
+4. Ortam değişkenlerini aynı ekrandan girin: `NODE_ENV=production`, `DATABASE_URL`, `DATA_ENCRYPTION_KEY`,
+   `PUBLIC_SITE_URL`, `TRUST_PROXY=1`, `UPLOAD_DIR=/home/KULLANICI/nidaakin-storage` (uygulama klasörünün dışında),
+   isteğe bağlı `SMTP_*`.
+5. Terminalde `npm run db:deploy`, ilk kurulumda `npm run prod:seed` ve `npm run prod:admin:create`; ardından
+   **Restart**.
 
-```bash
-cp .env.example .env    # DATA_ENCRYPTION_KEY, PUBLIC_SITE_URL vb. doldurun
-export POSTGRES_PASSWORD='güçlü-bir-şifre'
-docker compose up -d --build
-docker compose exec app node dist-server/seed.js
-docker compose exec -it app node dist-server/create-admin.js
-```
+Ayrıntılı güncelleme adımları, yedek ve geri dönüş: [docs/DEPLOY.md](docs/DEPLOY.md).
 
-**Ters vekil (ör. Caddy):** HTTPS zorunludur (Secure cookie). `TRUST_PROXY=1` ayarlayın.
+**Kendi sunucunuzda (VPS):** `node .next/standalone/server.js`'i systemd/pm2 ile çalıştırın, önüne HTTPS'li bir ters
+vekil koyun ve `TRUST_PROXY=1` ayarlayın:
 
 ```
 nidaakin.com {
   encode zstd gzip
-  reverse_proxy 127.0.0.1:4000
+  reverse_proxy 127.0.0.1:3000
 }
 ```
 
 **Kontrol listesi:** `NODE_ENV=production` · HTTPS · `PUBLIC_SITE_URL` doğru · güçlü veritabanı şifresi ·
-`DATA_ENCRYPTION_KEY` kasada · `storage/` kalıcı diskte · düzenli yedek · SMTP (isteğe bağlı) · periyodik
-`prod:data:retention` (ör. ayda bir cron).
+`DATA_ENCRYPTION_KEY` kasada · `UPLOAD_DIR` uygulama klasörü dışında, kalıcı diskte · düzenli yedek · SMTP (isteğe bağlı) ·
+periyodik `prod:data:retention` (ör. cPanel → Cron Jobs, ayda bir).
 
 ## Yedekleme ve veri saklama
 
 ```bash
-npm run backup                 # pg_dump (custom format) + storage/ arşivi → ./backups (izinler 600)
+npm run backup                 # mysqldump (gzip) + storage/ arşivi → ./backups (izinler 600)
 npm run data:retention -- --dry-run
 npm run data:retention
 ```

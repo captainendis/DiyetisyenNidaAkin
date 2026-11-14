@@ -3,7 +3,7 @@
 
 /** Yeni danışan / danışan düzenleme formu */
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { api, ApiError } from '@/lib/api';
 import { Button, Checkbox, Input, Modal, Select, Textarea, useFeedback } from '@/components/panel/ui';
 import { CLIENT_STATUS_LABEL, CLIENT_STATUSES, MEETING_TYPE_LABEL } from '@shared/constants';

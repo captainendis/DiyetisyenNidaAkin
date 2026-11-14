@@ -1,8 +1,10 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
+'use client';
+
 import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router';
+import { Outlet, useLocation } from '@/lib/router';
 import { motion, useReducedMotion } from 'motion/react';
 import { Navbar } from '@/components/navigation/Navbar';
 import { Footer } from './Footer';

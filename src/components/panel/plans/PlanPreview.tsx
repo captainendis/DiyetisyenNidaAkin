@@ -2,15 +2,17 @@
 // Developed by PaperAxis · paperaxis.com
 
 /**
- * Canlı A4 önizleme — PDF ile aynı şablon (shared/plan-template.ts).
+ * Canlı A4 önizleme — yazdırma sayfasıyla aynı şablon (shared/plan-template.ts).
  * iframe srcdoc betik çalıştırmaz; sayfaya sığdırma ölçümü üst pencereden yapılır.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import latinUrl from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url';
-import latinExtUrl from '@fontsource-variable/manrope/files/manrope-latin-ext-wght-normal.woff2?url';
 import { fitPlanToPage, MIN_SCALE, RECIPE_MIN_SCALE, renderPlanHtml, type FitResult } from '@shared/plan-template';
 import type { NutritionPlanData } from '@shared/plan';
 import type { PrintRecipe } from '@shared/recipe';
+
+// Manrope (OFL) — public/fonts altında; @fontsource-variable/manrope paketinden kopyalandı
+const latinUrl = '/fonts/manrope-latin-wght-normal.woff2';
+const latinExtUrl = '/fonts/manrope-latin-ext-wght-normal.woff2';
 
 const FONT_CSS =
   `@font-face{font-family:'Manrope Variable';font-weight:200 800;src:url(${latinUrl}) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212;}` +

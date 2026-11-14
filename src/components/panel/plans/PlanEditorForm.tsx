@@ -3,15 +3,16 @@
 
 /** Beslenme planı düzenleyici formu (kontrollü bileşen) */
 import { useId, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
-import { ArrowDown, ArrowUp, CookingPot, GitBranch, Plus, Trash2, X } from 'lucide-react';
-import { Button, Input, Select, Switch, Textarea } from '@/components/panel/ui';
+import { Link } from '@/lib/router';
+import { ArrowDown, ArrowUp, Check, CookingPot, GitBranch, Plus, Trash2, X } from 'lucide-react';
+import { Button, Input, Switch, Textarea } from '@/components/panel/ui';
+import { cn } from '@/lib/format';
 import { RecipePickerModal } from '@/components/panel/recipes/RecipePickerModal';
 import { RecipeThumb } from '@/components/panel/recipes/RecipeCard';
 import { RecipeFormModal } from '@/components/panel/recipes/RecipeFormModal';
 import { recipesVisibleFor } from '@/components/panel/recipes/api';
 import type { ClientRef } from '@/components/panel/recipes/ClientPicker';
-import { MAX_PLAN_RECIPES, type NutritionPlanData, type PlanMeal } from '@shared/plan';
+import { MAX_PLAN_RECIPES, PLAN_THEME_IDS, PLAN_THEMES, type NutritionPlanData, type PlanMeal, type PlanThemeId } from '@shared/plan';
 import { RECIPE_CATEGORY_LABEL, RECIPE_DEFAULT_LABEL, recipeMeta, type Recipe } from '@shared/recipe';
 
 type Setter = (fn: (d: NutritionPlanData) => void) => void;
@@ -59,7 +60,7 @@ function MealEditor({ meal, index, count, set }: { meal: PlanMeal; index: number
               onChange={(e) => upd((m) => void (m.options[oi] = e.target.value.split('\n').slice(0, 10)))}
             />
             {meal.options.length > 1 && (
-              <button type="button" aria-label={`${oi + 1}. seçeneği kaldır`} onClick={() => upd((m) => void m.options.splice(oi, 1))} className="absolute top-0 right-0 rounded p-0.5 text-panel-muted hover:text-danger">
+              <button type="button" aria-label={`${oi + 1}. seçeneği kaldır`} onClick={() => upd((m) => void m.options.splice(oi, 1))} className="absolute top-0 right-0 rounded p-0.5 text-panel-muted hover:text-danger-ink">
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
@@ -136,7 +137,7 @@ function RecipesSection({ data, set, library, onLibraryChange, client }: { data:
                       <span className="ml-1.5 font-medium text-panel-muted">· {[r.variantNote || RECIPE_CATEGORY_LABEL[r.category], ...recipeMeta(r).slice(0, 2)].join(' · ')}</span>
                     </p>
                   ) : (
-                    <p className="text-[0.82rem] font-semibold text-danger">{library ? 'Bu tarif silinmiş — PDF’te gösterilmez.' : 'Yükleniyor…'}</p>
+                    <p className="text-[0.82rem] font-semibold text-danger-ink">{library ? 'Bu tarif silinmiş — PDF’te gösterilmez.' : 'Yükleniyor…'}</p>
                   )}
                   <input
                     aria-label="Tarif etiketi"
@@ -194,21 +195,63 @@ function RecipesSection({ data, set, library, onLibraryChange, client }: { data:
   );
 }
 
+/**
+ * Renk teması seçici: her seçenek, PDF'in küçük bir taslağını temanın gerçek renkleriyle gösterir
+ * (zemin, öğün kartı, saat noktası, alışkanlıklar kutusu). Yerel radio düğmeleri — klavye ile oklarla gezilir.
+ */
+function ThemePicker({ value, onChange }: { value: PlanThemeId; onChange: (v: PlanThemeId) => void }) {
+  const name = useId();
+  return (
+    <fieldset>
+      <legend className="mb-1.5 text-[0.8rem] font-semibold text-cocoa">Renk teması</legend>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {PLAN_THEME_IDS.map((id) => {
+          const th = PLAN_THEMES[id];
+          const c = th.colors;
+          const selected = value === id;
+          return (
+            <label
+              key={id}
+              className={cn(
+                'relative flex cursor-pointer flex-col gap-2 rounded-lg border bg-white p-2 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-cocoa has-[:focus-visible]:ring-offset-2',
+                selected ? 'border-cocoa ring-1 ring-cocoa' : 'border-panel-line hover:border-panel-muted',
+              )}
+            >
+              <input type="radio" name={name} value={id} checked={selected} onChange={() => onChange(id)} className="sr-only" />
+              <span aria-hidden className="flex h-12 gap-1 rounded-md p-1.5" style={{ background: c.bg, boxShadow: c.bg.toLowerCase() === '#ffffff' ? `inset 0 0 0 1px ${c.line}` : undefined }}>
+                <span className="flex flex-1 items-start gap-1 rounded-sm p-1" style={{ background: c.card, boxShadow: c.card.toLowerCase() === c.bg.toLowerCase() ? `inset 0 0 0 1px ${c.line}` : undefined }}>
+                  <span className="mt-px h-2 w-2 shrink-0 rounded-full" style={{ background: c.accent, boxShadow: `0 0 0 1px ${c.ink}` }} />
+                  <span className="flex flex-1 flex-col gap-1 pt-px">
+                    <span className="h-[3px] w-4/5 rounded-full" style={{ background: c.ink }} />
+                    <span className="h-[3px] w-3/5 rounded-full" style={{ background: c.muted }} />
+                  </span>
+                </span>
+                <span className="flex w-1/3 flex-col justify-end rounded-sm p-1" style={{ background: c.dark }}>
+                  <span className="h-[3px] w-3/4 rounded-full" style={{ background: c.darkAccent }} />
+                </span>
+              </span>
+              <span className="flex items-start justify-between gap-1 px-0.5">
+                <span className="min-w-0">
+                  <span className="block text-[0.8rem] leading-tight font-semibold text-espresso">{th.label}</span>
+                  <span className="block text-[0.72rem] leading-tight text-panel-muted">{th.note}</span>
+                </span>
+                {selected && <Check className="h-4 w-4 shrink-0 text-cocoa" aria-hidden />}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 export function PlanEditorForm({ data, set, library, onLibraryChange, client }: { data: NutritionPlanData; set: Setter; library?: Recipe[]; onLibraryChange: (r: Recipe) => void; client?: ClientRef | null }) {
   return (
     <div>
       <Section title="Başlık">
         <Input label="Başlık" value={data.title} maxLength={60} onChange={(e) => set((d) => void (d.title = e.target.value))} hint="Danışan seçiliyse otomatik “Adın beslenme planı” olarak gelir." />
         <Input label="Alt başlık" value={data.subtitle} maxLength={160} onChange={(e) => set((d) => void (d.subtitle = e.target.value))} placeholder="1. ay, 1. liste. Her öğünde üç seçenekten yalnızca birini seç." />
-        <Select
-          label="Renk teması"
-          value={data.theme}
-          onChange={(e) => set((d) => void (d.theme = e.target.value as NutritionPlanData['theme']))}
-          options={[
-            { value: 'green', label: 'Yeşil (örnek plan)' },
-            { value: 'brand', label: 'Marka (kahve ve krem)' },
-          ]}
-        />
+        <ThemePicker value={data.theme} onChange={(v) => set((d) => void (d.theme = v))} />
       </Section>
 
       <Section title="Su ve hareket" description="Danışanın çıktıda işaretleyebileceği takip alanları.">

@@ -2,11 +2,11 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Denetim kaydı (audit log). Hassas içerik (not metni, ölçüm değeri) ASLA metadata'ya yazılmaz. */
-import type { Request } from 'express';
 import { prisma, type Tx } from './db';
+import { clientIp, userAgent, type Ctx } from './http';
 
 export async function audit(
-  req: Request | null,
+  c: Ctx | null,
   action: string,
   entityType: string,
   entityId?: string | null,
@@ -17,13 +17,13 @@ export async function audit(
   try {
     await db.auditLog.create({
       data: {
-        userId: req?.user?.id ?? null,
+        userId: c?.var.user?.id ?? null,
         action,
         entityType,
         entityId: entityId ?? null,
         metadata: (metadata ?? undefined) as never,
-        ip: req?.ip ?? null,
-        userAgent: req?.get('user-agent')?.slice(0, 300) ?? null,
+        ip: c ? clientIp(c) : null,
+        userAgent: c ? userAgent(c) : null,
       },
     });
   } catch (e) {

@@ -1,17 +1,16 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/db';
-import { parse } from '../lib/http';
+import { parse, query, router } from '../lib/http';
 import { requirePermission } from '../auth/session';
 import { dateStr } from '../../shared/schemas';
 import { startOfDay, endOfDayExclusive } from '../../shared/time';
 
-export const auditRouter = Router();
+export const auditRouter = router();
 
-const query = z.object({
+const listQuery = z.object({
   action: z.string().max(80).optional(),
   entityType: z.string().max(60).optional(),
   from: dateStr.optional(),
@@ -20,8 +19,8 @@ const query = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(30),
 });
 
-auditRouter.get('/', requirePermission('audit:read'), async (req, res) => {
-  const q = parse(query, req.query);
+auditRouter.get('/', requirePermission('audit:read'), async (c) => {
+  const q = parse(listQuery, query(c));
   const where = {
     ...(q.action ? { action: { startsWith: q.action } } : {}),
     ...(q.entityType ? { entityType: q.entityType } : {}),
@@ -39,13 +38,13 @@ auditRouter.get('/', requirePermission('audit:read'), async (req, res) => {
       include: { user: { select: { firstName: true, lastName: true, email: true } } },
     }),
   ]);
-  res.json({ items: items.map(({ userId: _u, ...r }) => r), total, page: q.page, pageSize: q.pageSize });
+  return c.json({ items: items.map(({ userId: _u, ...r }) => r), total, page: q.page, pageSize: q.pageSize });
 });
 
-auditRouter.get('/facets', requirePermission('audit:read'), async (_req, res) => {
+auditRouter.get('/facets', requirePermission('audit:read'), async (c) => {
   const [actions, types] = await Promise.all([
     prisma.auditLog.findMany({ distinct: ['action'], select: { action: true }, take: 200 }),
     prisma.auditLog.findMany({ distinct: ['entityType'], select: { entityType: true }, take: 100 }),
   ]);
-  res.json({ actions: actions.map((a) => a.action).sort(), entityTypes: types.map((t) => t.entityType).sort() });
+  return c.json({ actions: actions.map((a) => a.action).sort(), entityTypes: types.map((t) => t.entityType).sort() });
 });

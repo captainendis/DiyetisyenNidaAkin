@@ -14,7 +14,7 @@
  * Tüm saatler Europe/Istanbul'dadır. Dakika tabanlı aralıklar [başlangıç, bitiş) yarı açık aralıktır.
  */
 import { DateTime } from 'luxon';
-import { prisma, type Tx } from '../lib/db';
+import { prisma, Prisma, type Tx } from '../lib/db';
 import { conflict } from '../lib/http';
 import {
   HARD_CONFLICT_STATUSES,
@@ -25,7 +25,6 @@ import {
 import { addDays, endOfDayExclusive, isoWeekday, minutesOf, startOfDay, timeOf, todayStr, zonedToDate, toDateStr } from '../../shared/time';
 
 /** Tüm randevu yazma işlemleri bu anahtarla serileştirilir */
-const APPOINTMENT_LOCK_KEY = 4_120_031;
 
 export interface Interval {
   start: number; // gün başından dakika
@@ -234,22 +233,16 @@ export async function assertSlotAllowed(
  *   await withAppointmentLock(async (tx) => { await assertSlotAllowed(tx, ...); await tx.appointment.create(...) })
  */
 export async function withAppointmentLock<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
-  try {
-    return await prisma.$transaction(
-      async (tx) => {
-        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${APPOINTMENT_LOCK_KEY})`;
-        return fn(tx);
-      },
-      { timeout: 15_000 },
-    );
-  } catch (e) {
-    // Exclusion constraint ihlali (23P01) → anlaşılır çakışma hatası
-    const msg = String((e as Error)?.message ?? '');
-    if (msg.includes('appointments_no_overlap_confirmed') || msg.includes('23P01')) {
-      throw conflict('CONFLICT', SLOT_PROBLEM_MESSAGE.CONFLICT);
-    }
-    throw e;
-  }
+  return prisma.$transaction(
+    async (tx) => {
+      // app_locks satırına yazma kilidi: transaction bitene kadar diğer randevu yazımları burada bekler.
+      // Satır yoksa oluşturulur; varsa ON DUPLICATE KEY UPDATE mevcut satırı kilitler.
+      await tx.$executeRaw`INSERT INTO app_locks (name) VALUES ('appointments') ON DUPLICATE KEY UPDATE name = name`;
+      return fn(tx);
+    },
+    // READ COMMITTED: kilit alındıktan sonraki okumalar, bekleme sırasında commit edilen randevuları görür
+    { timeout: 15_000, maxWait: 15_000, isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
+  );
 }
 
 /** Randevunun gün/saat bilgisini İstanbul'a göre döndürür */

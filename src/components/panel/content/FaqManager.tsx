@@ -102,7 +102,7 @@ export function FaqManager() {
                 <IconButton label="Yukarı taşı" disabled={i === 0} onClick={() => void move(i, -1)}><ArrowUp className="h-4 w-4" /></IconButton>
                 <IconButton label="Aşağı taşı" disabled={i === items.length - 1} onClick={() => void move(i, 1)}><ArrowDown className="h-4 w-4" /></IconButton>
                 <IconButton label="Düzenle" onClick={() => (setErrors({}), setEditing(f))}><Pencil className="h-4 w-4" /></IconButton>
-                <IconButton label="Sil" className="hover:text-danger" onClick={() => void remove(f)}><Trash2 className="h-4 w-4" /></IconButton>
+                <IconButton label="Sil" className="hover:text-danger-ink" onClick={() => void remove(f)}><Trash2 className="h-4 w-4" /></IconButton>
               </div>
             </li>
           ))}

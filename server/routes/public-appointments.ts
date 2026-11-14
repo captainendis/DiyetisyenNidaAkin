@@ -5,10 +5,9 @@
  * Web sitesi randevu talebi uçları (oturum gerektirmez).
  * Yanıtlarda hiçbir kişisel veri / diğer randevuların detayları dönmez — yalnızca boş/dolu bilgisi.
  */
-import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/db';
-import { HttpError, badRequest, conflict, parse } from '../lib/http';
+import { HttpError, badRequest, body, conflict, parse, query, router } from '../lib/http';
 import { audit } from '../lib/audit';
 import { publicFormLimiter } from '../middleware/rate-limit';
 import { getSetting, getSettings } from '../services/settings';
@@ -19,7 +18,7 @@ import { dateStr, publicAppointmentRequestSchema } from '../../shared/schemas';
 import { MEETING_TYPE_LABEL, SLOT_HOLDING_STATUSES } from '../../shared/constants';
 import { addDays, eachDay, formatDateTime, isoWeekday, todayStr } from '../../shared/time';
 
-export const publicAppointmentsRouter = Router();
+export const publicAppointmentsRouter = router();
 
 async function publishedServiceDuration(serviceId?: string | null) {
   if (!serviceId) return undefined;
@@ -29,8 +28,8 @@ async function publishedServiceDuration(serviceId?: string | null) {
 
 const daysQuery = z.object({ from: dateStr.optional(), to: dateStr.optional(), serviceId: z.string().max(40).optional() });
 
-publicAppointmentsRouter.get('/availability/days', async (req, res) => {
-  const q = parse(daysQuery, req.query);
+publicAppointmentsRouter.get('/availability/days', async (c) => {
+  const q = parse(daysQuery, query(c));
   const cfg = await getSetting('appointment');
   const today = todayStr();
   const max = addDays(today, cfg.maxDaysAhead);
@@ -45,29 +44,30 @@ publicAppointmentsRouter.get('/availability/days', async (req, res) => {
       days.push({ date, available: slots.filter((s) => s.available).length });
     }
   }
-  res.json({ days, leadTimeHours: cfg.leadTimeHours, maxDaysAhead: cfg.maxDaysAhead });
+  return c.json({ days, leadTimeHours: cfg.leadTimeHours, maxDaysAhead: cfg.maxDaysAhead });
 });
 
 const slotsQuery = z.object({ date: dateStr, serviceId: z.string().max(40).optional() });
 
-publicAppointmentsRouter.get('/availability/slots', async (req, res) => {
-  const q = parse(slotsQuery, req.query);
+publicAppointmentsRouter.get('/availability/slots', async (c) => {
+  const q = parse(slotsQuery, query(c));
   const cfg = await getSetting('appointment');
   const today = todayStr();
   if (q.date < today || q.date > addDays(today, cfg.maxDaysAhead)) {
-    return res.json({ date: q.date, closedReason: 'Bu tarih için talep alınmıyor', slots: [] });
+    return c.json({ date: q.date, closedReason: 'Bu tarih için talep alınmıyor', slots: [] });
   }
   const duration = await publishedServiceDuration(q.serviceId);
   const { plan, slots } = await getSlots(q.date, { forPublic: true, leadTimeHours: cfg.leadTimeHours, durationMinutes: duration });
-  res.json({ date: q.date, closedReason: plan.isWorking ? null : plan.closedReason, slots });
+  return c.json({ date: q.date, closedReason: plan.isWorking ? null : plan.closedReason, slots });
 });
 
-publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (req, res) => {
+publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (c) => {
   // Bot tuzağı: görünmeyen alan doluysa kayıt yapılmaz
-  if (typeof req.body?.website === 'string' && req.body.website.trim() !== '') {
+  const raw = (await body(c)) as { website?: unknown } | null;
+  if (typeof raw?.website === 'string' && raw.website.trim() !== '') {
     throw badRequest('Talep işlenemedi.');
   }
-  const input = parse(publicAppointmentRequestSchema, req.body);
+  const input = parse(publicAppointmentRequestSchema, await body(c));
   const { appointment: cfg, contact } = await getSettings(['appointment', 'contact'] as const);
 
   if (input.meetingType === 'IN_PERSON' && !cfg.inPersonEnabled) throw badRequest('Yüz yüze görüşme şu anda sunulmuyor.');
@@ -140,7 +140,7 @@ publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (req, re
     return a;
   });
 
-  await audit(req, 'appointment.requested_public', 'appointment', created.id, { mode: input.mode, meetingType: input.meetingType });
+  await audit(c, 'appointment.requested_public', 'appointment', created.id, { mode: input.mode, meetingType: input.meetingType });
   await notifyStaff('APPOINTMENT_REQUESTED', {
     title: `Yeni randevu talebi: ${created.contactName}`,
     body: `${created.startsAt ? formatDateTime(created.startsAt) : 'Saat seçilmedi — geri arama talebi'} · ${MEETING_TYPE_LABEL[created.meetingType]}`,
@@ -148,10 +148,10 @@ publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (req, re
     clientId: created.clientId,
   });
 
-  res.status(201).json({
+  return c.json({
     ok: true,
     status: created.status,
     reference: created.id.slice(-6).toUpperCase(),
     whatsapp: contact.whatsapp,
-  });
+  }, 201);
 });

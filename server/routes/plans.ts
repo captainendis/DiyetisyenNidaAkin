@@ -3,23 +3,20 @@
 
 /**
  * Beslenme planları (/api/plans) — klinik veri: clinical:read / clinical:write gerekir.
- * İçerik şifreli saklanır; PDF sunucuda üretilir ve diske yazılmaz.
+ * İçerik şifreli saklanır; yazdırma sayfası istek anında üretilir, diske yazılmaz.
  */
-import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/db';
 import { decryptJson, encryptJson } from '../lib/crypto';
-import { HttpError, notFound, parse } from '../lib/http';
+import { body, notFound, param, parse, query, router } from '../lib/http';
 import { audit } from '../lib/audit';
-import { requirePermission } from '../auth/session';
+import { authUser, requirePermission } from '../auth/session';
 import { getSettings } from '../services/settings';
-import { PdfUnavailableError, renderPlanPdf } from '../services/pdf';
+import { renderPlanPrintPage } from '../services/print';
 import { emptyPlan, nutritionPlanDataSchema, planCreateSchema, planTitleFor, planUpdateSchema, type NutritionPlanData } from '../../shared/plan';
-import { slugify } from '../../shared/text';
 import { resolvePlanRecipes } from './recipes';
-import { todayStr } from '../../shared/time';
 
-export const plansRouter = Router();
+export const plansRouter = router();
 const read = requirePermission('clinical:read');
 const write = requirePermission('clinical:write');
 
@@ -47,10 +44,10 @@ async function load(id: string) {
   return plan;
 }
 
-plansRouter.get('/', read, async (req, res) => {
+plansRouter.get('/', read, async (c) => {
   const q = parse(
     z.object({ clientId: z.string().max(40).optional(), templates: z.enum(['1', '0']).optional(), q: z.string().trim().max(80).optional() }),
-    req.query,
+    query(c),
   );
   const items = await prisma.nutritionPlan.findMany({
     where: {
@@ -59,9 +56,9 @@ plansRouter.get('/', read, async (req, res) => {
       ...(q.q
         ? {
             OR: [
-              { name: { contains: q.q, mode: 'insensitive' as const } },
-              { client: { firstName: { contains: q.q, mode: 'insensitive' as const } } },
-              { client: { lastName: { contains: q.q, mode: 'insensitive' as const } } },
+              { name: { contains: q.q } },
+              { client: { firstName: { contains: q.q } } },
+              { client: { lastName: { contains: q.q } } },
             ],
           }
         : {}),
@@ -70,25 +67,25 @@ plansRouter.get('/', read, async (req, res) => {
     take: 200,
     select: listItem,
   });
-  res.json({ items });
+  return c.json({ items });
 });
 
-plansRouter.get('/:id', read, async (req, res) => {
-  const plan = await load(String(req.params.id));
-  await audit(req, 'clinical.read', 'nutrition_plan', plan.id);
+plansRouter.get('/:id', read, async (c) => {
+  const plan = await load(param(c));
+  await audit(c, 'clinical.read', 'nutrition_plan', plan.id);
   const { dataEnc, ...rest } = plan;
-  res.json({ plan: { ...rest, data: decodePlan(dataEnc) } });
+  return c.json({ plan: { ...rest, data: decodePlan(dataEnc) } });
 });
 
-plansRouter.post('/', write, async (req, res) => {
-  const body = parse(planCreateSchema, req.body);
-  const client = body.clientId ? await prisma.client.findUnique({ where: { id: body.clientId } }) : null;
-  if (body.clientId && !client) throw notFound('Danışan bulunamadı');
+plansRouter.post('/', write, async (c) => {
+  const input = parse(planCreateSchema, await body(c));
+  const client = input.clientId ? await prisma.client.findUnique({ where: { id: input.clientId } }) : null;
+  if (input.clientId && !client) throw notFound('Danışan bulunamadı');
 
   let data: NutritionPlanData;
-  if (body.data) data = body.data;
-  else if (body.fromId) {
-    const src = await load(body.fromId);
+  if (input.data) data = input.data;
+  else if (input.fromId) {
+    const src = await load(input.fromId);
     data = decodePlan(src.dataEnc);
   } else data = emptyPlan(await defaultSignature());
   if (client) data = { ...data, title: planTitleFor(client.firstName) };
@@ -100,58 +97,41 @@ plansRouter.post('/', write, async (req, res) => {
   const plan = await prisma.nutritionPlan.create({
     data: {
       clientId: client?.id ?? null,
-      isTemplate: client ? false : body.isTemplate,
-      name: body.name,
+      isTemplate: client ? false : input.isTemplate,
+      name: input.name,
       dataEnc: encryptJson(data),
-      createdById: req.user!.id,
+      createdById: authUser(c).id,
     },
     select: listItem,
   });
-  await audit(req, 'plan.created', 'nutrition_plan', plan.id, { fromTemplate: !!body.fromId, template: plan.isTemplate });
-  res.status(201).json({ plan });
+  await audit(c, 'plan.created', 'nutrition_plan', plan.id, { fromTemplate: !!input.fromId, template: plan.isTemplate });
+  return c.json({ plan }, 201);
 });
 
-plansRouter.patch('/:id', write, async (req, res) => {
-  const body = parse(planUpdateSchema, req.body);
-  const plan = await load(String(req.params.id));
+plansRouter.patch('/:id', write, async (c) => {
+  const input = parse(planUpdateSchema, await body(c));
+  const plan = await load(param(c));
   const updated = await prisma.nutritionPlan.update({
     where: { id: plan.id },
-    data: { ...(body.name ? { name: body.name } : {}), ...(body.data ? { dataEnc: encryptJson(body.data) } : {}) },
+    data: { ...(input.name ? { name: input.name } : {}), ...(input.data ? { dataEnc: encryptJson(input.data) } : {}) },
     select: listItem,
   });
-  await audit(req, 'plan.updated', 'nutrition_plan', plan.id);
-  res.json({ plan: updated });
+  await audit(c, 'plan.updated', 'nutrition_plan', plan.id);
+  return c.json({ plan: updated });
 });
 
-plansRouter.delete('/:id', write, async (req, res) => {
-  const plan = await load(String(req.params.id));
+plansRouter.delete('/:id', write, async (c) => {
+  const plan = await load(param(c));
   await prisma.nutritionPlan.delete({ where: { id: plan.id } });
-  await audit(req, 'plan.deleted', 'nutrition_plan', plan.id);
-  res.json({ ok: true });
+  await audit(c, 'plan.deleted', 'nutrition_plan', plan.id);
+  return c.json({ ok: true });
 });
 
-plansRouter.get('/:id/pdf', read, async (req, res) => {
-  const plan = await load(String(req.params.id));
+/** Yazdırma sayfası (A4). Tarayıcının yazdırma penceresinden "PDF olarak kaydet" ile PDF alınır. */
+plansRouter.get('/:id/print', read, async (c) => {
+  const plan = await load(param(c));
   const data = decodePlan(plan.dataEnc);
-  let out;
-  try {
-    out = await renderPlanPdf(data, data.title, await resolvePlanRecipes(data));
-  } catch (e) {
-    if (e instanceof PdfUnavailableError) throw new HttpError(503, 'PDF_UNAVAILABLE', e.message);
-    throw e;
-  }
-  await audit(req, 'plan.pdf_generated', 'nutrition_plan', plan.id, { scale: out.scale, fits: out.fits, pages: out.pages, recipes: data.recipes.items.length });
-  const who = plan.client ? `${plan.client.firstName}-${plan.client.lastName}` : plan.name;
-  const file = `Beslenme-Plani-${slugify(who) || 'plan'}-${todayStr()}.pdf`;
-  res.set({
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `${req.query.inline === '1' ? 'inline' : 'attachment'}; filename="${file}"`,
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Plan-Scale': String(out.scale),
-    'X-Plan-Fits': String(out.fits),
-    'X-Plan-Pages': String(out.pages),
-    'X-Plan-Recipes-Fit': String(out.recipesFit),
-  });
-  res.send(Buffer.from(out.pdf));
+  const page = renderPlanPrintPage(data, data.title, await resolvePlanRecipes(data), { autoPrint: c.req.query('autoprint') === '1' });
+  await audit(c, 'plan.print_opened', 'nutrition_plan', plan.id, { recipes: data.recipes.items.length });
+  return c.html(page.html, 200, { 'Content-Security-Policy': page.csp, 'Cache-Control': 'no-store' });
 });

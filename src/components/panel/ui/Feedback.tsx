@@ -3,7 +3,7 @@
 
 /** Toast bildirimleri ve onay diyaloğu (Promise tabanlı) */
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { BodyPortal } from '@/components/BodyPortal';
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
 import { Modal } from './Modal';
 import { Button } from './Button';
@@ -59,7 +59,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      {createPortal(
+      <BodyPortal>
         <div className="panel-root pointer-events-none fixed inset-x-0 bottom-0 z-[90] flex flex-col items-center gap-2 p-4 sm:items-end sm:p-6" aria-live="polite" role="status">
           {toasts.map((t) => {
             const Icon = icons[t.tone];
@@ -76,9 +76,8 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
               </div>
             );
           })}
-        </div>,
-        document.body,
-      )}
+        </div>
+      </BodyPortal>
       <Modal
         open={!!dialog}
         onClose={() => close(false)}

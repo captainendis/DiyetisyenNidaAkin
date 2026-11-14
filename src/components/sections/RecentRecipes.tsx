@@ -6,7 +6,7 @@
  * hiç seçilmemişse son yayınlananlar. Yayınlanmış tarif yoksa hiç çizilmez.
  */
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { api } from '@/lib/api';
 import { useSite } from '@/data/SiteContext';
 import { Reveal } from '@/components/motion/Reveal';

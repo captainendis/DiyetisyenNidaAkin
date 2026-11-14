@@ -8,11 +8,12 @@
  *    Token, /api/auth/me yanıtında döner (cookie'ye yazılmaz).
  *  - Kayan süre: aktif kullanımda son görülme güncellenir; mutlak süre dolunca oturum biter.
  */
-import type { NextFunction, Request, Response } from 'express';
+import { createMiddleware } from 'hono/factory';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { prisma } from '../lib/db';
 import { env } from '../lib/env';
 import { randomToken, safeEqual, sha256 } from '../lib/crypto';
-import { forbidden, unauthorized } from '../lib/http';
+import { clientIp, forbidden, unauthorized, userAgent, type AppEnv, type Ctx } from '../lib/http';
 import type { Permission } from './permissions';
 
 export const SESSION_COOKIE = 'na_sid';
@@ -29,16 +30,7 @@ export interface AuthUser {
   csrfToken: string;
 }
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      user?: AuthUser;
-    }
-  }
-}
-
-export async function createSession(req: Request, res: Response, userId: string, remember: boolean) {
+export async function createSession(c: Ctx, userId: string, remember: boolean) {
   const token = randomToken(32);
   const csrfToken = randomToken(24);
   const ttlMs = remember ? env.SESSION_REMEMBER_DAYS * 864e5 : env.SESSION_TTL_HOURS * 36e5;
@@ -50,14 +42,14 @@ export async function createSession(req: Request, res: Response, userId: string,
       userId,
       remember,
       expiresAt,
-      ip: req.ip ?? null,
-      userAgent: req.get('user-agent')?.slice(0, 300) ?? null,
+      ip: clientIp(c),
+      userAgent: userAgent(c),
     },
   });
-  res.cookie(SESSION_COOKIE, token, {
+  setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
     secure: env.isProd,
-    sameSite: 'strict',
+    sameSite: 'Strict',
     path: '/',
     // "Beni hatırla" seçilmediyse tarayıcı oturumu cookie'si (tarayıcı kapanınca silinir)
     ...(remember ? { expires: expiresAt } : {}),
@@ -65,16 +57,16 @@ export async function createSession(req: Request, res: Response, userId: string,
   return { csrfToken };
 }
 
-export async function destroySession(req: Request, res: Response) {
-  const token = req.cookies?.[SESSION_COOKIE];
+export async function destroySession(c: Ctx) {
+  const token = getCookie(c, SESSION_COOKIE);
   if (token) await prisma.session.deleteMany({ where: { tokenHash: sha256(token) } });
-  res.clearCookie(SESSION_COOKIE, { path: '/', httpOnly: true, secure: env.isProd, sameSite: 'strict' });
+  deleteCookie(c, SESSION_COOKIE, { path: '/', httpOnly: true, secure: env.isProd, sameSite: 'Strict' });
 }
 
-/** Cookie varsa oturumu çözer ve req.user'ı doldurur (zorunlu kılmaz) */
-export async function loadSession(req: Request, _res: Response, next: NextFunction) {
-  const token = req.cookies?.[SESSION_COOKIE];
-  if (!token || typeof token !== 'string') return next();
+/** Cookie varsa oturumu çözer ve c.var.user'ı doldurur (zorunlu kılmaz) */
+export const loadSession = createMiddleware<AppEnv>(async (c, next) => {
+  const token = getCookie(c, SESSION_COOKIE);
+  if (!token) return next();
   const session = await prisma.session.findUnique({
     where: { tokenHash: sha256(token) },
     include: { user: { include: { role: true } } },
@@ -93,7 +85,7 @@ export async function loadSession(req: Request, _res: Response, next: NextFuncti
     await prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } }).catch(() => {});
   }
   const u = session.user;
-  req.user = {
+  c.set('user', {
     id: u.id,
     email: u.email,
     firstName: u.firstName,
@@ -103,33 +95,41 @@ export async function loadSession(req: Request, _res: Response, next: NextFuncti
     permissions: u.role.permissions as Permission[],
     sessionId: session.id,
     csrfToken: session.csrfToken,
-  };
-  next();
-}
+  });
+  return next();
+});
 
 /** Oturum zorunlu + durum değiştiren isteklerde CSRF doğrulaması */
-export function requireAuth(req: Request, _res: Response, next: NextFunction) {
-  if (!req.user) return next(unauthorized());
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    const header = req.get('x-csrf-token') ?? '';
-    if (!header || !safeEqual(header, req.user.csrfToken)) {
-      return next(forbidden('Güvenlik doğrulaması başarısız (CSRF). Sayfayı yenileyip tekrar deneyin.'));
+export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
+  const user = c.var.user;
+  if (!user) throw unauthorized();
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(c.req.method)) {
+    const header = c.req.header('x-csrf-token') ?? '';
+    if (!header || !safeEqual(header, user.csrfToken)) {
+      throw forbidden('Güvenlik doğrulaması başarısız (CSRF). Sayfayı yenileyip tekrar deneyin.');
     }
   }
-  next();
-}
+  await next();
+});
 
 export function requirePermission(...perms: Permission[]) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    if (!req.user) return next(unauthorized());
-    const ok = perms.every((p) => req.user!.permissions.includes(p));
-    if (!ok) return next(forbidden());
-    next();
-  };
+  return createMiddleware<AppEnv>(async (c, next) => {
+    const user = c.var.user;
+    if (!user) throw unauthorized();
+    if (!perms.every((p) => user.permissions.includes(p))) throw forbidden();
+    await next();
+  });
 }
 
-export function can(req: Request, perm: Permission) {
-  return !!req.user?.permissions.includes(perm);
+export function can(c: Ctx, perm: Permission) {
+  return !!c.var.user?.permissions.includes(perm);
+}
+
+/** Oturumu zorunlu kılınmış uçlarda personel (requireAuth sonrası her zaman dolu) */
+export function authUser(c: Ctx): AuthUser {
+  const u = c.var.user;
+  if (!u) throw unauthorized();
+  return u;
 }
 
 export async function purgeExpiredSessions() {

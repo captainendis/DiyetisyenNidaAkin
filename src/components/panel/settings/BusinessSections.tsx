@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** İşletme bilgileri, randevu ayarları ve KVKK ayarları (website_settings anahtarları) */
-import { Link } from 'react-router';
+import { Link } from '@/lib/router';
 import { Input, Switch, Textarea } from '@/components/panel/ui';
 import { CharCount, FormCard, FormSection, Notice, SaveBar } from '@/components/panel/content/FormBits';
 import { useSettingForm } from '@/components/panel/content/settingsStore';
@@ -74,7 +74,7 @@ export function AppointmentSection() {
           <Switch checked={d.inPersonEnabled} onChange={(v) => f.set('inPersonEnabled', v)} label="Yüz yüze görüşme" />
           <Switch checked={d.onlineEnabled} onChange={(v) => f.set('onlineEnabled', v)} label="Online görüşme" />
         </div>
-        {!d.inPersonEnabled && !d.onlineEnabled && <p className="text-[0.78rem] text-danger">En az bir görüşme türünü açık bırakın.</p>}
+        {!d.inPersonEnabled && !d.onlineEnabled && <p className="text-[0.78rem] text-danger-ink">En az bir görüşme türünü açık bırakın.</p>}
         <Switch
           checked={d.allowRequestWithoutTime}
           onChange={(v) => f.set('allowRequestWithoutTime', v)}
@@ -136,8 +136,6 @@ export function PrivacySection() {
         />
         <Notice>
           <p>
-            Anonimleştirme sunucuda <code className="rounded bg-white px-1 py-0.5 font-mono text-[0.78rem]">npm run data:retention</code> komutuyla çalışır
-            (önce <code className="rounded bg-white px-1 py-0.5 font-mono text-[0.78rem]">-- --dry-run</code> ile etkisini görebilirsiniz). Düzenli çalıştırma için sunucuya günlük zamanlanmış görev olarak eklenmelidir.
             Anonimleştirmede klinik notlar, ölçümler ve dosyalar kalıcı olarak silinir; randevu kayıtları kimlik bilgisi olmadan istatistik için tutulur.
           </p>
         </Notice>

@@ -6,7 +6,7 @@
  * Sitede cam efekti (backdrop-blur) taşıyan tek öğe budur.
  */
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router';
+import { Link, NavLink, useLocation } from '@/lib/router';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Logo } from '@/components/icons/Logo';
 import { CtaButton } from '@/components/forms/Button';
@@ -96,6 +96,7 @@ export function Navbar() {
             </ul>
           </nav>
           <div className="flex items-center gap-3">
+            <Link to="/hesabim" className="hidden py-2 text-[0.88rem] whitespace-nowrap text-cream/80 transition-colors hover:text-ivory xl:block">Danışan girişi</Link>
             <div className="hidden sm:block"><CtaButton onClick={() => booking.open()} className="h-11 px-5 text-[0.88rem] whitespace-nowrap">Randevu Al</CtaButton></div>
             <MenuToggle open={open} onClick={() => setOpen((o) => !o)} />
           </div>
@@ -125,7 +126,10 @@ export function Navbar() {
               </ul>
             </nav>
             <div className="container-edge relative z-[2] flex flex-col gap-6 border-t border-cream/10 pt-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
-              <CtaButton size="lg" onClick={() => { setOpen(false); booking.open(); }} className="w-full sm:w-auto">Randevu Al</CtaButton>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                <CtaButton size="lg" onClick={() => { setOpen(false); booking.open(); }} className="w-full sm:w-auto">Randevu Al</CtaButton>
+                <Link to="/hesabim" className="text-center text-[1rem] text-cream underline-offset-4 hover:underline sm:text-left">Danışan girişi</Link>
+              </div>
               <SocialLinks social={site.settings.social} />
             </div>
           </motion.div>

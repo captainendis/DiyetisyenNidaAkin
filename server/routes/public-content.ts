@@ -2,17 +2,16 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Herkese açık içerik uçları — yalnızca yayınlanmış içerik döner, kişisel veri içermez. */
-import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/db';
-import { notFound, parse } from '../lib/http';
+import { notFound, param, parse, query, router } from '../lib/http';
 import { getSettings } from '../services/settings';
 import { PUBLIC_SETTINGS_KEYS } from '../../shared/settings';
 import { decryptNote } from '../services/recipe-notes';
 import { decryptContent } from '../services/recipe-content';
 import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, type PublicRecipe, type PublicRecipeCard } from '../../shared/recipe';
 
-export const publicContentRouter = Router();
+export const publicContentRouter = router();
 
 const publicService = {
   id: true, slug: true, title: true, summary: true, description: true, icon: true, imageUrl: true,
@@ -24,7 +23,7 @@ function serializeService<T extends { priceCents: number | null; showPrice: bool
   return { ...rest, priceCents: showPrice ? priceCents : null };
 }
 
-publicContentRouter.get('/site', async (_req, res) => {
+publicContentRouter.get('/site', async (c) => {
   const [settings, services, faqs, categories, recipeCount] = await Promise.all([
     getSettings(PUBLIC_SETTINGS_KEYS),
     prisma.service.findMany({ where: { isPublished: true }, orderBy: { sortOrder: 'asc' }, select: publicService }),
@@ -33,14 +32,14 @@ publicContentRouter.get('/site', async (_req, res) => {
     prisma.recipe.count({ where: PUBLISHED_RECIPE }),
   ]);
   // Panelde yapılan değişiklikler yenilemede hemen görünsün
-  res.set('Cache-Control', 'no-cache');
-  res.json({ settings, services: services.map(serializeService), faqs, categories, recipeCount });
+  c.header('Cache-Control', 'no-cache');
+  return c.json({ settings, services: services.map(serializeService), faqs, categories, recipeCount });
 });
 
-publicContentRouter.get('/services/:slug', async (req, res) => {
-  const s = await prisma.service.findFirst({ where: { slug: req.params.slug, isPublished: true }, select: publicService });
+publicContentRouter.get('/services/:slug', async (c) => {
+  const s = await prisma.service.findFirst({ where: { slug: param(c, 'slug'), isPublished: true }, select: publicService });
   if (!s) throw notFound('Hizmet bulunamadı');
-  res.json({ service: serializeService(s) });
+  return c.json({ service: serializeService(s) });
 });
 
 const listQuery = z.object({
@@ -54,8 +53,8 @@ const postCard = {
   publishedAt: true, readingMinutes: true, category: { select: { slug: true, name: true } },
 } as const;
 
-publicContentRouter.get('/blog', async (req, res) => {
-  const q = parse(listQuery, req.query);
+publicContentRouter.get('/blog', async (c) => {
+  const q = parse(listQuery, query(c));
   const where = {
     status: 'PUBLISHED' as const,
     ...(q.category ? { category: { slug: q.category } } : {}),
@@ -70,12 +69,12 @@ publicContentRouter.get('/blog', async (req, res) => {
       select: postCard,
     }),
   ]);
-  res.json({ posts, total, page: q.page, pageSize: q.pageSize });
+  return c.json({ posts, total, page: q.page, pageSize: q.pageSize });
 });
 
-publicContentRouter.get('/blog/:slug', async (req, res) => {
+publicContentRouter.get('/blog/:slug', async (c) => {
   const post = await prisma.blogPost.findFirst({
-    where: { slug: req.params.slug, status: 'PUBLISHED' },
+    where: { slug: param(c, 'slug'), status: 'PUBLISHED' },
     select: {
       ...postCard,
       content: true, seoTitle: true, metaDescription: true, updatedAt: true,
@@ -89,7 +88,7 @@ publicContentRouter.get('/blog/:slug', async (req, res) => {
     take: 3,
     select: postCard,
   });
-  res.json({ post, related });
+  return c.json({ post, related });
 });
 
 // ───────────── Tarifler ─────────────
@@ -119,7 +118,7 @@ const toCard = ({ contentEnc, variantNoteEnc, ...r }: CardRow): PublicRecipeCard
 };
 
 /** Ana sayfa şeridi: panelde seçilenler (seçilme sırasıyla); hiç seçilmemişse son yayınlananlar */
-publicContentRouter.get('/recipes/home', async (_req, res) => {
+publicContentRouter.get('/recipes/home', async (c) => {
   const featured = await prisma.recipe.findMany({
     where: { ...PUBLISHED_RECIPE, featuredAt: { not: null } },
     orderBy: { featuredAt: 'asc' },
@@ -129,11 +128,11 @@ publicContentRouter.get('/recipes/home', async (_req, res) => {
   const rows = featured.length
     ? featured
     : await prisma.recipe.findMany({ where: PUBLISHED_RECIPE, orderBy: { publishedAt: 'desc' }, take: MAX_FEATURED_RECIPES, select: recipeCard });
-  res.json({ recipes: rows.map(toCard), selected: featured.length > 0 });
+  return c.json({ recipes: rows.map(toCard), selected: featured.length > 0 });
 });
 
-publicContentRouter.get('/recipes', async (req, res) => {
-  const q = parse(z.object({ category: z.enum(RECIPE_CATEGORIES).optional(), limit: z.coerce.number().int().min(1).max(200).default(200) }), req.query);
+publicContentRouter.get('/recipes', async (c) => {
+  const q = parse(z.object({ category: z.enum(RECIPE_CATEGORIES).optional(), limit: z.coerce.number().int().min(1).max(200).default(200) }), query(c));
   const rows = await prisma.recipe.findMany({
     where: { ...PUBLISHED_RECIPE, ...(q.category ? { category: q.category } : {}) },
     orderBy: { publishedAt: 'desc' },
@@ -141,12 +140,12 @@ publicContentRouter.get('/recipes', async (req, res) => {
     select: recipeCard,
   });
   const counts = await prisma.recipe.groupBy({ by: ['category'], where: PUBLISHED_RECIPE, _count: true });
-  res.json({ recipes: rows.map(toCard), counts: Object.fromEntries(counts.map((c) => [c.category, c._count])) });
+  return c.json({ recipes: rows.map(toCard), counts: Object.fromEntries(counts.map((c) => [c.category, c._count])) });
 });
 
-publicContentRouter.get('/recipes/:slug', async (req, res) => {
+publicContentRouter.get('/recipes/:slug', async (c) => {
   const r = await prisma.recipe.findFirst({
-    where: { ...PUBLISHED_RECIPE, slug: req.params.slug },
+    where: { ...PUBLISHED_RECIPE, slug: param(c, 'slug') },
     select: { ...recipeCard, updatedAt: true },
   });
   if (!r) throw notFound('Tarif bulunamadı');
@@ -156,13 +155,13 @@ publicContentRouter.get('/recipes/:slug', async (req, res) => {
     take: 3,
     select: recipeCard,
   });
-  const c = decryptContent(r.contentEnc);
+  const rc = decryptContent(r.contentEnc);
   const recipe: PublicRecipe = {
     ...toCard(r),
-    ingredients: c.ingredients,
-    steps: c.steps,
-    tip: c.tip,
+    ingredients: rc.ingredients,
+    steps: rc.steps,
+    tip: rc.tip,
     updatedAt: r.updatedAt.toISOString(),
   };
-  res.json({ recipe, related: related.map(toCard) });
+  return c.json({ recipe, related: related.map(toCard) });
 });
