@@ -27,7 +27,7 @@ export default function PortalPlansPage() {
       ) : (
         <ol className="space-y-3">
           {data.items.map((p, i) => (
-            <li key={p.id} className="flex flex-col gap-4 rounded-2xl bg-white p-5 ring-1 ring-espresso/[0.07] sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <li key={p.id} className="flex flex-col gap-4 rounded-lg bg-white p-5 ring-1 ring-espresso/[0.07] sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2">
                   <Link to={`/hesabim/listeler/${p.id}`} className="font-display nums text-[1.6rem] leading-tight font-medium hover:underline hover:underline-offset-4">{p.name}</Link>

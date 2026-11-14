@@ -27,7 +27,7 @@ export default function PortalMessagesPage() {
         <ol className="space-y-4">
           {data.items.map((m) => (
             <li key={m.id}>
-              <article className="rounded-2xl bg-white p-5 ring-1 ring-espresso/[0.07] sm:p-6">
+              <article className="rounded-lg bg-white p-5 ring-1 ring-espresso/[0.07] sm:p-6">
                 <header className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[0.88rem] text-taupe">
                   <time dateTime={m.createdAt} className="font-semibold text-cocoa">{formatDate(m.createdAt)}</time>
                   {m.appointmentAt && <span>{formatDate(m.appointmentAt)} görüşmesi</span>}

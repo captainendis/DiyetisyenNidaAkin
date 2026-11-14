@@ -25,9 +25,9 @@ export default function PortalFilesPage() {
       ) : error ? (
         <LoadError message={error.message} onRetry={reload} />
       ) : !data?.items.length ? (
-        <Empty title="Paylaşılan dosya yok." />
+        <Empty title="Paylaşılan dosya yok.">Diyetisyenin seninle bir belge (ör. tahlil sonucu) paylaştığında buradan indirebilirsin.</Empty>
       ) : (
-        <ul className="divide-y divide-espresso/10 overflow-hidden rounded-2xl bg-white ring-1 ring-espresso/[0.07]">
+        <ul className="divide-y divide-espresso/10 overflow-hidden rounded-lg bg-white ring-1 ring-espresso/[0.07]">
           {data.items.map((f) => (
             <li key={f.id}>
               <a href={portalApi.url(`/files/${f.id}/download`)} className="flex items-center gap-4 px-5 py-4 hover:bg-espresso/[0.03]">

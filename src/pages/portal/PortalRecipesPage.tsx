@@ -33,10 +33,10 @@ export default function PortalRecipesPage() {
           {data.items.map((r) => (
             <li key={r.id}>
               <Link to={`/hesabim/tarifler/${r.id}`} className="group block">
-                <div className="overflow-hidden rounded-2xl"><RecipeImage recipe={r} className="transition-transform duration-500 group-hover:scale-[1.02]" /></div>
-                <p className="mt-4 flex flex-wrap items-center gap-2 text-[0.8rem] font-semibold tracking-wide text-taupe uppercase">
+                <div className="overflow-hidden rounded-lg"><RecipeImage recipe={r} className="transition-transform duration-500 group-hover:scale-[1.02]" /></div>
+                <p className="mt-4 flex flex-wrap items-center gap-2 text-[0.88rem] font-semibold text-taupe">
                   {RECIPE_CATEGORY_LABEL[r.category]}
-                  {r.personal && <span className="rounded-full bg-espresso px-2 py-0.5 text-[0.72rem] tracking-normal text-ivory normal-case">Sana özel</span>}
+                  {r.personal && <span className="rounded-full bg-espresso px-2 py-0.5 text-[0.72rem] text-ivory">Sana özel</span>}
                 </p>
                 <h2 className="mt-1 font-display text-[1.55rem] leading-tight font-medium group-hover:underline group-hover:underline-offset-4">{r.title}</h2>
                 {r.variantNote && <p className="mt-1 text-[0.92rem] font-semibold text-rose-ink">{r.variantNote}</p>}

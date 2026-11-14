@@ -41,7 +41,7 @@ export function NotificationsSection() {
 
   return (
     <FormCard>
-      <FormSection title="Bildirim kanalları" description="Panel içi bildirimler her zaman kullanılabilir. Harici kanallar sunucuda yapılandırıldığında etkinleşir.">
+      <FormSection title="Bildirim kanalları" description="Panel içi bildirimler her zaman açıktır.">
         <ul className="space-y-2 text-sm">
           <li className="flex items-center justify-between rounded-lg border border-panel-line px-4 py-3">
             <span className="font-medium text-espresso">Panel içi</span>
@@ -58,7 +58,7 @@ export function NotificationsSection() {
         </ul>
         {!emailOn && (
           <Notice>
-            E-posta gönderimi için sunucuda SMTP ayarlarının (README → “E-posta”) yapılması gerekir. Yapılandırılmadığı sürece hiçbir e-posta gönderilmez; tercihler kaydedilir ve kanal etkinleştiğinde uygulanır.
+            E-posta kanalı henüz açık değil. Tercihleriniz kaydedilir ve kanal açıldığında uygulanır.
           </Notice>
         )}
       </FormSection>
