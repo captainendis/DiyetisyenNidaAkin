@@ -107,20 +107,20 @@ clientsRouter.get('/', canRead, async (req, res) => {
     const parts = term.split(/\s+/).filter(Boolean);
     const digits = term.replace(/\D/g, '');
     const or: Prisma.ClientWhereInput[] = [
-      { firstName: { contains: term, mode: 'insensitive' } },
-      { lastName: { contains: term, mode: 'insensitive' } },
-      { email: { contains: term.toLowerCase(), mode: 'insensitive' } },
+      { firstName: { contains: term } },
+      { lastName: { contains: term } },
+      { email: { contains: term.toLowerCase() } },
     ];
     // Türkçe büyük/küçük harf (İ/ı) için yerelleştirilmiş varyantlar
     const lower = term.toLocaleLowerCase('tr-TR');
     const upper = term.toLocaleUpperCase('tr-TR');
     for (const v of new Set([lower, upper, lower.charAt(0).toLocaleUpperCase('tr-TR') + lower.slice(1)])) {
-      if (v !== term) or.push({ firstName: { contains: v, mode: 'insensitive' } }, { lastName: { contains: v, mode: 'insensitive' } });
+      if (v !== term) or.push({ firstName: { contains: v } }, { lastName: { contains: v } });
     }
     if (parts.length >= 2) {
       const first = parts.slice(0, -1).join(' ');
       const last = parts[parts.length - 1];
-      or.push({ AND: [{ firstName: { contains: first, mode: 'insensitive' } }, { lastName: { contains: last, mode: 'insensitive' } }] });
+      or.push({ AND: [{ firstName: { contains: first } }, { lastName: { contains: last } }] });
     }
     if (digits.length >= 3) {
       // Telefonlar +90 5xx… biçiminde saklanır; baştaki 0 / 90'ı tolere et

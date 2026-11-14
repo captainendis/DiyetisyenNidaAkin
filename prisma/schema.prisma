@@ -1,5 +1,5 @@
 // Nida Akın Diyetisyen — veritabanı şeması
-// Tüm zaman damgaları timestamptz (UTC) olarak saklanır; iş kuralları Europe/Istanbul saat diliminde hesaplanır.
+// Veritabanı: MySQL 8 / MariaDB 10.6+ (utf8mb4). Tüm zaman damgaları UTC olarak DATETIME(3) saklanır; iş kuralları Europe/Istanbul saat diliminde hesaplanır.
 // Takvim günleri (izin günü, ölçüm tarihi, doğum tarihi) saat dilimi kaymasını önlemek için "YYYY-MM-DD" metni olarak tutulur.
 
 generator client {
@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 // ───────────────────────────── Kimlik & Yetki ─────────────────────────────
@@ -19,7 +19,7 @@ model Role {
   key         RoleKey  @unique
   name        String
   /// İzin anahtarları (ör. "clinical:read"). Bkz. server/auth/permissions.ts
-  permissions String[]
+  permissions Json
   users       User[]
 
   @@map("roles")
@@ -43,13 +43,13 @@ model User {
   role              Role      @relation(fields: [roleId], references: [id])
   isActive          Boolean   @default(true)
   failedLoginCount  Int       @default(0)
-  lockedUntil       DateTime? @db.Timestamptz(3)
-  lastLoginAt       DateTime? @db.Timestamptz(3)
-  passwordChangedAt DateTime? @db.Timestamptz(3)
+  lockedUntil       DateTime? @db.DateTime(3)
+  lastLoginAt       DateTime? @db.DateTime(3)
+  passwordChangedAt DateTime? @db.DateTime(3)
   /// { inApp: { [type]: boolean }, email: { [type]: boolean } }
   notificationPrefs Json      @default("{}")
-  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @db.DateTime(3)
+  updatedAt         DateTime  @updatedAt @db.DateTime(3)
 
   sessions           Session[]
   resetTokens        PasswordResetToken[]
@@ -77,11 +77,11 @@ model Session {
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   remember   Boolean  @default(false)
-  expiresAt  DateTime @db.Timestamptz(3)
-  lastSeenAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt  DateTime @db.DateTime(3)
+  lastSeenAt DateTime @default(now()) @db.DateTime(3)
   ip         String?
-  userAgent  String?
-  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  userAgent  String? @db.Text
+  createdAt  DateTime @default(now()) @db.DateTime(3)
 
   @@index([userId])
   @@index([expiresAt])
@@ -93,9 +93,9 @@ model PasswordResetToken {
   tokenHash String    @unique
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime  @db.Timestamptz(3)
-  usedAt    DateTime? @db.Timestamptz(3)
-  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime  @db.DateTime(3)
+  usedAt    DateTime? @db.DateTime(3)
+  createdAt DateTime  @default(now()) @db.DateTime(3)
 
   @@index([userId])
   @@map("password_reset_tokens")
@@ -133,15 +133,15 @@ model Client {
   status               ClientStatus  @default(ACTIVE)
   source               RecordSource  @default(PANEL)
   /// Kısa yönetimsel not (sağlık bilgisi içermemeli; klinik notlar consultation_notes'ta şifreli tutulur)
-  internalNote         String?
+  internalNote         String? @db.Text
   /// KVKK aydınlatma metninin danışana sunulduğu an
-  kvkkNoticeAt         DateTime?     @db.Timestamptz(3)
+  kvkkNoticeAt         DateTime?     @db.DateTime(3)
   /// Sağlık verisi işlenmesine ilişkin açık rıza (ölçüm/beslenme takibi için zorunlu)
-  healthConsentAt      DateTime?     @db.Timestamptz(3)
-  healthConsentNote    String?
-  healthConsentWithdrawnAt DateTime? @db.Timestamptz(3)
-  createdAt            DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
+  healthConsentAt      DateTime?     @db.DateTime(3)
+  healthConsentNote    String? @db.Text
+  healthConsentWithdrawnAt DateTime? @db.DateTime(3)
+  createdAt            DateTime      @default(now()) @db.DateTime(3)
+  updatedAt            DateTime      @updatedAt @db.DateTime(3)
 
   appointments      Appointment[]
   consultationNotes ConsultationNote[]
@@ -183,21 +183,21 @@ model Appointment {
   contactPhone         String
   contactEmail         String?
   /// NEW_REQUEST durumunda boş olabilir
-  startsAt             DateTime?         @db.Timestamptz(3)
-  endsAt               DateTime?         @db.Timestamptz(3)
+  startsAt             DateTime?         @db.DateTime(3)
+  endsAt               DateTime?         @db.DateTime(3)
   meetingType          MeetingType       @default(IN_PERSON)
   status               AppointmentStatus @default(PENDING)
   source               RecordSource      @default(PANEL)
-  clientMessage        String?
-  internalNote         String?
-  kvkkNoticeAcceptedAt DateTime?         @db.Timestamptz(3)
-  explicitConsentAt    DateTime?         @db.Timestamptz(3)
+  clientMessage        String? @db.Text
+  internalNote         String? @db.Text
+  kvkkNoticeAcceptedAt DateTime?         @db.DateTime(3)
+  explicitConsentAt    DateTime?         @db.DateTime(3)
   /// Yaklaşan randevu bildiriminin üretildiği an (tekrarı önler)
-  reminderNotifiedAt   DateTime?         @db.Timestamptz(3)
+  reminderNotifiedAt   DateTime?         @db.DateTime(3)
   createdById          String?
   createdBy            User?             @relation("AppointmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt            DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt            DateTime          @updatedAt @db.Timestamptz(3)
+  createdAt            DateTime          @default(now()) @db.DateTime(3)
+  updatedAt            DateTime          @updatedAt @db.DateTime(3)
 
   statusHistory     AppointmentStatusHistory[]
   notifications     Notification[]
@@ -217,12 +217,12 @@ model AppointmentStatusHistory {
   fromStatus    AppointmentStatus?
   toStatus      AppointmentStatus
   /// Zaman değişikliklerinde önceki/sonraki başlangıç
-  previousStartsAt DateTime?       @db.Timestamptz(3)
-  newStartsAt      DateTime?       @db.Timestamptz(3)
-  note          String?
+  previousStartsAt DateTime?       @db.DateTime(3)
+  newStartsAt      DateTime?       @db.DateTime(3)
+  note          String? @db.Text
   changedById   String?
   changedBy     User?              @relation(fields: [changedById], references: [id], onDelete: SetNull)
-  changedAt     DateTime           @default(now()) @db.Timestamptz(3)
+  changedAt     DateTime           @default(now()) @db.DateTime(3)
 
   @@index([appointmentId])
   @@map("appointment_status_history")
@@ -234,19 +234,19 @@ model Service {
   id              String   @id @default(cuid())
   slug            String   @unique
   title           String
-  summary         String
-  description     String
+  summary         String @db.Text
+  description     String @db.Text
   /// Yerleşik çizgi-ikon anahtarı (src/components/icons/ServiceIcon.tsx)
   icon            String   @default("leaf")
-  imageUrl        String?
+  imageUrl        String? @db.VarChar(500)
   isPublished     Boolean  @default(true)
   sortOrder       Int      @default(0)
   durationMinutes Int?
   /// Kuruş cinsinden; isteğe bağlı
   priceCents      Int?
   showPrice       Boolean  @default(false)
-  createdAt       DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+  createdAt       DateTime @default(now()) @db.DateTime(3)
+  updatedAt       DateTime @updatedAt @db.DateTime(3)
 
   appointments Appointment[]
 
@@ -297,7 +297,7 @@ model BlockedDate {
   label     String?
   startTime String?           @db.VarChar(5)
   endTime   String?           @db.VarChar(5)
-  createdAt DateTime          @default(now()) @db.Timestamptz(3)
+  createdAt DateTime          @default(now()) @db.DateTime(3)
 
   @@index([date])
   @@map("blocked_dates")
@@ -318,14 +318,14 @@ model Notification {
   userId        String
   user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type          NotificationType
-  title         String
-  body          String?
+  title         String @db.VarChar(500)
+  body          String? @db.Text
   appointmentId String?
   appointment   Appointment?     @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   clientId      String?
   client        Client?          @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  readAt        DateTime?        @db.Timestamptz(3)
-  createdAt     DateTime         @default(now()) @db.Timestamptz(3)
+  readAt        DateTime?        @db.DateTime(3)
+  createdAt     DateTime         @default(now()) @db.DateTime(3)
 
   deliveries NotificationDelivery[]
 
@@ -353,8 +353,8 @@ model NotificationDelivery {
   notification   Notification    @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   channel        DeliveryChannel
   status         DeliveryStatus
-  error          String?
-  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  error          String? @db.Text
+  createdAt      DateTime        @default(now()) @db.DateTime(3)
 
   @@map("notification_deliveries")
 }
@@ -370,9 +370,9 @@ model ConsultationNote {
   authorId      String?
   author        User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
   /// AES-256-GCM ile şifrelenmiş içerik (server/lib/crypto.ts)
-  contentEnc    String
-  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+  contentEnc    String @db.MediumText
+  createdAt     DateTime     @default(now()) @db.DateTime(3)
+  updatedAt     DateTime     @updatedAt @db.DateTime(3)
 
   @@index([clientId])
   @@map("consultation_notes")
@@ -385,10 +385,10 @@ model Measurement {
   /// YYYY-MM-DD
   measuredOn  String   @db.VarChar(10)
   /// Şifreli JSON: { heightCm, weightKg, targetWeightKg, note }
-  dataEnc     String
+  dataEnc     String @db.Text
   createdById String?
   createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @db.DateTime(3)
 
   @@index([clientId, measuredOn])
   @@map("measurements")
@@ -398,7 +398,7 @@ model ClientFile {
   id           String   @id @default(cuid())
   clientId     String
   client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  originalName String
+  originalName String @db.VarChar(500)
   /// Disk üzerindeki şifreli dosya adı (UPLOAD_DIR/private)
   storedName   String   @unique
   mimeType     String
@@ -407,7 +407,7 @@ model ClientFile {
   uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
   /// Danışan hesabında ("Hesabım → Dosyalar") görünsün mü
   visibleToClient Boolean @default(true)
-  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  createdAt    DateTime @default(now()) @db.DateTime(3)
 
   @@index([clientId])
   @@map("client_files")
@@ -423,11 +423,11 @@ model NutritionPlan {
   /// Listeleme için kısa ad (ör. "1. ay, 1. liste"). Kişisel/sağlık bilgisi yazılmamalı.
   name        String
   /// AES-256-GCM şifreli JSON (NutritionPlanData)
-  dataEnc     String
+  dataEnc     String @db.MediumText
   createdById String?
   createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @db.DateTime(3)
 
   @@index([clientId])
   @@index([isTemplate])
@@ -452,20 +452,20 @@ model Recipe {
   /// AES-256-GCM şifreli JSON: { title, summary, ingredients[], steps[], tip } (RecipeContent).
   /// Kişiye özel tarifler sağlık bilgisi içerebildiği için tüm tariflerde içerik şifreli tutulur;
   /// yalnızca açılıştaki taşıma tamamlanana kadar (eski kurulumlarda) kısa süre boş olabilir.
-  contentEnc  String?
+  contentEnc  String? @db.MediumText
   /// Herkese açık adres (/tarifler/<slug>); ilk yayında atanır, sonra değişmez
   slug        String?        @unique
   isPublished Boolean        @default(false)
-  publishedAt DateTime?      @db.Timestamptz(3)
+  publishedAt DateTime?      @db.DateTime(3)
   /// Ana sayfadaki "Mutfaktan" şeridinde gösterilsin mi (doluysa seçilme zamanı; sıralama bu alana göre). En fazla 3.
-  featuredAt  DateTime?      @db.Timestamptz(3)
+  featuredAt  DateTime?      @db.DateTime(3)
   parentId    String?
   parent      Recipe?        @relation("RecipeVariants", fields: [parentId], references: [id], onDelete: SetNull)
   variants    Recipe[]       @relation("RecipeVariants")
   clientId    String?
   client      Client?        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   /// Varyasyonda neyin değiştiği (ör. "Laktozsuz, glutensiz ekmekle") — AES-256-GCM şifreli; sağlık bilgisi içerebilir
-  variantNoteEnc String?
+  variantNoteEnc String? @db.Text
   category    RecipeCategory
   servings    Int?
   prepMinutes Int?
@@ -476,8 +476,8 @@ model Recipe {
   imageBase   String?
   createdById String?
   createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime       @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime       @updatedAt @db.Timestamptz(3)
+  createdAt   DateTime       @default(now()) @db.DateTime(3)
+  updatedAt   DateTime       @updatedAt @db.DateTime(3)
 
   @@index([category])
   @@index([isPublished])
@@ -507,25 +507,25 @@ enum PostStatus {
 model BlogPost {
   id              String        @id @default(cuid())
   slug            String        @unique
-  title           String
-  excerpt         String
+  title           String @db.VarChar(255)
+  excerpt         String @db.Text
   /// Basit Markdown (başlık, paragraf, liste, kalın/italik, bağlantı)
-  content         String
-  coverImageUrl   String?
-  coverImageAlt   String?
+  content         String @db.MediumText
+  coverImageUrl   String? @db.VarChar(500)
+  coverImageAlt   String? @db.VarChar(255)
   categoryId      String?
   category        BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   status          PostStatus    @default(DRAFT)
-  seoTitle        String?
-  metaDescription String?
+  seoTitle        String? @db.VarChar(255)
+  metaDescription String? @db.Text
   readingMinutes  Int?
   /// Uzman tarafından içerik onayı verildi mi? (yayınlamak için zorunlu)
   expertReviewed  Boolean       @default(false)
-  publishedAt     DateTime?     @db.Timestamptz(3)
+  publishedAt     DateTime?     @db.DateTime(3)
   authorId        String?
   author          User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  createdAt       DateTime      @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime      @updatedAt @db.Timestamptz(3)
+  createdAt       DateTime      @default(now()) @db.DateTime(3)
+  updatedAt       DateTime      @updatedAt @db.DateTime(3)
 
   @@index([status, publishedAt])
   @@map("blog_posts")
@@ -533,12 +533,12 @@ model BlogPost {
 
 model Faq {
   id          String   @id @default(cuid())
-  question    String
-  answer      String
+  question    String @db.Text
+  answer      String @db.Text
   sortOrder   Int      @default(0)
   isPublished Boolean  @default(false)
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @db.DateTime(3)
 
   @@map("faqs")
 }
@@ -546,12 +546,12 @@ model Faq {
 model MediaAsset {
   id          String   @id @default(cuid())
   /// Herkese açık yol (/uploads/public/...)
-  url         String   @unique
+  url         String   @unique @db.VarChar(500)
   mimeType    String
   sizeBytes   Int
-  alt         String?
+  alt         String? @db.VarChar(500)
   uploadedById String?
-  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @db.DateTime(3)
 
   @@map("media_assets")
 }
@@ -561,7 +561,7 @@ model WebsiteSetting {
   key         String   @id
   value       Json
   updatedById String?
-  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.DateTime(3)
 
   @@map("website_settings")
 }
@@ -575,8 +575,8 @@ model AuditLog {
   entityId   String?
   metadata   Json?
   ip         String?
-  userAgent  String?
-  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  userAgent  String? @db.Text
+  createdAt  DateTime @default(now()) @db.DateTime(3)
 
   @@index([entityType, entityId])
   @@index([createdAt])
@@ -601,14 +601,14 @@ model ClientAccount {
   passwordHash      String?
   isActive          Boolean   @default(true)
   failedLoginCount  Int       @default(0)
-  lockedUntil       DateTime? @db.Timestamptz(3)
-  lastLoginAt       DateTime? @db.Timestamptz(3)
-  passwordChangedAt DateTime? @db.Timestamptz(3)
-  activatedAt       DateTime? @db.Timestamptz(3)
+  lockedUntil       DateTime? @db.DateTime(3)
+  lastLoginAt       DateTime? @db.DateTime(3)
+  passwordChangedAt DateTime? @db.DateTime(3)
+  activatedAt       DateTime? @db.DateTime(3)
   createdById       String?
   createdBy         User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
-  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+  createdAt         DateTime  @default(now()) @db.DateTime(3)
+  updatedAt         DateTime  @updatedAt @db.DateTime(3)
 
   sessions ClientSession[]
   tokens   ClientAccountToken[]
@@ -623,9 +623,9 @@ model ClientAccountToken {
   accountId String
   account   ClientAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
   purpose   ClientTokenPurpose
-  expiresAt DateTime           @db.Timestamptz(3)
-  usedAt    DateTime?          @db.Timestamptz(3)
-  createdAt DateTime           @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime           @db.DateTime(3)
+  usedAt    DateTime?          @db.DateTime(3)
+  createdAt DateTime           @default(now()) @db.DateTime(3)
 
   @@index([accountId])
   @@map("client_account_tokens")
@@ -638,11 +638,11 @@ model ClientSession {
   accountId  String
   account    ClientAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   remember   Boolean       @default(false)
-  expiresAt  DateTime      @db.Timestamptz(3)
-  lastSeenAt DateTime      @default(now()) @db.Timestamptz(3)
+  expiresAt  DateTime      @db.DateTime(3)
+  lastSeenAt DateTime      @default(now()) @db.DateTime(3)
   ip         String?
-  userAgent  String?
-  createdAt  DateTime      @default(now()) @db.Timestamptz(3)
+  userAgent  String? @db.Text
+  createdAt  DateTime      @default(now()) @db.DateTime(3)
 
   @@index([accountId])
   @@index([expiresAt])
@@ -659,10 +659,20 @@ model ClientMessage {
   authorId      String?
   author        User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
   /// AES-256-GCM şifreli metin
-  contentEnc    String
-  createdAt     DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime     @updatedAt @db.Timestamptz(3)
+  contentEnc    String @db.MediumText
+  createdAt     DateTime     @default(now()) @db.DateTime(3)
+  updatedAt     DateTime     @updatedAt @db.DateTime(3)
 
   @@index([clientId])
   @@map("client_messages")
+}
+
+// ───────────────────────────── Sistem ─────────────────────────────
+
+/// Uygulama düzeyinde kilitler (ör. "appointments"): satıra SELECT … FOR UPDATE / INSERT … ON DUPLICATE KEY UPDATE
+/// ile yazma kilidi alınarak eşzamanlı randevu yazımları serileştirilir. Bkz. server/services/availability.ts
+model AppLock {
+  name String @id @db.VarChar(64)
+
+  @@map("app_locks")
 }

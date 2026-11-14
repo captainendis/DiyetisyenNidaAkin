@@ -50,7 +50,7 @@ export default function PortalHomePage() {
               </div>
               <div className="mt-7 flex flex-wrap gap-2">
                 <PortalLinkButton to={`/hesabim/listeler/${data.latestPlan.id}`} className="bg-espresso text-ivory ring-0 hover:bg-cocoa">Listeyi aç</PortalLinkButton>
-                <a href={portalApi.url(`/plans/${data.latestPlan.id}/pdf`)} className="inline-flex h-11 items-center rounded-full px-5 text-[0.92rem] font-semibold text-espresso ring-1 ring-espresso/20 ring-inset hover:bg-espresso/[0.05]">PDF indir</a>
+                <a href={portalApi.url(`/plans/${data.latestPlan.id}/print`, { autoprint: 1 })} target="_blank" rel="noopener" className="inline-flex h-11 items-center rounded-full px-5 text-[0.92rem] font-semibold text-espresso ring-1 ring-espresso/20 ring-inset hover:bg-espresso/[0.05]">Yazdır / PDF</a>
               </div>
             </>
           ) : (

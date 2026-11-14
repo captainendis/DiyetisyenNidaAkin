@@ -9,15 +9,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/db';
 import { decryptJson, encryptJson } from '../lib/crypto';
-import { HttpError, notFound, parse } from '../lib/http';
+import { notFound, parse } from '../lib/http';
 import { audit } from '../lib/audit';
 import { requirePermission } from '../auth/session';
 import { getSettings } from '../services/settings';
-import { PdfUnavailableError, renderPlanPdf } from '../services/pdf';
+import { renderPlanPrintPage } from '../services/print';
 import { emptyPlan, nutritionPlanDataSchema, planCreateSchema, planTitleFor, planUpdateSchema, type NutritionPlanData } from '../../shared/plan';
-import { slugify } from '../../shared/text';
 import { resolvePlanRecipes } from './recipes';
-import { todayStr } from '../../shared/time';
 
 export const plansRouter = Router();
 const read = requirePermission('clinical:read');
@@ -59,9 +57,9 @@ plansRouter.get('/', read, async (req, res) => {
       ...(q.q
         ? {
             OR: [
-              { name: { contains: q.q, mode: 'insensitive' as const } },
-              { client: { firstName: { contains: q.q, mode: 'insensitive' as const } } },
-              { client: { lastName: { contains: q.q, mode: 'insensitive' as const } } },
+              { name: { contains: q.q } },
+              { client: { firstName: { contains: q.q } } },
+              { client: { lastName: { contains: q.q } } },
             ],
           }
         : {}),
@@ -130,28 +128,12 @@ plansRouter.delete('/:id', write, async (req, res) => {
   res.json({ ok: true });
 });
 
-plansRouter.get('/:id/pdf', read, async (req, res) => {
+/** Yazdırma sayfası (A4). Tarayıcının yazdırma penceresinden "PDF olarak kaydet" ile PDF alınır. */
+plansRouter.get('/:id/print', read, async (req, res) => {
   const plan = await load(String(req.params.id));
   const data = decodePlan(plan.dataEnc);
-  let out;
-  try {
-    out = await renderPlanPdf(data, data.title, await resolvePlanRecipes(data));
-  } catch (e) {
-    if (e instanceof PdfUnavailableError) throw new HttpError(503, 'PDF_UNAVAILABLE', e.message);
-    throw e;
-  }
-  await audit(req, 'plan.pdf_generated', 'nutrition_plan', plan.id, { scale: out.scale, fits: out.fits, pages: out.pages, recipes: data.recipes.items.length });
-  const who = plan.client ? `${plan.client.firstName}-${plan.client.lastName}` : plan.name;
-  const file = `Beslenme-Plani-${slugify(who) || 'plan'}-${todayStr()}.pdf`;
-  res.set({
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `${req.query.inline === '1' ? 'inline' : 'attachment'}; filename="${file}"`,
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Plan-Scale': String(out.scale),
-    'X-Plan-Fits': String(out.fits),
-    'X-Plan-Pages': String(out.pages),
-    'X-Plan-Recipes-Fit': String(out.recipesFit),
-  });
-  res.send(Buffer.from(out.pdf));
+  const page = renderPlanPrintPage(data, data.title, await resolvePlanRecipes(data), { autoPrint: req.query.autoprint === '1' });
+  await audit(req, 'plan.print_opened', 'nutrition_plan', plan.id, { recipes: data.recipes.items.length });
+  res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': page.csp, 'Cache-Control': 'no-store' });
+  res.send(page.html);
 });

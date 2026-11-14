@@ -82,10 +82,10 @@ appointmentsRouter.get('/', canRead, async (req, res) => {
     const term = q.q.trim();
     const digits = term.replace(/\D/g, '');
     const or: Prisma.AppointmentWhereInput[] = [
-      { contactName: { contains: term, mode: 'insensitive' } },
-      { contactEmail: { contains: term, mode: 'insensitive' } },
-      { client: { firstName: { contains: term, mode: 'insensitive' } } },
-      { client: { lastName: { contains: term, mode: 'insensitive' } } },
+      { contactName: { contains: term } },
+      { contactEmail: { contains: term } },
+      { client: { firstName: { contains: term } } },
+      { client: { lastName: { contains: term } } },
     ];
     if (digits.length >= 3) or.push({ contactPhone: { contains: digits.replace(/^0/, '') } });
     and.push({ OR: or });

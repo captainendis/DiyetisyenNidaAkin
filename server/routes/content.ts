@@ -80,7 +80,7 @@ contentRouter.get('/posts', async (req, res) => {
   const where = {
     ...(q.status ? { status: q.status } : {}),
     ...(q.categoryId ? { categoryId: q.categoryId } : {}),
-    ...(q.q ? { OR: [{ title: { contains: q.q, mode: 'insensitive' as const } }, { excerpt: { contains: q.q, mode: 'insensitive' as const } }] } : {}),
+    ...(q.q ? { OR: [{ title: { contains: q.q } }, { excerpt: { contains: q.q } }] } : {}),
   };
   const [total, items] = await Promise.all([
     prisma.blogPost.count({ where }),

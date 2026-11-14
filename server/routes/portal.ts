@@ -22,11 +22,9 @@ import { emailAccountLink, issueAccountLink } from '../services/client-accounts'
 import { isEmailConfigured } from '../services/mailer';
 import { decryptContent } from '../services/recipe-content';
 import { decryptNote } from '../services/recipe-notes';
-import { PdfUnavailableError, renderPlanPdf } from '../services/pdf';
+import { renderPlanPrintPage } from '../services/print';
 import { decodePlan } from './plans';
 import { resolvePlanRecipes } from './recipes';
-import { slugify } from '../../shared/text';
-import { todayStr } from '../../shared/time';
 import {
   portalChangePasswordSchema,
   portalForgotSchema,
@@ -324,25 +322,14 @@ portalRouter.get('/plans/:id', async (req, res) => {
   res.json({ plan: out });
 });
 
-portalRouter.get('/plans/:id/pdf', async (req, res) => {
+/** Listenin yazdırma sayfası (A4); danışan tarayıcıdan yazdırır ya da "PDF olarak kaydet" ile indirir */
+portalRouter.get('/plans/:id/print', async (req, res) => {
   const plan = await loadOwnPlan(req);
   const data = decodePlan(plan.dataEnc);
-  let out;
-  try {
-    out = await renderPlanPdf(data, data.title, await resolvePlanRecipes(data));
-  } catch (e) {
-    if (e instanceof PdfUnavailableError) throw new HttpError(503, 'PDF_UNAVAILABLE', 'PDF şu anda hazırlanamıyor. Lütfen biraz sonra tekrar deneyin.');
-    throw e;
-  }
-  await portalAudit(req, 'portal.plan_pdf', req.portalUser!.accountId, { planId: plan.id });
-  const file = `Beslenme-Listesi-${slugify(plan.name) || 'liste'}-${todayStr()}.pdf`;
-  res.set({
-    'Content-Type': 'application/pdf',
-    'Content-Disposition': `${req.query.inline === '1' ? 'inline' : 'attachment'}; filename="${file}"`,
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff',
-  });
-  res.send(Buffer.from(out.pdf));
+  const page = renderPlanPrintPage(data, data.title, await resolvePlanRecipes(data), { autoPrint: req.query.autoprint === '1' });
+  await portalAudit(req, 'portal.plan_print', req.portalUser!.accountId, { planId: plan.id });
+  res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': page.csp, 'Cache-Control': 'no-store' });
+  res.send(page.html);
 });
 
 // ───────────────────────── Tarifler ─────────────────────────

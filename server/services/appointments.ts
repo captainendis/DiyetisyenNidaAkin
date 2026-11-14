@@ -74,7 +74,7 @@ export async function resolveDuration(db: Tx | typeof prisma, opts: { serviceId?
 /** Telefon veya e-postaya göre mevcut danışanı bulur */
 export async function findClientByContact(db: Tx | typeof prisma, phone: string, email: string | null) {
   const or: Prisma.ClientWhereInput[] = [{ phone }];
-  if (email) or.push({ email: { equals: email, mode: 'insensitive' } });
+  if (email) or.push({ email: { equals: email } });
   return db.client.findFirst({ where: { OR: or }, orderBy: { createdAt: 'asc' }, select: { id: true } });
 }
 

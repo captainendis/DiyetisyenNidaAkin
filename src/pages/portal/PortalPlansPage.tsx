@@ -37,7 +37,7 @@ export default function PortalPlansPage() {
               </div>
               <div className="flex shrink-0 gap-2">
                 <Link to={`/hesabim/listeler/${p.id}`} className="inline-flex h-11 items-center rounded-full bg-espresso px-5 text-[0.92rem] font-semibold text-ivory hover:bg-cocoa">Aç</Link>
-                <a href={portalApi.url(`/plans/${p.id}/pdf`)} className="inline-flex h-11 items-center rounded-full px-5 text-[0.92rem] font-semibold text-espresso ring-1 ring-espresso/20 ring-inset hover:bg-espresso/[0.05]">PDF</a>
+                <a href={portalApi.url(`/plans/${p.id}/print`, { autoprint: 1 })} target="_blank" rel="noopener" className="inline-flex h-11 items-center rounded-full px-5 text-[0.92rem] font-semibold text-espresso ring-1 ring-espresso/20 ring-inset hover:bg-espresso/[0.05]">Yazdır / PDF</a>
               </div>
             </li>
           ))}

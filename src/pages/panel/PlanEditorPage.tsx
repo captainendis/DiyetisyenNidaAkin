@@ -4,14 +4,14 @@
 /** /panel/planlar/:id — plan düzenleyici + canlı A4 önizleme */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { ArrowLeft, BookmarkPlus, Download, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, BookmarkPlus, Printer, Save, Trash2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { RequirePermission, usePanelAuth } from '@/components/panel/PanelAuth';
 import { Badge, Button, Card, ErrorState, Skeleton, Tabs, useFeedback } from '@/components/panel/ui';
 import { PlanEditorForm } from '@/components/panel/plans/PlanEditorForm';
 import { PlanPreview } from '@/components/panel/plans/PlanPreview';
-import { downloadPlanPdf, type PlanDetail } from '@/components/panel/plans/api';
+import { openPlanPrint, type PlanDetail } from '@/components/panel/plans/api';
 import { printRecipesFor } from '@/components/panel/recipes/api';
 import type { FitResult } from '@shared/plan-template';
 import type { Recipe } from '@shared/recipe';
@@ -31,7 +31,6 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
   const [data, setData] = useState<NutritionPlanData>(() => clone(plan.data));
   const [name, setName] = useState(plan.name);
   const [saving, setSaving] = useState(false);
-  const [pdfBusy, setPdfBusy] = useState(false);
   const [fit, setFit] = useState<FitResult | null>(null);
   const library = useApi(() => api.get<{ items: Recipe[] }>('/recipes'), []);
   const printRecipes = useMemo(() => printRecipesFor(data, library.data?.items), [data, library.data]);
@@ -71,20 +70,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
     }
   };
 
-  const pdf = async () => {
-    if (dirty && editable && !(await save(true))) return;
-    setPdfBusy(true);
-    try {
-      const r = await downloadPlanPdf(plan.id);
-      if (!r.fits) fb.toast({ tone: 'warning', title: 'Plan sayfaya tam sığmadı', description: 'Bazı satırları kısaltın veya bir seçeneği çıkarın.' });
-      else if (!r.recipesFit) fb.toast({ tone: 'warning', title: 'Bir tarif sayfaya tam sığmadı', description: 'Uzun tariflerde adımları kısaltmayı deneyin.' });
-      else fb.success('PDF indirildi', r.pages > 1 ? `${r.pages} sayfa (plan + tarif önerileri)` : undefined);
-    } catch (e) {
-      fb.error('PDF oluşturulamadı', e instanceof ApiError ? e.message : undefined);
-    } finally {
-      setPdfBusy(false);
-    }
-  };
+  const pdf = () => void openPlanPrint(plan.id, async () => !(dirty && editable) || (await save(true)));
 
   const saveAsTemplate = async () => {
     try {
@@ -133,7 +119,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
           {editable && <Button variant="ghost" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove()}>Sil</Button>}
           {editable && !plan.isTemplate && <Button variant="secondary" icon={<BookmarkPlus className="h-4 w-4" />} onClick={() => void saveAsTemplate()}>Şablon olarak kaydet</Button>}
           {editable && <Button variant="secondary" loading={saving} disabled={!dirty} icon={<Save className="h-4 w-4" />} onClick={() => void save()}>Kaydet</Button>}
-          <Button variant="primary" loading={pdfBusy} icon={<Download className="h-4 w-4" />} onClick={() => void pdf()}>PDF indir</Button>
+          <Button variant="primary" icon={<Printer className="h-4 w-4" />} onClick={pdf}>Yazdır / PDF</Button>
         </div>
       </div>
 
@@ -170,7 +156,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
                 : 'Bir tarif tek sayfaya sığmıyor — adımlarını veya malzeme listesini kısaltın.'}
             </p>
           )}
-          <p className="mt-1 text-[0.75rem] text-panel-muted">PDF bu önizlemeyle aynıdır; metin vektördür, telefonda yakınlaştırınca netliğini korur.</p>
+          <p className="mt-1 text-[0.75rem] text-panel-muted">Yazdırma sayfası bu önizlemeyle aynıdır. PDF için yazdırma penceresinde “PDF olarak kaydet”i seçin.</p>
         </div>
       </div>
     </>

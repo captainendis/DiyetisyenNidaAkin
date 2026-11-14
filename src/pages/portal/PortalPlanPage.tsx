@@ -1,10 +1,10 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-/** /hesabim/listeler/:id — listenin ekran hâli + PDF (görüntüle / indir) */
+/** /hesabim/listeler/:id — listenin ekran hâli + yazdırma sayfası (yazdır / PDF olarak kaydet) */
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router';
-import { Download, Eye } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { portalApi } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { formatDate } from '@/lib/format';
@@ -26,7 +26,7 @@ export default function PortalPlanPage() {
   if (error || !plan) return <LoadError message={error?.message} onRetry={reload} />;
 
   const d = plan.data;
-  const pdf = (inline: boolean) => portalApi.url(`/plans/${plan.id}/pdf`, inline ? { inline: 1 } : undefined);
+  const printUrl = portalApi.url(`/plans/${plan.id}/print`, { autoprint: 1 });
 
   return (
     <>
@@ -36,8 +36,7 @@ export default function PortalPlanPage() {
         lead={<>{d.subtitle && <span className="block">{d.subtitle}</span>}<span className="mt-1 block text-[0.9rem] text-taupe">{formatDate(plan.createdAt)} tarihinde verildi</span></>}
         actions={
           <>
-            <a href={pdf(false)} className="inline-flex h-11 items-center gap-2 rounded-full bg-espresso px-5 text-[0.92rem] font-semibold text-ivory hover:bg-cocoa"><Download className="h-4 w-4" aria-hidden /> PDF indir</a>
-            <a href={pdf(true)} target="_blank" rel="noopener" className="inline-flex h-11 items-center gap-2 rounded-full px-5 text-[0.92rem] font-semibold text-espresso ring-1 ring-espresso/20 ring-inset hover:bg-espresso/[0.05]"><Eye className="h-4 w-4" aria-hidden /> Görüntüle</a>
+            <a href={printUrl} target="_blank" rel="noopener" className="inline-flex h-11 items-center gap-2 rounded-full bg-espresso px-5 text-[0.92rem] font-semibold text-ivory hover:bg-cocoa"><Printer className="h-4 w-4" aria-hidden /> Yazdır / PDF</a>
           </>
         }
       />

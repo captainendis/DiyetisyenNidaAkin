@@ -4,13 +4,13 @@
 /** /panel/planlar — beslenme planları ve şablonlar */
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Copy, Download, FileText, Plus, Search, Trash2 } from 'lucide-react';
+import { Copy, Printer, FileText, Plus, Search, Trash2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useApi, useDebounced } from '@/hooks/useApi';
 import { RequirePermission, usePanelAuth } from '@/components/panel/PanelAuth';
 import { Badge, Button, Card, EmptyState, ErrorState, PageHeader, ResponsiveTable, SkeletonRows, Tabs, useFeedback } from '@/components/panel/ui';
 import { formatDateTime } from '@/lib/format';
-import { downloadPlanPdf, type PlanListItem } from '@/components/panel/plans/api';
+import { openPlanPrint, type PlanListItem } from '@/components/panel/plans/api';
 import { NewPlanModal } from '@/components/panel/plans/NewPlanModal';
 
 type View = 'planlar' | 'sablonlar';
@@ -21,7 +21,6 @@ function Body() {
   const [q, setQ] = useState('');
   const dq = useDebounced(q, 250);
   const [open, setOpen] = useState(params.get('new') === '1');
-  const [busy, setBusy] = useState<string | null>(null);
   const { can } = usePanelAuth();
   const fb = useFeedback();
   const { data, loading, error, reload } = useApi(
@@ -29,17 +28,7 @@ function Body() {
     [view, dq],
   );
 
-  const pdf = async (id: string) => {
-    setBusy(id);
-    try {
-      const r = await downloadPlanPdf(id);
-      if (!r.fits) fb.toast({ tone: 'warning', title: 'Plan sayfaya tam sığmadı', description: 'Düzenleyicide bazı satırları kısaltın.' });
-    } catch (e) {
-      fb.error('PDF oluşturulamadı', e instanceof ApiError ? e.message : undefined);
-    } finally {
-      setBusy(null);
-    }
-  };
+  const pdf = (id: string) => void openPlanPrint(id);
   const duplicate = async (p: PlanListItem) => {
     try {
       await api.post('/plans', { isTemplate: true, name: `${p.name} (kopya)`, fromId: p.id });
@@ -65,7 +54,7 @@ function Body() {
     <>
       <PageHeader
         title="Beslenme Planları"
-        description="Danışana özel planlar hazırlayın; tek sayfa A4 PDF olarak indirin."
+        description="Danışana özel planlar hazırlayın; A4 olarak yazdırın ya da PDF olarak kaydedin."
         actions={can('clinical:write') && <Button icon={<Plus className="h-4 w-4" />} onClick={() => setOpen(true)}>Yeni plan</Button>}
       />
       <Card>
@@ -107,7 +96,7 @@ function Body() {
                   key: 'actions', header: <span className="sr-only">İşlemler</span>, className: 'text-right',
                   cell: (p) => (
                     <div className="flex justify-end gap-1">
-                      <Button variant="secondary" size="sm" loading={busy === p.id} icon={<Download className="h-4 w-4" />} onClick={() => void pdf(p.id)}>PDF</Button>
+                      <Button variant="secondary" size="sm" icon={<Printer className="h-4 w-4" />} onClick={() => pdf(p.id)}>Yazdır / PDF</Button>
                       {p.isTemplate && can('clinical:write') && <Button variant="ghost" size="sm" aria-label="Şablonu kopyala" onClick={() => void duplicate(p)}><Copy className="h-4 w-4" /></Button>}
                       {can('clinical:write') && <Button variant="ghost" size="sm" aria-label="Sil" onClick={() => void remove(p)}><Trash2 className="h-4 w-4" /></Button>}
                     </div>
@@ -120,7 +109,7 @@ function Body() {
                     <p className="truncate text-sm font-semibold text-espresso">{p.name}</p>
                     <p className="truncate text-[0.78rem] text-panel-muted">{p.client ? `${p.client.firstName} ${p.client.lastName} · ` : ''}{formatDateTime(p.updatedAt)}</p>
                   </Link>
-                  <Button variant="secondary" size="sm" loading={busy === p.id} icon={<Download className="h-4 w-4" />} onClick={() => void pdf(p.id)}>PDF</Button>
+                  <Button variant="secondary" size="sm" icon={<Printer className="h-4 w-4" />} onClick={() => pdf(p.id)}>Yazdır / PDF</Button>
                 </div>
               )}
             />

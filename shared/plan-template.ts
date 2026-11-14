@@ -3,7 +3,7 @@
 
 /**
  * Beslenme planı — tek sayfa A4 HTML şablonu.
- * Aynı şablon paneldeki canlı önizlemede (iframe srcdoc) ve sunucudaki PDF üretiminde (Chromium) kullanılır.
+ * Aynı şablon paneldeki canlı önizlemede (iframe srcdoc) ve sunucunun yazdırma sayfasında (server/services/print.ts) kullanılır.
  *
  * Telefonda okunabilirlik: PDF vektör metin içerir (yakınlaştırınca bulanıklaşmaz), yazı boyutları
  * A4 baskıda da rahat okunacak şekilde seçilmiştir. İçerik uzarsa fitPlanToPage() tüm ölçüleri
@@ -226,7 +226,7 @@ export interface FitResult {
  *  1) Plan sayfası taşıyorsa ölçeği adım adım küçültür.
  *  2) Tarif blokları havuzdan sırayla A4 sayfalara yerleştirilir; sığmayan blok yeni sayfaya geçer,
  *     tek başına da sığmıyorsa o sayfa RECIPE_MIN_SCALE'e kadar küçültülür.
- * Hem tarayıcıda (önizleme) hem Chromium'da (PDF) çalışır; dış değişken kullanmaz
+ * Hem önizlemede hem yazdırma sayfasında tarayıcıda çalışır; dış değişken kullanmaz
  * (page.evaluate ile serileştirilebilmesi için) — minimum ölçekler parametre olarak gelir.
  */
 export function fitPlanToPage(doc: Document, minScale: number, recipeMinScale = 0.7): FitResult {

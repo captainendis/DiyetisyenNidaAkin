@@ -15,8 +15,6 @@ import { createApp } from '../server/app';
 import { resolveMeta } from '../server/seo';
 import { prisma } from '../server/lib/db';
 import { encryptJson } from '../server/lib/crypto';
-import { encryptLegacyVariantNotes } from '../server/services/recipe-notes';
-import { encryptContent, encryptLegacyRecipeContent } from '../server/services/recipe-content';
 import { PUBLIC_UPLOADS } from '../server/lib/storage';
 import { samplePlanTemplate } from '../shared/plan';
 import type { Recipe } from '../shared/recipe';
@@ -110,16 +108,16 @@ describe('tarifler', () => {
     const got = await agent.get(`/api/plans/${plan.id}`);
     expect(got.body.plan.data.recipes.items).toHaveLength(2);
 
-    const pdf = await agent.get(`/api/plans/${plan.id}/pdf`).buffer(true).parse((res, cb) => {
-      const chunks: Buffer[] = [];
-      res.on('data', (c: Buffer) => chunks.push(c));
-      res.on('end', () => cb(null, Buffer.concat(chunks)));
-    });
-    if (pdf.status === 503) return; // Chromium yok
-    expect(pdf.status).toBe(200);
-    expect(pdf.headers['x-plan-pages']).toBe('2');
-    expect(pdf.headers['x-plan-recipes-fit']).toBe('true');
-    expect((pdf.body as Buffer).subarray(0, 5).toString()).toBe('%PDF-');
+    // Yazdırma sayfası: bağımsız HTML, tek betik nonce'lu, silinmiş tarif atlanır
+    const page = await agent.get(`/api/plans/${plan.id}/print`).query({ autoprint: 1 });
+    expect(page.status).toBe(200);
+    expect(page.headers['content-type']).toMatch(/^text\/html/);
+    const nonce = /script-src 'nonce-([^']+)'/.exec(page.headers['content-security-policy'] ?? '')?.[1];
+    expect(nonce).toBeTruthy();
+    expect(page.text).toContain(`<script nonce="${nonce}">`);
+    expect(page.text.match(/<script/g)).toHaveLength(1);
+    expect(page.text).toContain('window.print()');
+    expect(page.text.match(/<article class="recipe/g)).toHaveLength(1);
   }, 60_000);
 
   it('yalnızca işaretli ve kişiye özel olmayan tarifler sitede yayınlanır; adres sabit kalır', async () => {
@@ -271,33 +269,6 @@ describe('tarifler', () => {
     expect((await prisma.recipe.findUniqueOrThrow({ where: { id: row.id } })).variantNoteEnc).toBeNull();
   });
 
-  it('sürüm atlanmış kurulumda eski düz metin sütunu: notlar şifrelenir, sütun kaldırılır (idempotent)', async () => {
-    const hasColumn = async () =>
-      Number((await prisma.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM information_schema.columns
-        WHERE table_schema = current_schema() AND table_name = 'recipes' AND column_name = 'variantNote'`)[0]!.n) > 0;
-    // Normal kurulumda migration sütunu silmiş olmalı
-    expect(await hasColumn()).toBe(false);
-
-    // Notları henüz taşınmamış eski bir kurulumu taklit et
-    await prisma.$executeRawUnsafe(`ALTER TABLE "recipes" ADD COLUMN "variantNote" TEXT NOT NULL DEFAULT ''`);
-    try {
-      const legacy = await prisma.recipe.create({
-        data: { category: 'SOUP', contentEnc: encryptContent({ title: 'Test eski not', summary: '', ingredients: ['a'], steps: ['b'], tip: '' }) },
-      });
-      recipeIds.push(legacy.id);
-      await prisma.$executeRaw`UPDATE "recipes" SET "variantNote" = 'Laktozsuz' WHERE id = ${legacy.id}`;
-
-      expect(await encryptLegacyVariantNotes()).toBe(1);
-      expect(await hasColumn()).toBe(false);
-      const row = await prisma.recipe.findUniqueOrThrow({ where: { id: legacy.id } });
-      expect(row.variantNoteEnc).toMatch(/^v1:/);
-      expect((await agent.get(`/api/recipes/${legacy.id}`)).body.recipe.variantNote).toBe('Laktozsuz');
-      expect(await encryptLegacyVariantNotes()).toBe(0);
-    } finally {
-      await prisma.$executeRawUnsafe('ALTER TABLE "recipes" DROP COLUMN IF EXISTS "variantNote"');
-    }
-  });
-
   it('tarif içeriği (ad, açıklama, malzemeler, adımlar, ipucu) veritabanında yalnızca şifreli durur; arama çalışır', async () => {
     const secret = { ...body, title: 'Test Glutensiz Kek', summary: 'Çölyak için', tip: 'Laktozsuz sütle', ingredients: ['glutensiz un'], steps: ['karıştır'] };
     const res = await agent.post('/api/recipes').set('X-CSRF-Token', csrf).send(secret);
@@ -306,7 +277,7 @@ describe('tarifler', () => {
     expect(res.body.recipe).toMatchObject({ title: secret.title, summary: secret.summary, tip: secret.tip, ingredients: secret.ingredients, steps: secret.steps });
 
     // Ham satırın hiçbir sütununda düz metin yok
-    const raw = await prisma.$queryRaw<Record<string, unknown>[]>`SELECT * FROM "recipes" WHERE id = ${res.body.recipe.id}`;
+    const raw = await prisma.$queryRaw<Record<string, unknown>[]>`SELECT * FROM recipes WHERE id = ${res.body.recipe.id}`;
     const dump = JSON.stringify(raw[0]);
     for (const word of ['Glutensiz', 'Çölyak', 'Laktozsuz', 'glutensiz un', 'karıştır']) expect(dump).not.toContain(word);
     expect(raw[0]!.contentEnc).toMatch(/^v1:/);
@@ -314,33 +285,6 @@ describe('tarifler', () => {
     // Panel araması çözülmüş içerik üzerinde çalışır
     const hit = await agent.get('/api/recipes').query({ q: 'glutensiz kek' });
     expect(hit.body.items.map((r: Recipe) => r.id)).toContain(res.body.recipe.id);
-  });
-
-  it('sürüm atlanmış kurulumda düz metin içerik sütunları: içerik şifrelenir, sütunlar kaldırılır (idempotent)', async () => {
-    const legacyColumns = async () =>
-      (await prisma.$queryRaw<{ column_name: string }[]>`SELECT column_name FROM information_schema.columns
-        WHERE table_schema = current_schema() AND table_name = 'recipes'
-          AND column_name IN ('title', 'summary', 'ingredients', 'steps', 'tip')`).map((c) => c.column_name);
-    expect(await legacyColumns()).toEqual([]);
-
-    // İçeriği henüz taşınmamış eski bir kurulumu taklit et
-    await prisma.$executeRawUnsafe(`ALTER TABLE "recipes" ADD COLUMN "title" TEXT, ADD COLUMN "summary" TEXT NOT NULL DEFAULT '',
-      ADD COLUMN "ingredients" JSONB NOT NULL DEFAULT '[]', ADD COLUMN "steps" JSONB NOT NULL DEFAULT '[]', ADD COLUMN "tip" TEXT NOT NULL DEFAULT ''`);
-    try {
-      const legacy = await prisma.recipe.create({ data: { category: 'SOUP' } });
-      recipeIds.push(legacy.id);
-      await prisma.$executeRaw`UPDATE "recipes" SET "contentEnc" = NULL, "title" = 'Eski çorba', "summary" = 'Eski özet',
-        "ingredients" = '["mercimek"]'::jsonb, "steps" = '["pişir"]'::jsonb, "tip" = 'Limonla' WHERE id = ${legacy.id}`;
-
-      expect(await encryptLegacyRecipeContent()).toBe(1);
-      expect(await legacyColumns()).toEqual([]);
-      const r = (await agent.get(`/api/recipes/${legacy.id}`)).body.recipe as Recipe;
-      expect(r).toMatchObject({ title: 'Eski çorba', summary: 'Eski özet', ingredients: ['mercimek'], steps: ['pişir'], tip: 'Limonla' });
-      expect(await encryptLegacyRecipeContent()).toBe(0);
-    } finally {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "recipes" DROP COLUMN IF EXISTS "title", DROP COLUMN IF EXISTS "summary",
-        DROP COLUMN IF EXISTS "ingredients", DROP COLUMN IF EXISTS "steps", DROP COLUMN IF EXISTS "tip"`);
-    }
   });
 });
 

@@ -134,7 +134,7 @@ describe('danışanın gördükleri', () => {
     expect(list.body.items.map((p: { id: string }) => p.id)).toEqual([planA]);
     expect((await portal.get(`/api/portal/plans/${planA}`)).body.plan.data.title).toBe('Ayşe’nin beslenme planı');
     expect((await portal.get(`/api/portal/plans/${planB}`)).status).toBe(404);
-    expect((await portal.get(`/api/portal/plans/${planB}/pdf`)).status).toBe(404);
+    expect((await portal.get(`/api/portal/plans/${planB}/print`)).status).toBe(404);
   });
 
   it('klinik not ve ölçüm notu hiçbir uçta dönmez', async () => {
