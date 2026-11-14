@@ -1,0 +1,156 @@
+# Copyright (c) 2026 Nida Akın. All rights reserved.
+# Developed by PaperAxis · paperaxis.com
+#
+# Otomatik dağıtım: main'e her push → CI (test + derleme + paket) → SSH ile sunucuya yükleme → yedek → migration →
+# yeni sürüme geçiş → yeniden başlatma → /api/health ile doğrulama (sürüm eşleşmezse otomatik geri dönüş).
+# Elle: Actions → Deploy → Run workflow (deploy | rollback).
+#
+# Kurulum (bir kez): docs/DEPLOY.md → "Otomatik dağıtım (GitHub Actions)".
+# Repository variable DEPLOY_ENABLED=true olmadan hiçbir şey sunucuya gönderilmez.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: İşlem
+        type: choice
+        options: [deploy, rollback]
+        default: deploy
+
+permissions:
+  contents: read
+
+# Dağıtımlar sıraya girer; yarıda kesilmez
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    if: inputs.action != 'rollback'
+    uses: ./.github/workflows/ci.yml
+    with:
+      release: true
+
+  deploy:
+    name: Canlıya al
+    needs: ci
+    if: vars.DEPLOY_ENABLED == 'true' && inputs.action != 'rollback'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: ${{ vars.SITE_URL }}
+    env:
+      REV: ${{ github.sha }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-${{ github.sha }}
+
+      - name: SSH hazırlığı
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PORT: ${{ secrets.DEPLOY_PORT }}
+          APP_ROOT: ${{ vars.DEPLOY_PATH }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          missing=""
+          for v in SSH_KEY KNOWN_HOSTS HOST USER APP_ROOT SITE_URL; do [ -n "${!v}" ] || missing="$missing $v"; done
+          if [ -n "$missing" ]; then
+            echo "::error::Eksik ayar:$missing — docs/DEPLOY.md → Otomatik dağıtım bölümüne bakın."
+            exit 1
+          fi
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<CFG
+          Host prod
+            HostName $HOST
+            User $USER
+            Port ${PORT:-22}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+          CFG
+
+      - name: Paketi yükle
+        env:
+          APP_ROOT: ${{ vars.DEPLOY_PATH }}
+        run: |
+          ssh prod "mkdir -p $(printf %q "$APP_ROOT")/.deploy/incoming"
+          scp -q release.tar.gz "prod:$APP_ROOT/.deploy/incoming/$REV.tar.gz"
+
+      - name: Sunucuda dağıt (yedek → migration → geçiş → yeniden başlatma)
+        id: remote
+        env:
+          APP_ROOT: ${{ vars.DEPLOY_PATH }}
+          NODE_ACTIVATE: ${{ vars.DEPLOY_NODE_ACTIVATE }}
+          RESTART_CMD: ${{ vars.DEPLOY_RESTART_CMD }}
+        run: |
+          q() { printf %q "$1"; }
+          REL=".deploy/releases/$REV"
+          ssh prod "set -euo pipefail; cd $(q "$APP_ROOT"); rm -rf $REL; mkdir -p $REL; tar -xzf .deploy/incoming/$REV.tar.gz -C $REL; \
+            APP_ROOT=$(q "$APP_ROOT") NODE_ACTIVATE=$(q "$NODE_ACTIVATE") RESTART_CMD=$(q "$RESTART_CMD") bash $REL/scripts/deploy-remote.sh deploy $REV"
+
+      - name: Doğrula (/api/health → yeni sürüm)
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          URL="${SITE_URL%/}/api/health"
+          for i in $(seq 1 30); do
+            BODY="$(curl -fsS --max-time 10 "$URL" || true)"
+            if echo "$BODY" | grep -q "\"revision\":\"$REV\""; then
+              echo "✓ Canlıda: $REV"
+              exit 0
+            fi
+            echo "Bekleniyor ($i/30): ${BODY:-yanıt yok}"
+            sleep 10
+          done
+          echo "::error::Site 5 dakika içinde yeni sürümle yanıt vermedi."
+          exit 1
+
+      - name: Doğrulama başarısız → önceki sürüme dön
+        if: failure() && steps.remote.outcome == 'success'
+        env:
+          APP_ROOT: ${{ vars.DEPLOY_PATH }}
+          NODE_ACTIVATE: ${{ vars.DEPLOY_NODE_ACTIVATE }}
+          RESTART_CMD: ${{ vars.DEPLOY_RESTART_CMD }}
+        run: |
+          q() { printf %q "$1"; }
+          ssh prod "APP_ROOT=$(q "$APP_ROOT") NODE_ACTIVATE=$(q "$NODE_ACTIVATE") RESTART_CMD=$(q "$RESTART_CMD") bash $(q "$APP_ROOT")/scripts/deploy-remote.sh rollback"
+          echo "::warning::Kod önceki sürüme döndü. Migration'lar geri alınmadı; gerekirse backups/ altındaki yedeği kullanın."
+
+  rollback:
+    name: Önceki sürüme dön
+    if: vars.DEPLOY_ENABLED == 'true' && inputs.action == 'rollback'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: ${{ vars.SITE_URL }}
+    steps:
+      - name: Geri dönüş
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PORT: ${{ secrets.DEPLOY_PORT }}
+          APP_ROOT: ${{ vars.DEPLOY_PATH }}
+          NODE_ACTIVATE: ${{ vars.DEPLOY_NODE_ACTIVATE }}
+          RESTART_CMD: ${{ vars.DEPLOY_RESTART_CMD }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          q() { printf %q "$1"; }
+          ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "$USER@$HOST" \
+            "APP_ROOT=$(q "$APP_ROOT") NODE_ACTIVATE=$(q "$NODE_ACTIVATE") RESTART_CMD=$(q "$RESTART_CMD") bash $(q "$APP_ROOT")/scripts/deploy-remote.sh rollback"

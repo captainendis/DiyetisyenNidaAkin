@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
   // cPanel "Node.js App" için tek klasörlük çıktı: .next/standalone/server.js
   output: 'standalone',
   poweredByHeader: false,
+  // Dağıtılan sürüm (CI: commit SHA) — /api/health yanıtında döner; dağıtım sonrası doğrulamada kullanılır
+  env: { APP_REVISION: process.env.APP_REVISION ?? 'dev' },
   reactStrictMode: true,
   // Sunucuya özgü paketler paketlenmez, node_modules'tan yüklenir
   serverExternalPackages: ['sharp', '@prisma/client', '@prisma/adapter-mariadb', 'mariadb', 'nodemailer'],

@@ -15,3 +15,8 @@ server/generated
 coverage
 /tmp
 __pycache__/
+
+# Dağıtım
+.deploy
+release*.tar.gz
+.ci-storage

@@ -414,6 +414,10 @@ npm run typecheck      # tüm proje tip kontrolü
 
 > Çalışan bir siteyi **güncellemek** için adım adım kontrol listesi (yedek, migration, doğrulama, geri dönüş):
 > [docs/DEPLOY.md](docs/DEPLOY.md).
+>
+> **Otomatik dağıtım:** `main`'e birleştirilen her değişiklik GitHub Actions ile test edilir, derlenir ve SSH ile
+> canlıya alınır (yedek + migration + sürüm doğrulama + başarısızlıkta otomatik geri dönüş). Kurulum:
+> [docs/DEPLOY.md → Otomatik dağıtım](docs/DEPLOY.md#otomatik-dağıtım-github-actions).
 
 Docker gerekmez. Derleme `.next/standalone/` altında **tek başına çalışan** bir klasör üretir (`server.js` +
 yalnızca gereken `node_modules` + `public/` + `.next/static/`).

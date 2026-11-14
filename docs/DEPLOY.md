@@ -9,6 +9,103 @@ Bu belge, **çalışan bir siteyi güncellemek** ve **eski (PostgreSQL + Docker)
 Yapı: **Next.js** (sayfalar + `/api`) tek Node süreci · **MySQL 8 / MariaDB** · Docker ve Chromium **gerekmez**.
 Paylaşımlı hostingde cPanel **Setup Node.js App** ile çalışır (Startup file: `app.cjs`).
 
+> 🤖 **Otomatik dağıtım kuruluysa** (aşağıdaki bölüm) bu belgedeki 1–3. adımları GitHub Actions sizin yerinize yapar:
+> `main` dalına her birleştirmede test → yedek → migration → yeni sürüm → doğrulama. Elle güncelleme yalnızca yedek yöntemdir.
+
+---
+
+## Otomatik dağıtım (GitHub Actions)
+
+### Nasıl çalışır
+
+```
+main'e push / PR birleştirme
+  └─ CI (.github/workflows/ci.yml)  tip kontrolü · MariaDB'ye karşı tüm testler · şema↔migration uyumu · üretim derlemesi
+       └─ paket: .next/standalone + dist-scripts + prisma  (.env ASLA pakete girmez)
+  └─ Deploy (.github/workflows/deploy.yml)  SSH ile sunucuya yükler ve scripts/deploy-remote.sh'ı çalıştırır:
+       1. kilit (aynı anda tek dağıtım)
+       2. DATA_ENCRYPTION_KEY parmak izi kontrolü — anahtar değişmişse DURUR
+       3. yedek (veritabanı + dosyalar → backups/, son 14 tanesi saklanır)
+       4. prisma CLI bağımlılıkları (yalnızca package-lock.json değiştiyse npm ci)
+       5. migration (prisma migrate deploy) — hata olursa DURUR, canlı site eski sürümde kalır
+       6. yeni derlemeye geçiş (eski derleme .deploy/previous/ altında saklanır) + yeniden başlatma
+  └─ Doğrulama: https://alanadiniz/api/health yeni commit'i gösterene kadar bekler (5 dk)
+       └─ göstermezse kod otomatik olarak önceki sürüme döner
+```
+
+Derleme **sunucuda yapılmaz** (paylaşımlı hostingde bellek sınırı sorunu ortadan kalkar). Testler geçmeyen kod
+canlıya çıkmaz. PR'larda ve diğer dallarda yalnızca CI çalışır.
+
+### Bir kerelik kurulum
+
+**1. Sunucuda SSH erişimi.** cPanel → **SSH Access** (Hosting Dünyam'da paket SSH içermiyorsa destekten açtırın).
+
+**2. Dağıtım anahtarı** (kendi bilgisayarınızda; parola koymayın — GitHub Actions kullanacak):
+
+```bash
+ssh-keygen -t ed25519 -C "github-deploy" -f nidaakin_deploy -N ""
+```
+
+- `nidaakin_deploy.pub` → cPanel → SSH Access → **Manage SSH Keys → Import Key** → ardından **Authorize**.
+- `nidaakin_deploy` (gizli anahtar) → GitHub'a (adım 5). Sonra bilgisayarınızdan silebilirsiniz.
+
+**3. Sunucu parmak izi** (ortadaki-adam saldırısına karşı; bilgisayarınızda):
+
+```bash
+ssh-keyscan -p SSH_PORTU sunucu.alanadi.com
+```
+
+Çıktıyı cPanel → SSH Access'te görünen parmak iziyle karşılaştırın; tüm satırları adım 5'te `DEPLOY_KNOWN_HOSTS`'a yapıştırın.
+
+**4. Sunucuda `.env`.** Uygulama kökünde (cPanel "Application root") bir `.env` dosyası oluşturun ve
+**Setup Node.js App'teki değişkenlerin aynısını** yazın (`DATABASE_URL`, `DATA_ENCRYPTION_KEY`, `PUBLIC_SITE_URL`,
+`UPLOAD_DIR`, `TRUST_PROXY`, `SMTP_*`…). Dağıtım betiği migration ve yedek için bu dosyayı okur; site de aynı
+dosyayı görür. İzinleri kısıtlayın: `chmod 600 .env`. Bu dosya git'e ve CI'a **hiç girmez**.
+
+**5. GitHub ayarları** — depo → Settings → Secrets and variables → Actions:
+
+| Tür | Ad | Değer |
+| --- | --- | --- |
+| Secret | `DEPLOY_SSH_KEY` | Adım 2'deki gizli anahtarın tamamı (`-----BEGIN OPENSSH PRIVATE KEY-----` …) |
+| Secret | `DEPLOY_KNOWN_HOSTS` | Adım 3'teki `ssh-keyscan` çıktısı |
+| Secret | `DEPLOY_HOST` | SSH sunucusu (ör. `sunucu.alanadi.com`) |
+| Secret | `DEPLOY_USER` | cPanel kullanıcı adı |
+| Secret | `DEPLOY_PORT` | SSH portu (boşsa 22) |
+| Variable | `DEPLOY_PATH` | Uygulama kökü, mutlak yol (ör. `/home/KULLANICI/nidaakin`) |
+| Variable | `SITE_URL` | `https://alanadiniz` (doğrulama için) |
+| Variable | `DEPLOY_NODE_ACTIVATE` | cPanel: `/home/KULLANICI/nodevenv/nidaakin/22/bin/activate` (Setup Node.js App sayfasının üstündeki komutta görünen yol). VPS'te boş |
+| Variable | `DEPLOY_RESTART_CMD` | cPanel'de **boş bırakın** (Passenger `tmp/restart.txt` ile yeniden başlar). VPS: ör. `pm2 reload nidaakin` |
+| Variable | `DEPLOY_ENABLED` | Her şey hazır olunca `true` — bu olmadan hiçbir şey sunucuya gönderilmez |
+
+İsteğe bağlı: Settings → Environments → **production** → *Required reviewers* eklerseniz her dağıtım sizin
+onayınızı bekler (otomatik yerine "tek tıkla" dağıtım).
+
+**6. İlk dağıtım:** Actions → **Deploy** → *Run workflow* (`deploy`). İlk çalıştırmada anahtar parmak izi kaydedilir
+ve `npm ci` yapılır (birkaç dakika). Sonrakiler genelde 1–2 dakika sürer.
+
+> Sunucuda daha önce cPanel **Git Version Control** ile çekilmiş bir kopya varsa sorun değildir; dağıtım yalnızca
+> `.next/`, `dist-scripts/`, `prisma/`, `package*.json`, `app.cjs` ve `scripts/` altındaki iki betiği günceller.
+> Otomatik dağıtıma geçtikten sonra sunucuda `git pull` / `npm run build` yapmayın.
+
+### Günlük kullanım
+
+- **Güncelleme:** PR'ı `main`'e birleştirin — gerisi otomatik. İlerleme: GitHub → Actions → Deploy.
+- **Geri dönüş:** Actions → Deploy → *Run workflow* → `rollback`. Ya da sunucuda:
+  `APP_ROOT=$PWD bash scripts/deploy-remote.sh rollback` (önce `source <NODE_ACTIVATE yolu>`).
+  Yalnızca **kod** geri alınır; veritabanı için aşağıdaki **5. Geri dönüş** adımını ve `backups/` altındaki
+  dağıtım öncesi yedeği kullanın. Son 3 derleme saklanır.
+- **Durum:** sunucuda `APP_ROOT=$PWD bash scripts/deploy-remote.sh status` · tarayıcıda `/api/health` → `revision`.
+
+### Bir şey ters giderse
+
+| Belirti | Neden / çözüm |
+| --- | --- |
+| `DATA_ENCRYPTION_KEY değişmiş!` | `.env`'deki anahtar ilk dağıtımdakinden farklı. Doğru anahtarı geri koyun. Anahtarı bilerek değiştirmediyseniz `.deploy/key.sha256`'yı **silmeyin**. |
+| Migration hatası (`P3018` vb.) | Site eski sürümde çalışmaya devam eder. Hatayı düzeltin; Prisma başarısız migration'ı kaydettiği için sunucuda `npx prisma migrate resolve --rolled-back <migration_adı>` gerekebilir. MySQL'de DDL transaction içinde çalışmaz; yarım kalan değişiklik varsa yedekten dönün. |
+| `Başka bir dağıtım sürüyor` | Önceki dağıtım bitmeden ikincisi başladı; Actions zaten sıraya koyar. Elle çalıştırmada bekleyin. |
+| Doğrulama zaman aşımı → otomatik geri dönüş | cPanel → Setup Node.js App → `stderr.log`'a bakın (çoğunlukla eksik ortam değişkeni). |
+| `Eksik ayar: …` | Adım 5'teki secret/variable eksik. |
+
 ---
 
 ## 0. Başlamadan önce

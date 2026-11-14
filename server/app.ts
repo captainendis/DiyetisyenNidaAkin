@@ -64,7 +64,7 @@ function build() {
   // '/x/*' kalıbı '/x'in kendisini de kapsar
   for (const [prefix] of STAFF) api.use(`${prefix}/*`, requireAuth);
 
-  api.get('/health', (c) => c.json({ ok: true }));
+  api.get('/health', (c) => c.json({ ok: true, revision: process.env.APP_REVISION ?? 'dev' }));
   api.route('/auth', authRouter);
   api.route('/public', publicContentRouter);
   api.route('/public', publicAppointmentsRouter);

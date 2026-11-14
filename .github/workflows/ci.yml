@@ -1,0 +1,105 @@
+# Copyright (c) 2026 Nida Akın. All rights reserved.
+# Developed by PaperAxis · paperaxis.com
+#
+# Sürekli entegrasyon: tip kontrolü, MariaDB'ye karşı birim + API entegrasyon testleri, şema/migration uyumu, derleme.
+# Her PR'da ve main dışındaki dallara her push'ta çalışır. deploy.yml bunu çağırır (release: true → dağıtım paketi üretir).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+  workflow_call:
+    inputs:
+      release:
+        description: Dağıtım paketi üret ve artifact olarak yükle
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: Test ve derleme
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci_root_pw
+          MARIADB_DATABASE: nidaakin
+          MARIADB_USER: nida
+          MARIADB_PASSWORD: nida_ci_pw
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=24
+    env:
+      NODE_ENV: test
+      DATABASE_URL: mysql://nida:nida_ci_pw@127.0.0.1:3306/nidaakin
+      TEST_ADMIN_EMAIL: ci-admin@example.com
+      TEST_ADMIN_PASSWORD: CiYonetici2026
+      UPLOAD_DIR: ${{ github.workspace }}/.ci-storage
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Her çalıştırmada rastgele, yalnızca bu iş için anahtar (gerçek anahtar CI'a hiç girmez)
+      - name: Test şifreleme anahtarı
+        run: |
+          KEY="$(openssl rand -base64 32)"
+          echo "::add-mask::$KEY"
+          echo "DATA_ENCRYPTION_KEY=$KEY" >> "$GITHUB_ENV"
+
+      - name: Bağımlılıklar
+        run: npm ci --no-audit --no-fund
+
+      - name: Veritabanı (migration + temel veriler + test yöneticisi)
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+          ADMIN_EMAIL="$TEST_ADMIN_EMAIL" ADMIN_PASSWORD="$TEST_ADMIN_PASSWORD" ADMIN_FIRST_NAME=CI ADMIN_LAST_NAME=Test npm run admin:create
+
+      # schema.prisma değişip migration yazılmamışsa canlı veritabanı şemayla uyuşmaz → yakala
+      - name: Şema ↔ migration uyumu
+        run: |
+          if ! npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code > /tmp/drift.sql; then
+            echo "::error::schema.prisma ile migration'lar uyuşmuyor. 'npx prisma migrate dev --name <ad>' ile migration oluşturun."
+            cat /tmp/drift.sql
+            exit 1
+          fi
+
+      - name: Tip kontrolü
+        run: npm run typecheck
+
+      - name: Testler
+        run: npm test
+
+      - name: Üretim derlemesi
+        env:
+          NODE_ENV: production
+          APP_REVISION: ${{ github.sha }}
+        run: npm run build
+
+      - name: Dağıtım paketi
+        if: inputs.release
+        run: bash scripts/package-release.sh "$GITHUB_SHA" release.tar.gz
+
+      - name: Paketi yükle
+        if: inputs.release
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ github.sha }}
+          path: release.tar.gz
+          retention-days: 14
+          if-no-files-found: error
