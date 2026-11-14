@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Nida Akın. All rights reserved.
 # Developed by PaperAxis · paperaxis.com
 #
-# Otomatik dağıtım: main'e her push → CI (test + derleme + paket) → SSH ile sunucuya yükleme → yedek → migration →
+# Otomatik dağıtım: main'e her push → CI (testler) → derleme + paket → SSH ile sunucuya yükleme → yedek → migration →
 # yeni sürüme geçiş → yeniden başlatma → /api/health ile doğrulama (sürüm eşleşmezse otomatik geri dönüş).
 # Elle: Actions → Deploy → Run workflow (deploy | rollback).
 #
@@ -32,8 +32,6 @@ jobs:
   ci:
     if: inputs.action != 'rollback'
     uses: ./.github/workflows/ci.yml
-    with:
-      release: true
 
   deploy:
     name: Canlıya al
@@ -47,9 +45,25 @@ jobs:
     env:
       REV: ${{ github.sha }}
     steps:
-      - uses: actions/download-artifact@v4
+      # Paket bu işte derlenir ve doğrudan sunucuya gider (GitHub artifact depolama kotasına bağlı değil)
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          name: release-${{ github.sha }}
+          node-version: 22
+          cache: npm
+
+      - name: Derleme ve paket
+        env:
+          NODE_ENV: production
+          APP_REVISION: ${{ github.sha }}
+          # Derleme veritabanına bağlanmaz; ortam doğrulaması için yer tutucu değerler (gerçek değerler sunucudaki .env'de)
+          DATABASE_URL: mysql://build:build@127.0.0.1:3306/build
+        run: |
+          npm ci --include=dev --no-audit --no-fund
+          export DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+          npm run build
+          bash scripts/package-release.sh "$REV" release.tar.gz
 
       - name: SSH hazırlığı
         env:

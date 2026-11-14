@@ -2,7 +2,7 @@
 # Developed by PaperAxis · paperaxis.com
 #
 # Sürekli entegrasyon: tip kontrolü, MariaDB'ye karşı birim + API entegrasyon testleri, şema/migration uyumu, derleme.
-# Her PR'da ve main dışındaki dallara her push'ta çalışır. deploy.yml bunu çağırır (release: true → dağıtım paketi üretir).
+# Her PR'da ve main dışındaki dallara her push'ta çalışır. deploy.yml dağıtımdan önce bunu çağırır.
 name: CI
 
 on:
@@ -10,11 +10,6 @@ on:
   push:
     branches-ignore: [main]
   workflow_call:
-    inputs:
-      release:
-        description: Dağıtım paketi üret ve artifact olarak yükle
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -90,16 +85,3 @@ jobs:
           NODE_ENV: production
           APP_REVISION: ${{ github.sha }}
         run: npm run build
-
-      - name: Dağıtım paketi
-        if: inputs.release
-        run: bash scripts/package-release.sh "$GITHUB_SHA" release.tar.gz
-
-      - name: Paketi yükle
-        if: inputs.release
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ github.sha }}
-          path: release.tar.gz
-          retention-days: 14
-          if-no-files-found: error

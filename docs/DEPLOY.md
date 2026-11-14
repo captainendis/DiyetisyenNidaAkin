@@ -21,7 +21,7 @@ Paylaşımlı hostingde cPanel **Setup Node.js App** ile çalışır (Startup fi
 ```
 main'e push / PR birleştirme
   └─ CI (.github/workflows/ci.yml)  tip kontrolü · MariaDB'ye karşı tüm testler · şema↔migration uyumu · üretim derlemesi
-       └─ paket: .next/standalone + dist-scripts + prisma  (.env ASLA pakete girmez)
+  └─ Deploy işi siteyi derler ve paketler: .next/standalone + dist-scripts + prisma  (.env ASLA pakete girmez)
   └─ Deploy (.github/workflows/deploy.yml)  SSH ile sunucuya yükler ve scripts/deploy-remote.sh'ı çalıştırır:
        1. kilit (aynı anda tek dağıtım)
        2. DATA_ENCRYPTION_KEY parmak izi kontrolü — anahtar değişmişse DURUR
