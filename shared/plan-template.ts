@@ -115,8 +115,8 @@ export function renderPlanHtml(plan: NutritionPlanData, opts: RenderPlanOptions)
   const bottom =
     hasHabits || hasPortions
       ? `<div class="bottom ${hasHabits && hasPortions ? 'two' : ''}">
-        ${hasHabits ? `<section class="habits"><h2>${esc(plan.habits.title)}</h2>${plan.habits.items.map((h) => `<p><b>${esc(h.title)}</b> ${esc(h.text)}</p>`).join('')}</section>` : ''}
-        ${hasPortions ? `<section class="portions"><h2>${esc(plan.portions.title)}</h2><div class="chips">${plan.portions.items.map((p) => `<div class="chip"><b>${esc(p.name)}</b><span>${esc(p.amount)}</span></div>`).join('')}</div></section>` : ''}
+        ${hasHabits ? `<section class="habits">${plan.habits.title ? `<h2>${esc(plan.habits.title)}</h2>` : ''}${plan.habits.items.map((h) => `<p><b>${esc(h.title)}</b> ${esc(h.text)}</p>`).join('')}</section>` : ''}
+        ${hasPortions ? `<section class="portions">${plan.portions.title ? `<h2>${esc(plan.portions.title)}</h2>` : ''}<div class="chips">${plan.portions.items.map((p) => `<div class="chip"><b>${esc(p.name)}</b><span>${esc(p.amount)}</span></div>`).join('')}</div></section>` : ''}
       </div>`
       : '';
 

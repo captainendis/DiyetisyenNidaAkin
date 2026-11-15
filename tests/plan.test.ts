@@ -20,8 +20,9 @@ describe('plan şablonu', () => {
   it('boş şablon şemaya uyar ve içerik taşımaz', () => {
     const p = emptyPlan();
     expect(nutritionPlanDataSchema.safeParse(p).success).toBe(true);
-    expect(p.meals.flatMap((m) => m.options.flat())).toHaveLength(0);
-    expect(p.subtitle).not.toContain('1. ay');
+    expect(p.meals).toHaveLength(0);
+    expect([p.subtitle, p.habits.title, p.portions.title, p.footerNote, p.recipes.title].join('')).toBe('');
+    expect(() => renderPlanHtml(p, { fontCss: '' })).not.toThrow();
   });
   it('kullanıcı metnini HTML olarak kaçırır', () => {
     const plan = samplePlanTemplate();
