@@ -10,12 +10,14 @@ import { formatDayStr } from '@/lib/format';
 import type { PortalMeasurement } from '@shared/portal';
 import { CIRCUMFERENCES } from '@shared/measurements';
 import { WeightTrend } from '@/components/panel/clients/WeightTrend';
+import { BodyComposition } from '@/components/panel/clients/BodyComposition';
+import type { CompositionProfile } from '@shared/body-composition';
 import { Empty, LoadError, Loading, Panel, PanelTitle, PortalPageHeader } from '@/components/portal/ui';
 
 const num = (v: number | null, unit: string) => (v == null ? '—' : `${v.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ${unit}`);
 
 export default function PortalProgressPage() {
-  const { data, error, loading, reload } = useApi(() => portalApi.get<{ items: PortalMeasurement[] }>('/measurements'), []);
+  const { data, error, loading, reload } = useApi(() => portalApi.get<{ items: PortalMeasurement[]; profile: CompositionProfile }>('/measurements'), []);
   useEffect(() => {
     document.title = 'Ölçümlerim | Nida Akın';
   }, []);
@@ -35,6 +37,12 @@ export default function PortalProgressPage() {
         <Empty title="Henüz ölçüm yok.">Görüşmede alınan ölçümlerin burada görünecek.</Empty>
       ) : (
         <div className="space-y-6">
+          {data?.profile && (
+            <Panel>
+              <PanelTitle>Vücut kompozisyonu</PanelTitle>
+              <BodyComposition items={items} profile={data.profile} audience="client" />
+            </Panel>
+          )}
           {chart.filter((m) => m.weightKg != null).length > 1 && (
             <Panel>
               <PanelTitle>Kilo</PanelTitle>

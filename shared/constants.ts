@@ -31,6 +31,10 @@ export const HARD_CONFLICT_STATUSES: AppointmentStatus[] = ['CONFIRMED', 'COMPLE
 /** Sonlanmış (artık değiştirilmesi beklenmeyen) durumlar */
 export const FINAL_STATUSES: AppointmentStatus[] = ['COMPLETED', 'CANCELLED', 'NO_SHOW'];
 
+export const CLIENT_SEXES = ['FEMALE', 'MALE'] as const;
+export type ClientSex = (typeof CLIENT_SEXES)[number];
+export const CLIENT_SEX_LABEL: Record<ClientSex, string> = { FEMALE: 'Kadın', MALE: 'Erkek' };
+
 export const MEETING_TYPES = ['IN_PERSON', 'ONLINE'] as const;
 export type MeetingType = (typeof MEETING_TYPES)[number];
 export const MEETING_TYPE_LABEL: Record<MeetingType, string> = {

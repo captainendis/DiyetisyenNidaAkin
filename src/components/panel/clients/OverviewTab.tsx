@@ -3,7 +3,7 @@
 
 import { Link } from '@/lib/router';
 import { formatDate, formatDayStr, formatPhone, formatTime } from '@/lib/format';
-import { MEETING_TYPE_LABEL } from '@shared/constants';
+import { CLIENT_SEX_LABEL, MEETING_TYPE_LABEL } from '@shared/constants';
 import { Card, CardHeader, StatusBadge } from '@/components/panel/ui';
 import { ConsentPanel } from './ConsentPanel';
 import { PortalAccountCard } from './PortalAccountCard';
@@ -55,6 +55,7 @@ export function OverviewTab({ client, stats, onClientChanged }: { client: Client
             <Row label="Telefon"><a href={`tel:${client.phone}`} className="tabular hover:underline">{formatPhone(client.phone)}</a></Row>
             <Row label="E-posta">{client.email ? <a href={`mailto:${client.email}`} className="hover:underline">{client.email}</a> : none}</Row>
             <Row label="Doğum tarihi">{client.birthDate ? formatDayStr(client.birthDate) : none}</Row>
+            <Row label="Cinsiyet">{client.sex ? CLIENT_SEX_LABEL[client.sex] : none}</Row>
             <Row label="İlk görüşme tarihi">{client.firstVisitDate ? formatDayStr(client.firstVisitDate) : stats.firstAppointmentAt ? formatDate(stats.firstAppointmentAt) : none}</Row>
             <Row label="Görüşme tercihi">{client.preferredMeetingType ? MEETING_TYPE_LABEL[client.preferredMeetingType] : none}</Row>
             <Row label="Kayıt kaynağı">{client.source === 'WEBSITE' ? 'Web sitesi randevu talebi' : 'Panelden eklendi'}</Row>

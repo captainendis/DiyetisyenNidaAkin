@@ -264,13 +264,13 @@ function toMessage(m: { id: string; contentEnc: string; createdAt: Date; updated
 }
 
 function toMeasurement(m: { id: string; measuredOn: string; dataEnc: string }): PortalMeasurement {
-  let d: { heightCm?: number | null; weightKg?: number | null; targetWeightKg?: number | null } & Partial<Circumferences> = {};
+  let d: { heightCm?: number | null; weightKg?: number | null; targetWeightKg?: number | null; bodyFatPct?: number | null; muscleKg?: number | null } & Partial<Circumferences> = {};
   try {
     d = decryptJson(m.dataEnc);
   } catch {
     /* çözülemeyen ölçüm boş gösterilir */
   }
-  return { id: m.id, measuredOn: m.measuredOn, heightCm: d.heightCm ?? null, weightKg: d.weightKg ?? null, targetWeightKg: d.targetWeightKg ?? null, ...pickCircumferences(d) };
+  return { id: m.id, measuredOn: m.measuredOn, heightCm: d.heightCm ?? null, weightKg: d.weightKg ?? null, targetWeightKg: d.targetWeightKg ?? null, bodyFatPct: d.bodyFatPct ?? null, muscleKg: d.muscleKg ?? null, ...pickCircumferences(d) };
 }
 
 /** Danışanın görebileceği tarifler: kişiye özel varyasyonları + planlarına eklenmiş tarifler (plan adlarıyla) */
@@ -600,7 +600,8 @@ portalRouter.get('/measurements', async (c) => {
     orderBy: [{ measuredOn: 'desc' }, { createdAt: 'desc' }],
     select: { id: true, measuredOn: true, dataEnc: true },
   });
-  return c.json({ items: rows.map(toMeasurement) });
+  const profile = await prisma.client.findUnique({ where: { id: portalUser(c).clientId }, select: { sex: true, birthDate: true } });
+  return c.json({ items: rows.map(toMeasurement), profile: { sex: profile?.sex ?? null, birthDate: profile?.birthDate ?? null } });
 });
 
 portalRouter.get('/messages', async (c) => {

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { CIRCUMFERENCES, type CircumferenceKey } from './measurements';
 import {
   APPOINTMENT_STATUSES,
+  CLIENT_SEXES,
   BLOCKED_DATE_KINDS,
   CLASS_ATTENDANCE_STATUSES,
   CLASS_CAPACITY_DEFAULT,
@@ -179,6 +180,7 @@ export const clientCreateSchema = z.object({
   phone: phoneSchema,
   email: optionalEmail,
   birthDate: dateStr.nullable().optional(),
+  sex: z.enum(CLIENT_SEXES).nullable().optional(),
   firstVisitDate: dateStr.nullable().optional(),
   preferredMeetingType: z.enum(MEETING_TYPES).nullable().optional(),
   internalNote: z.string().trim().max(2000).nullable().optional(),
@@ -212,6 +214,9 @@ export const measurementSchema = z.object({
   heightCm: z.number().min(50).max(250).nullable().optional(),
   weightKg: z.number().min(2).max(400).nullable().optional(),
   targetWeightKg: z.number().min(2).max(400).nullable().optional(),
+  /** Vücut analizi cihazından, isteğe bağlı */
+  bodyFatPct: z.number().min(2).max(75).nullable().optional(),
+  muscleKg: z.number().min(5).max(150).nullable().optional(),
   ...Object.fromEntries(CIRCUMFERENCES.map(({ key }) => [key, z.number().min(5).max(300).nullable().optional()])) as Record<
     CircumferenceKey,
     z.ZodOptional<z.ZodNullable<z.ZodNumber>>

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import type { AppointmentStatus, ClientStatus, MeetingType } from '@shared/constants';
+import type { AppointmentStatus, ClientSex, ClientStatus, MeetingType } from '@shared/constants';
 import type { Circumferences } from '@shared/measurements';
 
 export interface ClientListItem {
@@ -26,6 +26,7 @@ export interface Client {
   phone: string;
   email: string | null;
   birthDate: string | null;
+  sex: ClientSex | null;
   firstVisitDate: string | null;
   preferredMeetingType: MeetingType | null;
   status: ClientStatus;
@@ -68,6 +69,8 @@ export interface ConsultationNote {
 
 export interface Measurement extends Circumferences {
   id: string;
+  bodyFatPct: number | null;
+  muscleKg: number | null;
   measuredOn: string;
   heightCm: number | null;
   weightKg: number | null;

@@ -6,7 +6,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from '@/lib/router';
 import { api, ApiError } from '@/lib/api';
 import { Button, Checkbox, Input, Modal, Select, Textarea, useFeedback } from '@/components/panel/ui';
-import { CLIENT_STATUS_LABEL, CLIENT_STATUSES, MEETING_TYPE_LABEL } from '@shared/constants';
+import { CLIENT_SEX_LABEL, CLIENT_SEXES, CLIENT_STATUS_LABEL, CLIENT_STATUSES, MEETING_TYPE_LABEL, type ClientSex } from '@shared/constants';
 import { todayStr } from '@shared/time';
 import type { Client } from './types';
 
@@ -16,6 +16,7 @@ interface FormState {
   phone: string;
   email: string;
   birthDate: string;
+  sex: '' | ClientSex;
   firstVisitDate: string;
   preferredMeetingType: '' | 'IN_PERSON' | 'ONLINE';
   internalNote: string;
@@ -24,7 +25,7 @@ interface FormState {
 }
 
 const empty: FormState = {
-  firstName: '', lastName: '', phone: '', email: '', birthDate: '', firstVisitDate: '', preferredMeetingType: '', internalNote: '', kvkkNoticeGiven: false, status: 'ACTIVE',
+  firstName: '', lastName: '', phone: '', email: '', birthDate: '', sex: '', firstVisitDate: '', preferredMeetingType: '', internalNote: '', kvkkNoticeGiven: false, status: 'ACTIVE',
 };
 
 function fromClient(c: Client): FormState {
@@ -34,6 +35,7 @@ function fromClient(c: Client): FormState {
     phone: c.phone.replace(/^\+90(5\d{2})(\d{3})(\d{2})(\d{2})$/, '0$1 $2 $3 $4'),
     email: c.email ?? '',
     birthDate: c.birthDate ?? '',
+    sex: c.sex ?? '',
     firstVisitDate: c.firstVisitDate ?? '',
     preferredMeetingType: c.preferredMeetingType ?? '',
     internalNote: c.internalNote ?? '',
@@ -71,6 +73,7 @@ export function ClientFormModal({ open, onClose, client, onSaved }: { open: bool
       phone: f.phone,
       email: f.email || null,
       birthDate: f.birthDate || null,
+      sex: f.sex || null,
       firstVisitDate: f.firstVisitDate || null,
       preferredMeetingType: f.preferredMeetingType || null,
       internalNote: f.internalNote || null,
@@ -120,6 +123,14 @@ export function ClientFormModal({ open, onClose, client, onSaved }: { open: bool
           </p>
         )}
         <Input label="Doğum tarihi" hint="İsteğe bağlı" type="date" max={todayStr()} value={f.birthDate} onChange={(e) => set('birthDate', e.target.value)} error={errors.birthDate} />
+        <Select
+          label="Cinsiyet"
+          hint="Yağ oranı tahmini için"
+          value={f.sex}
+          onChange={(e) => set('sex', e.target.value as FormState['sex'])}
+          placeholder="Belirtilmedi"
+          options={CLIENT_SEXES.map((s) => ({ value: s, label: CLIENT_SEX_LABEL[s] }))}
+        />
         <Input label="İlk görüşme tarihi" type="date" value={f.firstVisitDate} onChange={(e) => set('firstVisitDate', e.target.value)} error={errors.firstVisitDate} />
         <Select
           label="Görüşme türü tercihi"

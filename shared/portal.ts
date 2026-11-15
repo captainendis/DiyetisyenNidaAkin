@@ -174,6 +174,8 @@ export interface PortalRecipe extends PortalRecipeCard {
 /** Danışana gösterilen ölçüm — diyetisyenin ölçüm notu (klinik olabilir) gösterilmez */
 export interface PortalMeasurement extends Circumferences {
   id: string;
+  bodyFatPct: number | null;
+  muscleKg: number | null;
   measuredOn: string;
   heightCm: number | null;
   weightKg: number | null;
