@@ -15,7 +15,7 @@ import { assertSlotAllowed, getSlots, withAppointmentLock } from '../services/av
 import { findClientByContact, resolveDuration } from '../services/appointments';
 import { notifyStaff } from '../services/notifications';
 import { dateStr, publicAppointmentRequestSchema } from '../../shared/schemas';
-import { MEETING_TYPE_LABEL, SLOT_HOLDING_STATUSES } from '../../shared/constants';
+import { DAYPARTS, MEETING_TYPE_LABEL, PILATES_FORMAT_LABEL, SLOT_HOLDING_STATUSES, pilatesPreferenceText } from '../../shared/constants';
 import { addDays, eachDay, formatDateTime, isoWeekday, todayStr } from '../../shared/time';
 
 export const publicAppointmentsRouter = router();
@@ -70,12 +70,16 @@ publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (c) => {
   const input = parse(publicAppointmentRequestSchema, await body(c));
   const { appointment: cfg, contact } = await getSettings(['appointment', 'contact'] as const);
 
-  if (input.meetingType === 'IN_PERSON' && !cfg.inPersonEnabled) throw badRequest('Yüz yüze görüşme şu anda sunulmuyor.');
-  if (input.meetingType === 'ONLINE' && !cfg.onlineEnabled) throw badRequest('Online görüşme şu anda sunulmuyor.');
-  if (input.mode === 'callback' && !cfg.allowRequestWithoutTime) throw badRequest('Lütfen bir gün ve saat seçin.');
+  const pilates = input.kind === 'PILATES';
+  // Pilates dersleri stüdyoda ve saati birlikte planlanarak yapılır; danışmanlık ayarları uygulanmaz
+  if (!pilates) {
+    if (input.meetingType === 'IN_PERSON' && !cfg.inPersonEnabled) throw badRequest('Yüz yüze görüşme şu anda sunulmuyor.');
+    if (input.meetingType === 'ONLINE' && !cfg.onlineEnabled) throw badRequest('Online görüşme şu anda sunulmuyor.');
+    if (input.mode === 'callback' && !cfg.allowRequestWithoutTime) throw badRequest('Lütfen bir gün ve saat seçin.');
+  }
 
   let serviceId: string | null = null;
-  if (input.serviceId) {
+  if (input.serviceId && !pilates) {
     const s = await prisma.service.findFirst({ where: { id: input.serviceId, isPublished: true }, select: { id: true } });
     serviceId = s?.id ?? null;
   }
@@ -108,6 +112,7 @@ publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (c) => {
         contactPhone: input.phone,
         source: 'WEBSITE',
         status: { in: ['NEW_REQUEST', 'PENDING'] },
+        kind: input.kind,
         createdAt: { gt: new Date(now.getTime() - 10 * 60_000) },
         ...(times ? { startsAt: times.startsAt } : { startsAt: null }),
       },
@@ -127,6 +132,10 @@ publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (c) => {
         startsAt: times?.startsAt ?? null,
         endsAt: times?.endsAt ?? null,
         meetingType: input.meetingType,
+        kind: input.kind,
+        pilatesFormat: pilates ? input.pilatesFormat : null,
+        preferredDays: pilates && input.preferredDays?.length ? [...new Set(input.preferredDays)].sort().join(',') : null,
+        preferredDayparts: pilates && input.preferredDayparts?.length ? DAYPARTS.filter((d) => input.preferredDayparts!.includes(d)).join(',') : null,
         status,
         source: 'WEBSITE',
         clientMessage: input.message?.trim() || null,
@@ -140,10 +149,12 @@ publicAppointmentsRouter.post('/appointments', publicFormLimiter, async (c) => {
     return a;
   });
 
-  await audit(c, 'appointment.requested_public', 'appointment', created.id, { mode: input.mode, meetingType: input.meetingType });
+  await audit(c, 'appointment.requested_public', 'appointment', created.id, { mode: input.mode, meetingType: input.meetingType, kind: input.kind });
   await notifyStaff('APPOINTMENT_REQUESTED', {
-    title: `Yeni randevu talebi: ${created.contactName}`,
-    body: `${created.startsAt ? formatDateTime(created.startsAt) : 'Saat seçilmedi — geri arama talebi'} · ${MEETING_TYPE_LABEL[created.meetingType]}`,
+    title: pilates ? `Yeni pilates talebi: ${created.contactName}` : `Yeni randevu talebi: ${created.contactName}`,
+    body: pilates
+      ? `${PILATES_FORMAT_LABEL[input.pilatesFormat!]} · ${pilatesPreferenceText(created.preferredDays, created.preferredDayparts)}`
+      : `${created.startsAt ? formatDateTime(created.startsAt) : 'Saat seçilmedi — geri arama talebi'} · ${MEETING_TYPE_LABEL[created.meetingType]}`,
     appointmentId: created.id,
     clientId: created.clientId,
   });

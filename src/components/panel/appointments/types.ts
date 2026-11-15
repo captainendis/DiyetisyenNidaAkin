@@ -1,12 +1,16 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import type { AppointmentStatus, MeetingType } from '@shared/constants';
+import type { AppointmentKind, AppointmentStatus, Daypart, MeetingType, PilatesFormat } from '@shared/constants';
 
 export interface AppointmentDTO {
   id: string;
   status: AppointmentStatus;
   meetingType: MeetingType;
+  kind: AppointmentKind;
+  pilatesFormat: PilatesFormat | null;
+  preferredDays: number[];
+  preferredDayparts: Daypart[];
   source: 'WEBSITE' | 'PANEL';
   startsAt: string | null;
   endsAt: string | null;

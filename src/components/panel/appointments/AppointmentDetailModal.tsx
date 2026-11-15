@@ -8,11 +8,11 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link } from '@/lib/router';
 import {
-  CalendarClock, Check, CheckCheck, Globe, Mail, MapPin, MessageSquareText, Phone, Trash2, UserRound, UserX, Video, X,
+  CalendarClock, Check, CheckCheck, Dumbbell, Globe, Mail, MapPin, MessageSquareText, Phone, Trash2, UserRound, UserX, Video, X,
 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { formatDateTime, formatDayStr, formatPhone, relativeTime, todayStr } from '@/lib/format';
-import { APPOINTMENT_STATUS_LABEL, MEETING_TYPE_LABEL, type AppointmentStatus } from '@shared/constants';
+import { APPOINTMENT_STATUS_LABEL, MEETING_TYPE_LABEL, PILATES_FORMAT_LABEL, pilatesPreferenceText, type AppointmentStatus } from '@shared/constants';
 import { Button, ErrorState, Modal, Skeleton, StatusBadge, Switch, Textarea, useFeedback } from '../ui';
 import { SlotPicker } from './SlotPicker';
 import { displayName, TRANSITIONS, type AppointmentDetail } from './types';
@@ -232,9 +232,19 @@ export default function AppointmentDetailModal({
               <Row icon={<CalendarClock className="h-4 w-4" />} label="Tarih ve saat">
                 {a.date ? <span className="tabular">{formatDayStr(a.date, 'd MMMM yyyy')} · {a.time} ({a.durationMinutes} dk)</span> : <span className="text-panel-muted">Atanmadı</span>}
               </Row>
-              <Row icon={a.meetingType === 'ONLINE' ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />} label="Görüşme türü">
-                {MEETING_TYPE_LABEL[a.meetingType]}{a.service ? ` · ${a.service.title}` : ''}
-              </Row>
+              {a.kind === 'PILATES' ? (
+                <Row icon={<Dumbbell className="h-4 w-4" />} label="Pilates talebi">
+                  <span className="block">{a.pilatesFormat ? PILATES_FORMAT_LABEL[a.pilatesFormat] : 'Ders türü belirtilmedi'}</span>
+                  <span className="block text-[0.82rem] text-panel-muted">Tercih: {pilatesPreferenceText(a.preferredDays, a.preferredDayparts)}</span>
+                  {a.pilatesFormat === 'GROUP' && (
+                    <Link to="/panel/pilates" className="mt-1 inline-block text-[0.82rem] font-semibold underline decoration-panel-line underline-offset-4 hover:decoration-cocoa">Pilates gruplarına git</Link>
+                  )}
+                </Row>
+              ) : (
+                <Row icon={a.meetingType === 'ONLINE' ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />} label="Görüşme türü">
+                  {MEETING_TYPE_LABEL[a.meetingType]}{a.service ? ` · ${a.service.title}` : ''}
+                </Row>
+              )}
               <Row icon={<Globe className="h-4 w-4" />} label="KVKK">
                 <span className="text-[0.82rem]">
                   {a.kvkkNoticeAcceptedAt ? `Aydınlatma onayı: ${formatDateTime(a.kvkkNoticeAcceptedAt)}` : 'Aydınlatma kaydı yok'}

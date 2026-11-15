@@ -37,7 +37,7 @@ const STATIC_META: Record<string, { title?: string; description?: string }> = {
   '/beslenme-rehberi': { title: 'Beslenme Rehberi', description: 'Sağlıklı beslenme ve günlük alışkanlıklar üzerine genel bilgilendirme yazıları. İçerikler tıbbi tavsiye yerine geçmez.' },
   '/tarifler': { title: 'Tarifler', description: 'Diyetisyen Nida Akın’ın önerdiği pratik ve dengeli tarifler. Genel öneridir; kişiye özel planın yerine geçmez.' },
   '/iletisim': { title: 'İletişim', description: 'Diyetisyen Nida Akın ile iletişime geçin ya da çevrim içi randevu talebi oluşturun.' },
-  '/randevu': { title: 'Randevu Talebi', description: 'Diyetisyen Nida Akın ile görüşmek için çevrim içi randevu talebi oluşturun.' },
+  '/randevu': { title: 'Randevu Talebi', description: 'Diyetisyen Nida Akın ile beslenme görüşmesi ya da pilates dersi için çevrim içi talep oluşturun.' },
   '/kvkk-aydinlatma-metni': { title: 'KVKK Aydınlatma Metni', description: 'Kişisel verilerin işlenmesine ilişkin aydınlatma metni (taslak).' },
   '/acik-riza-metni': { title: 'Açık Rıza Metni', description: 'Randevu formunda isteğe bağlı açık rıza metni (taslak).' },
   '/gizlilik-politikasi': { title: 'Gizlilik Politikası', description: 'Web sitesi gizlilik politikası (taslak).' },
