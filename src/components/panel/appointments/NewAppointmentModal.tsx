@@ -7,7 +7,7 @@ import { Search, UserPlus, X } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useDebounced } from '@/hooks/useApi';
 import { formatPhone, todayStr } from '@/lib/format';
-import { MEETING_TYPE_LABEL, type MeetingType } from '@shared/constants';
+import { MEETING_TYPE_LABEL, PILATES_FORMAT_LABEL, type AppointmentKind, type MeetingType, type PilatesFormat } from '@shared/constants';
 import { Button, Input, Modal, Select, Switch, Textarea, useFeedback } from '../ui';
 import { SlotPicker } from './SlotPicker';
 import type { AppointmentDTO } from './types';
@@ -21,7 +21,7 @@ export default function NewAppointmentModal({
   open: boolean;
   onClose: () => void;
   onCreated?: (a: AppointmentDTO) => void;
-  initial?: { date?: string; time?: string; clientId?: string };
+  initial?: { date?: string; time?: string; clientId?: string; kind?: AppointmentKind };
 }) {
   const fb = useFeedback();
   const [client, setClient] = useState<ClientLite | null>(null);
@@ -37,6 +37,8 @@ export default function NewAppointmentModal({
   const [time, setTime] = useState('');
   const [duration, setDuration] = useState('');
   const [meetingType, setMeetingType] = useState<MeetingType>('IN_PERSON');
+  const [kind, setKind] = useState<AppointmentKind>('CONSULTATION');
+  const [pilatesFormat, setPilatesFormat] = useState<PilatesFormat>('PRIVATE');
   const [status, setStatus] = useState<'CONFIRMED' | 'PENDING'>('CONFIRMED');
   const [outside, setOutside] = useState(false);
   const [note, setNote] = useState('');
@@ -63,6 +65,8 @@ export default function NewAppointmentModal({
     setTime(initial?.time ?? '');
     setDuration('');
     setMeetingType('IN_PERSON');
+    setKind(initial?.kind ?? 'CONSULTATION');
+    setPilatesFormat('PRIVATE');
     setStatus('CONFIRMED');
     setOutside(false);
     setNote('');
@@ -85,7 +89,7 @@ export default function NewAppointmentModal({
           .then((r) => setServices(r.services))
           .catch(() => setServices([])),
       );
-  }, [open, initial?.date, initial?.time, initial?.clientId]);
+  }, [open, initial?.date, initial?.time, initial?.clientId, initial?.kind]);
 
   useEffect(() => {
     if (!open || mode !== 'search' || client) return;
@@ -127,11 +131,13 @@ export default function NewAppointmentModal({
     try {
       const body = {
         ...(client ? { clientId: client.id } : { contactName: contact.name.trim(), contactPhone: contact.phone, contactEmail: contact.email || null }),
-        serviceId: serviceId || null,
+        kind,
+        pilatesFormat: kind === 'PILATES' ? pilatesFormat : null,
+        serviceId: kind === 'PILATES' ? null : serviceId || null,
         date,
         time,
         durationMinutes: duration ? Number(duration) : undefined,
-        meetingType,
+        meetingType: kind === 'PILATES' ? 'IN_PERSON' : meetingType,
         status,
         internalNote: note.trim() || null,
         allowOutsideHours: outside,
@@ -230,13 +236,44 @@ export default function NewAppointmentModal({
           )}
         </section>
 
+        <section>
+          <p className="mb-2 text-[0.8rem] font-semibold text-cocoa">Randevu türü</p>
+          <div role="radiogroup" aria-label="Randevu türü" className="inline-flex rounded-lg bg-panel-bg p-1">
+            {(['CONSULTATION', 'PILATES'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={kind === k}
+                onClick={() => setKind(k)}
+                className={kind === k ? 'rounded-md bg-white px-3 py-1.5 text-[0.82rem] font-semibold text-espresso shadow-sm' : 'rounded-md px-3 py-1.5 text-[0.82rem] font-semibold text-panel-muted hover:text-cocoa'}
+              >
+                {k === 'PILATES' ? 'Pilates' : 'Diyet'}
+              </button>
+            ))}
+          </div>
+          {kind === 'PILATES' && (
+            <p className="mt-2 text-[0.78rem] text-panel-muted">Birebir ya da deneme dersi için. Grup dersleri “Pilates dersi” ve “Ders programı” ile eklenir.</p>
+          )}
+        </section>
+
         <section className="grid gap-3 sm:grid-cols-3">
+          {kind === 'PILATES' ? (
+            <Select
+              label="Ders türü"
+              value={pilatesFormat}
+              onChange={(e) => setPilatesFormat(e.target.value as PilatesFormat)}
+              options={(['PRIVATE', 'GROUP'] as const).map((f) => ({ value: f, label: PILATES_FORMAT_LABEL[f] }))}
+            />
+          ) : (
           <Select label="Hizmet" value={serviceId} onChange={(e) => setServiceId(e.target.value)} placeholder="Belirtilmedi" options={services.map((s) => ({ value: s.id, label: s.title }))} />
+          )}
           <Select
             label="Görüşme türü"
-            value={meetingType}
+            value={kind === 'PILATES' ? 'IN_PERSON' : meetingType}
             onChange={(e) => setMeetingType(e.target.value as MeetingType)}
             options={(['IN_PERSON', 'ONLINE'] as const).map((m) => ({ value: m, label: MEETING_TYPE_LABEL[m] }))}
+            disabled={kind === 'PILATES'}
           />
           <Input label="Süre (dk)" type="number" min={10} max={240} step={5} value={duration} onChange={(e) => setDuration(e.target.value)} placeholder={effDuration ? String(effDuration) : 'Takvim varsayılanı'} />
         </section>

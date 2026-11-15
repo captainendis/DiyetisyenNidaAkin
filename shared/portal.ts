@@ -7,7 +7,7 @@
  */
 import { z } from 'zod';
 import { emailSchema, passwordPolicy } from './schemas';
-import { DAYPARTS, PILATES_FORMATS, type AppointmentStatus, type Daypart, type MeetingType, type PilatesFormat } from './constants';
+import { DAYPARTS, PILATES_FORMATS, type AppointmentKind, type AppointmentStatus, type Daypart, type MeetingType, type PilatesFormat } from './constants';
 import type { PortalClassSession } from './classes';
 import type { NutritionPlanData } from './plan';
 import type { DietTag, RecipeCategory } from './recipe';
@@ -90,6 +90,26 @@ export interface PortalPilates {
   stats: { attended: number; noShow: number; excused: number };
   /** Açık (henüz planlanmamış) pilates talepleri */
   requests: { id: string; createdAt: string; pilatesFormat: PilatesFormat | null; preferredDays: number[]; preferredDayparts: Daypart[]; status: 'NEW_REQUEST' | 'PENDING' }[];
+}
+
+/** Danışanın yanıt bekleyen talepleri (diyet ve pilates) */
+export interface PortalRequest {
+  id: string;
+  kind: AppointmentKind;
+  status: 'NEW_REQUEST' | 'PENDING';
+  createdAt: string;
+  /** Diyet talebinde seçilen saat (varsa) */
+  startsAt: string | null;
+  service: string | null;
+  pilatesFormat: PilatesFormat | null;
+  preferredDays: number[];
+  preferredDayparts: Daypart[];
+}
+
+/** Pilates boş yerleri: yalnızca sayılar — katılımcı bilgisi yok */
+export interface PortalPilatesAvailability {
+  groups: { id: string; name: string; free: number }[];
+  sessions: { id: string; title: string; startsAt: string; endsAt: string; free: number }[];
 }
 
 export const portalPilatesRequestSchema = z.object({

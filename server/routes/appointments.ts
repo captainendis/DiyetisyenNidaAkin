@@ -163,12 +163,14 @@ appointmentsRouter.post('/', canWrite, async (c) => {
     const a = await tx.appointment.create({
       data: {
         clientId: contact.clientId,
-        serviceId: input.serviceId ?? null,
+        serviceId: input.kind === 'PILATES' ? null : (input.serviceId ?? null),
         contactName: contact.name,
         contactPhone: contact.phone,
         contactEmail: contact.email,
         ...times,
-        meetingType: input.meetingType,
+        meetingType: input.kind === 'PILATES' ? 'IN_PERSON' : input.meetingType,
+        kind: input.kind,
+        pilatesFormat: input.kind === 'PILATES' ? (input.pilatesFormat ?? 'PRIVATE') : null,
         status: input.status,
         source: 'PANEL',
         internalNote: input.internalNote ?? null,
