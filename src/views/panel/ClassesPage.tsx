@@ -47,7 +47,11 @@ function GroupList({ groups, selectedId, onSelect }: { groups: ClassGroupDTO[]; 
             {g.pattern.length ? patternLabel(g.pattern) : 'Planlı ders yok'}
           </span>
         </span>
-        <SeatDots taken={g.members.length} capacity={g.capacity} className={selectedId === g.id ? 'opacity-80' : undefined} />
+        {selectedId === g.id ? (
+          <span className="tabular text-[0.75rem] font-semibold text-ivory/80" aria-label={`${g.members.length} / ${g.capacity} kişi`}>{g.members.length}/{g.capacity}</span>
+        ) : (
+          <SeatDots taken={g.members.length} capacity={g.capacity} />
+        )}
       </button>
     </li>
   );
