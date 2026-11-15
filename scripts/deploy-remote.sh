@@ -74,6 +74,10 @@ if [ -n "${NODE_ACTIVATE:-}" ]; then
   # shellcheck disable=SC1090
   set +u; . "$NODE_ACTIVATE"; set -u
 fi
+# Paylaşımlı hostingde (CloudLinux LVE) hesap başına thread sınırı var. V8 varsayılan olarak çekirdek sayısı kadar
+# arka plan thread'i açar; sınıra çarpınca prisma CLI ya SIGABRT ile çöker ya da migrate deploy sessizce takılır
+# (günlükte yanıltıcı "P1001 Can't reach database server" görünür). Bu betikteki tüm node/npm/npx çağrıları için tek thread.
+export NODE_OPTIONS="--v8-pool-size=1${NODE_OPTIONS:+ $NODE_OPTIONS}"
 command -v node >/dev/null 2>&1 || fail "node bulunamadı. NODE_ACTIVATE ile Node ortamını belirtin."
 node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a>20||(a===20&&b>=19)?0:1)' \
   || fail "Node.js 20.19+ gerekli (bulunan: $(node -v))."
