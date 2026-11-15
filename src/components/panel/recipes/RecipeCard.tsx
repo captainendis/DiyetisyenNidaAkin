@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Check, CookingPot, GitBranch, Globe, House, UserRound } from 'lucide-react';
 import { cn } from '@/lib/format';
 import { RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, recipeImageUrl, recipeMeta, type Recipe, type RecipeCategory } from '@shared/recipe';
+import { Select } from '@/components/panel/ui/Field';
 
 export function RecipeThumb({ recipe, className }: { recipe: Pick<Recipe, 'imageBase'>; className?: string }) {
   return (
@@ -76,11 +77,20 @@ export function RecipeBadges({ recipe, className }: { recipe: Recipe; className?
   );
 }
 
-/** Kategori süzgeci (yatay kaydırılabilir çipler) */
+/** Kategori süzgeci: telefonda açılır liste, geniş ekranda çipler */
 export function CategoryChips({ value, onChange, counts }: { value: RecipeCategory | ''; onChange: (v: RecipeCategory | '') => void; counts?: Partial<Record<RecipeCategory | '', number>> }) {
   const all: (RecipeCategory | '')[] = ['', ...RECIPE_CATEGORIES];
+  const label = (c: RecipeCategory | '') => `${c ? RECIPE_CATEGORY_LABEL[c] : 'Tümü'}${counts?.[c] !== undefined ? ` (${counts[c]})` : ''}`;
   return (
-    <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Kategoriye göre süz">
+    <>
+    <Select
+      aria-label="Kategori"
+      wrapperClassName="sm:hidden"
+      value={value}
+      onChange={(e) => onChange(e.target.value as RecipeCategory | '')}
+      options={all.map((c) => ({ value: c, label: label(c) }))}
+    />
+    <div className="-mx-1 hidden gap-1.5 overflow-x-auto px-1 pb-1 sm:flex" role="group" aria-label="Kategoriye göre süz">
       {all.map((c) => (
         <button
           key={c || 'all'}
@@ -97,5 +107,6 @@ export function CategoryChips({ value, onChange, counts }: { value: RecipeCatego
         </button>
       ))}
     </div>
+    </>
   );
 }

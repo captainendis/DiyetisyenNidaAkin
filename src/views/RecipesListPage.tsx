@@ -5,8 +5,9 @@
 
 /** /tarifler — panelde "Web sitesinde yayınla" işaretlenen tarifler (kişiye özel varyasyonlar hiçbir zaman görünmez) */
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from '@/lib/router';
+import { useSearchParams } from '@/lib/router';
 import { api } from '@/lib/api';
+import { FilterNav } from '@/components/sections/FilterNav';
 import { PageHeader } from '@/components/sections/PageHeader';
 import { PublicRecipeCardView } from '@/components/cards/RecipeCard';
 import { Reveal } from '@/components/motion/Reveal';
@@ -69,45 +70,18 @@ export default function RecipesListPage() {
       <section className="bg-ivory text-espresso">
         <div className="container-edge py-14 sm:py-20">
           {cats.length > 1 && (
-            <nav aria-label="Tarif kategorileri" className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
-              <ul className="flex min-w-max gap-7 border-b border-espresso/12">
-                {[undefined, ...cats].map((c) => {
-                  const active = c === category;
-                  return (
-                    <li key={c ?? 'all'}>
-                      <Link
-                        to={href(c, diet)}
-                        aria-current={active ? 'page' : undefined}
-                        className={cn('-mb-px block border-b py-4 text-[0.92rem] transition-colors', active ? 'border-espresso text-espresso' : 'border-transparent text-taupe hover:text-espresso')}
-                      >
-                        {c ? RECIPE_CATEGORY_LABEL[c] : 'Tümü'}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
+            <FilterNav
+              label="Kategori"
+              items={[undefined, ...cats].map((c) => ({ key: c ?? 'all', label: c ? RECIPE_CATEGORY_LABEL[c] : 'Tümü', to: href(c, diet), active: c === category }))}
+            />
           )}
           {(diets.length > 1 || diet) && (
-            <nav aria-label="Diyet türü" className={cn('-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0', cats.length > 1 && 'mt-6')}>
-              <ul className="flex min-w-max items-center gap-6">
-                <li className="text-[0.9rem] text-taupe">Diyet türü:</li>
-                {[undefined, ...diets].map((t) => {
-                  const active = t === diet;
-                  return (
-                    <li key={t ?? 'all'}>
-                      <Link
-                        to={href(category, t)}
-                        aria-current={active ? 'page' : undefined}
-                        className={cn('block border-b py-1 text-[0.9rem] transition-colors', active ? 'border-espresso text-espresso' : 'border-transparent text-taupe hover:text-espresso')}
-                      >
-                        {t ? DIET_TAG_LABEL[t] : 'Tümü'}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
+            <FilterNav
+              label="Diyet türü"
+              variant="inline"
+              className={cn(cats.length > 1 && '-mt-px sm:mt-6')}
+              items={[undefined, ...diets].map((t) => ({ key: t ?? 'all', label: t ? DIET_TAG_LABEL[t] : 'Tümü', to: href(category, t), active: t === diet }))}
+            />
           )}
           <div className="pt-14 sm:pt-20">
             {error ? (

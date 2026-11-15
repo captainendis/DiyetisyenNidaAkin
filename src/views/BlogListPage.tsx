@@ -4,10 +4,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from '@/lib/router';
+import { useParams, useSearchParams } from '@/lib/router';
 import { api } from '@/lib/api';
 import { useSite } from '@/data/SiteContext';
 import type { PostCard as Post } from '@/data/types';
+import { FilterNav } from '@/components/sections/FilterNav';
 import { PageHeader } from '@/components/sections/PageHeader';
 import { PostCard } from '@/components/cards/PostCard';
 import { FaqList } from '@/components/sections/FaqList';
@@ -62,24 +63,15 @@ export default function BlogListPage() {
         <div className="container-edge py-14 sm:py-20">
           {/* Hiç yayınlanmış yazı yokken boş kategori sekmeleri gösterilmez. */}
           {!(data && data.total === 0 && !category) && (
-            <nav aria-label="Kategoriler" className="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
-              <ul className="flex min-w-max gap-7 border-b border-espresso/12">
-                {[{ slug: undefined as string | undefined, name: 'Tümü' }, ...site.categories].map((c) => {
-                  const active = c.slug === category;
-                  return (
-                    <li key={c.name}>
-                      <Link
-                        to={c.slug ? `/beslenme-rehberi/kategori/${c.slug}` : '/beslenme-rehberi'}
-                        aria-current={active ? 'page' : undefined}
-                        className={cn('-mb-px block border-b py-4 text-[0.92rem] transition-colors', active ? 'border-espresso text-espresso' : 'border-transparent text-taupe hover:text-espresso')}
-                      >
-                        {c.name}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
+            <FilterNav
+              label="Kategori"
+              items={[{ slug: undefined as string | undefined, name: 'Tümü' }, ...site.categories].map((c) => ({
+                key: c.slug ?? 'all',
+                label: c.name,
+                to: c.slug ? `/beslenme-rehberi/kategori/${c.slug}` : '/beslenme-rehberi',
+                active: c.slug === category,
+              }))}
+            />
           )}
 
           <div className="pt-14 sm:pt-20">
