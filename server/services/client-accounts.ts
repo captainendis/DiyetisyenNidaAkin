@@ -28,7 +28,7 @@ export async function issueAccountLink(accountId: string, purpose: ClientTokenPu
 
 /** Bağlantıyı e-postayla da gönderir (SMTP yapılandırılmışsa). Gönderemezse false döner — panel bağlantıyı yine de gösterir. */
 export async function emailAccountLink(to: string, firstName: string, purpose: ClientTokenPurpose, link: string) {
-  if (!isEmailConfigured()) return false;
+  if (!(await isEmailConfigured())) return false;
   const activate = purpose === 'ACTIVATE';
   try {
     await sendMail({

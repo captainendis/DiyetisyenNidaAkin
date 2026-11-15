@@ -6,13 +6,14 @@
  *  - Panel içi bildirim her zaman oluşturulur (kullanıcı tercihi kapatmadıysa).
  *  - Harici kanallar (e-posta, WhatsApp) için "channel adapter" mimarisi:
  *    kanal yapılandırılmamışsa gönderim YAPILMAZ ve NotificationDelivery'ye SKIPPED_NOT_CONFIGURED yazılır.
- *  - WhatsApp için resmi WhatsApp Business API entegrasyonu henüz yok: adaptör bilinçli olarak
- *    "yapılandırılmadı" döner. Entegrasyon eklendiğinde yalnızca whatsappChannel.send uygulanmalıdır.
+ *  - WhatsApp: panelden etkinleştirilen Cloud API (bkz. whatsapp.ts). Şablonlu mesajlar olay bazında
+ *    gönderilir (yeni talep -> personel, onay/hatırlatma -> danışan); bu adaptör yalnızca durum bildirir.
  */
 import { prisma, type Tx } from '../lib/db';
 import type { NotificationType } from '../../shared/constants';
 import { env } from '../lib/env';
 import { isEmailConfigured, sendMail } from './mailer';
+import { isWhatsappCloudConfigured, whatsappNotifyClient, whatsappNotifyStaffRequest } from './whatsapp';
 
 interface ChannelResult {
   status: 'SENT' | 'FAILED' | 'SKIPPED_NOT_CONFIGURED';
@@ -20,7 +21,7 @@ interface ChannelResult {
 }
 interface Channel {
   key: 'EMAIL' | 'WHATSAPP';
-  isConfigured(): boolean;
+  isConfigured(): boolean | Promise<boolean>;
   send(to: { email: string }, n: { title: string; body?: string | null; link?: string }): Promise<ChannelResult>;
 }
 
@@ -40,7 +41,7 @@ const emailChannel: Channel = {
 
 const whatsappChannel: Channel = {
   key: 'WHATSAPP',
-  isConfigured: () => false,
+  isConfigured: isWhatsappCloudConfigured,
   async send() {
     return { status: 'SKIPPED_NOT_CONFIGURED' };
   },
@@ -48,8 +49,8 @@ const whatsappChannel: Channel = {
 
 export const channels = [emailChannel, whatsappChannel];
 
-export function channelStatus() {
-  return channels.map((c) => ({ key: c.key, configured: c.isConfigured() }));
+export async function channelStatus() {
+  return Promise.all(channels.map(async (c) => ({ key: c.key, configured: await c.isConfigured() })));
 }
 
 interface Prefs {
@@ -75,11 +76,12 @@ export async function notifyStaff(
   }
   // Harici kanallar transaction dışında, arka planda
   const link = data.appointmentId ? `${env.publicSiteUrl}/panel/randevular?id=${data.appointmentId}` : `${env.publicSiteUrl}/panel/bildirimler`;
+  if (type === 'APPOINTMENT_REQUESTED') void whatsappNotifyStaffRequest(data).catch(() => {});
   setImmediate(() => {
     void (async () => {
       for (const c of created) {
         if (c.prefs.email?.[type] !== true) continue; // e-posta yalnızca açıkça istenirse
-        const res = emailChannel.isConfigured()
+        const res = (await emailChannel.isConfigured())
           ? await emailChannel.send({ email: c.email }, { ...data, link })
           : { status: 'SKIPPED_NOT_CONFIGURED' as const };
         await prisma.notificationDelivery
@@ -110,5 +112,6 @@ export async function generateUpcomingReminders() {
       clientId: a.clientId,
     });
     await prisma.appointment.update({ where: { id: a.id }, data: { reminderNotifiedAt: new Date() } });
+    void whatsappNotifyClient('reminderClient', a.id);
   }
 }

@@ -4,6 +4,7 @@
 /** Varsayılan site içeriği (zod içermez — herkese açık sitenin ana paketine girer) */
 import type { Settings } from './settings';
 import { siteConfig } from './site-config';
+import { defaultWhatsappTemplates } from './whatsapp-templates';
 
 export const defaultSettings: Settings = {
   hero: {
@@ -87,6 +88,7 @@ export const defaultSettings: Settings = {
       'Gönderdiğiniz talep bir ön başvurudur. Randevunuz, uygunluk kontrolünden sonra sizinle iletişime geçilerek kesinleştirilir.',
   },
   media: { hero: null, venue: null, portrait: null },
+  whatsappTemplates: defaultWhatsappTemplates,
   kvkk: {
     retentionMonths: 36,
     noticeVersion: '2026-10-taslak',

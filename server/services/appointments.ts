@@ -26,6 +26,7 @@ import {
   type PilatesFormat,
 } from '../../shared/constants';
 import { formatDateTime, isoWeekday } from '../../shared/time';
+import { whatsappNotifyClient } from './whatsapp';
 
 export const appointmentInclude = {
   client: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
@@ -176,6 +177,7 @@ export async function changeStatus(c: Ctx, id: string, to: AppointmentStatus, no
   }
   const when = updated.startsAt ? formatDateTime(updated.startsAt) : 'Tarih belirlenmedi';
   if (to === 'CONFIRMED') {
+    void whatsappNotifyClient('confirmedClient', id);
     await notifyStaff('APPOINTMENT_CONFIRMED', { title: `Randevu onaylandı: ${updated.contactName}`, body: when, appointmentId: id, clientId: updated.clientId });
   } else if (to === 'CANCELLED') {
     await notifyStaff('APPOINTMENT_CANCELLED', { title: `Randevu iptal edildi: ${updated.contactName}`, body: note ? `${when} — ${note}` : when, appointmentId: id, clientId: updated.clientId });

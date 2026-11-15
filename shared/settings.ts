@@ -10,6 +10,7 @@
  * Metinlerde uzmanlık, eğitim, deneyim yılı, sertifika vb. doğrulanmamış bilgi YOKTUR.
  */
 import { z } from 'zod';
+import { whatsappTemplatesSchema } from './integrations';
 
 const text = (max = 400) => z.string().trim().max(max);
 const nullableText = (max = 400) => z.string().trim().max(max).nullable();
@@ -173,6 +174,7 @@ export const settingsSchemas = {
   appointment: appointmentSettingsSchema,
   kvkk: kvkkSettingsSchema,
   media: mediaSchema,
+  whatsappTemplates: whatsappTemplatesSchema,
 } as const;
 
 export type SettingsKey = keyof typeof settingsSchemas;
