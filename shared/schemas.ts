@@ -5,6 +5,7 @@
  * API giriş doğrulama şemaları (Zod). İstemci formları ve sunucu aynı şemaları kullanır.
  */
 import { z } from 'zod';
+import { CIRCUMFERENCES, type CircumferenceKey } from './measurements';
 import {
   APPOINTMENT_STATUSES,
   BLOCKED_DATE_KINDS,
@@ -211,6 +212,10 @@ export const measurementSchema = z.object({
   heightCm: z.number().min(50).max(250).nullable().optional(),
   weightKg: z.number().min(2).max(400).nullable().optional(),
   targetWeightKg: z.number().min(2).max(400).nullable().optional(),
+  ...Object.fromEntries(CIRCUMFERENCES.map(({ key }) => [key, z.number().min(5).max(300).nullable().optional()])) as Record<
+    CircumferenceKey,
+    z.ZodOptional<z.ZodNullable<z.ZodNumber>>
+  >,
   note: z.string().trim().max(500).nullable().optional(),
 });
 

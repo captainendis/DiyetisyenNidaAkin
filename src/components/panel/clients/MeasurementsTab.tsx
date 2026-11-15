@@ -10,7 +10,10 @@ import { Button, Card, CardHeader, EmptyState, ErrorState, IconButton, Input, Re
 import { usePanelAuth } from '@/components/panel/PanelAuth';
 import { ConsentGate } from './ConsentGate';
 import { WeightTrend } from './WeightTrend';
+import { CIRCUMFERENCES, type CircumferenceKey } from '@shared/measurements';
 import type { Client, Measurement } from './types';
+
+const emptyCirc = () => Object.fromEntries(CIRCUMFERENCES.map(({ key }) => [key, ''])) as Record<CircumferenceKey, string>;
 
 const num = (v: string) => (v.trim() === '' ? null : Number(v.replace(',', '.')));
 const fmt = (v: number | null, unit: string) => (v == null ? '—' : `${v.toLocaleString('tr-TR')} ${unit}`);
@@ -22,7 +25,7 @@ export function MeasurementsTab({ client, onClientChanged }: { client: Client; o
     () => api.get<{ items: Measurement[] }>(`/clients/${client.id}/measurements`),
     [client.id],
   );
-  const [f, setF] = useState({ measuredOn: todayStr(), heightCm: '', weightKg: '', targetWeightKg: '', note: '' });
+  const [f, setF] = useState({ measuredOn: todayStr(), heightCm: '', weightKg: '', targetWeightKg: '', note: '', ...emptyCirc() });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
   const { success, error: toastError, confirm } = useFeedback();
@@ -39,10 +42,11 @@ export function MeasurementsTab({ client, onClientChanged }: { client: Client; o
         heightCm: num(f.heightCm),
         weightKg: num(f.weightKg),
         targetWeightKg: num(f.targetWeightKg),
+        ...Object.fromEntries(CIRCUMFERENCES.map(({ key }) => [key, num(f[key])])),
         note: f.note || null,
       });
       setData((d) => ({ items: [res.measurement, ...(d?.items ?? [])].sort((a, b) => b.measuredOn.localeCompare(a.measuredOn)) }));
-      setF((s) => ({ ...s, weightKg: '', note: '' }));
+      setF((s) => ({ ...s, weightKg: '', note: '', ...emptyCirc() }));
       success('Ölçüm kaydedildi');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -65,6 +69,9 @@ export function MeasurementsTab({ client, onClientChanged }: { client: Client; o
     }
   }
 
+  // Geçmiş tablosunda yalnızca en az bir kez girilmiş mezura ölçüleri sütun olarak gösterilir
+  const usedCirc = CIRCUMFERENCES.filter(({ key }) => data?.items.some((m) => m[key] != null));
+
   const history = loading ? (
     <Card><SkeletonRows rows={3} /></Card>
   ) : error ? (
@@ -86,6 +93,7 @@ export function MeasurementsTab({ client, onClientChanged }: { client: Client; o
             { key: 'w', header: 'Kilo', className: 'tabular', cell: (m) => fmt(m.weightKg, 'kg') },
             { key: 'h', header: 'Boy', className: 'tabular', cell: (m) => fmt(m.heightCm, 'cm') },
             { key: 't', header: 'Hedef', className: 'tabular', cell: (m) => fmt(m.targetWeightKg, 'kg') },
+            ...usedCirc.map(({ key, label }) => ({ key, header: label, className: 'tabular whitespace-nowrap', cell: (m: Measurement) => fmt(m[key], 'cm') })),
             { key: 'b', header: 'BKİ', className: 'tabular', cell: (m) => (m.bmi != null ? m.bmi.toLocaleString('tr-TR') : '—') },
             { key: 'n', header: 'Not', cell: (m) => <span className="block max-w-[16rem] truncate text-panel-muted">{m.note ?? ''}</span> },
             ...(can('clinical:write') ? [{ key: 'x', header: <span className="sr-only">İşlemler</span>, className: 'text-right', cell: (m: Measurement) => <IconButton label="Ölçümü sil" onClick={() => void remove(m)}><Trash2 className="h-4 w-4" /></IconButton> }] : []),
@@ -95,6 +103,11 @@ export function MeasurementsTab({ client, onClientChanged }: { client: Client; o
               <div>
                 <p className="tabular font-semibold text-espresso">{formatDayStr(m.measuredOn)}</p>
                 <p className="tabular mt-0.5 text-sm text-cocoa">{fmt(m.weightKg, 'kg')} · {fmt(m.heightCm, 'cm')}{m.bmi ? ` · BKİ ${m.bmi.toLocaleString('tr-TR')}` : ''}</p>
+                {CIRCUMFERENCES.some(({ key }) => m[key] != null) && (
+                  <p className="tabular mt-0.5 text-[0.78rem] text-cocoa">
+                    {CIRCUMFERENCES.filter(({ key }) => m[key] != null).map(({ key, label }) => `${label} ${m[key]!.toLocaleString('tr-TR')}`).join(' · ')} cm
+                  </p>
+                )}
                 {m.note && <p className="mt-1 text-[0.78rem] text-panel-muted">{m.note}</p>}
               </div>
               {can('clinical:write') && <IconButton label="Ölçümü sil" onClick={() => void remove(m)}><Trash2 className="h-4 w-4" /></IconButton>}
@@ -117,6 +130,12 @@ export function MeasurementsTab({ client, onClientChanged }: { client: Client; o
               <Input label="Kilo (kg)" inputMode="decimal" value={f.weightKg} onChange={(e) => setF({ ...f, weightKg: e.target.value })} error={errors.weightKg} />
               <Input label="Boy (cm)" inputMode="decimal" placeholder={lastHeight ? String(lastHeight) : ''} value={f.heightCm} onChange={(e) => setF({ ...f, heightCm: e.target.value })} error={errors.heightCm} />
               <Input wrapperClassName="col-span-2" label="Hedef kilo (kg)" hint="İsteğe bağlı" inputMode="decimal" value={f.targetWeightKg} onChange={(e) => setF({ ...f, targetWeightKg: e.target.value })} error={errors.targetWeightKg} />
+              <fieldset className="col-span-2 mt-1 grid grid-cols-2 gap-3 border-t border-espresso/10 pt-3">
+                <legend className="col-span-2 mb-1 text-[0.82rem] font-bold text-espresso">Mezura ölçüleri (cm)</legend>
+                {CIRCUMFERENCES.map(({ key, label }) => (
+                  <Input key={key} label={label} inputMode="decimal" value={f[key]} onChange={(e) => setF({ ...f, [key]: e.target.value })} error={errors[key]} />
+                ))}
+              </fieldset>
               <Input wrapperClassName="col-span-2" label="Not" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} error={errors.note} maxLength={500} />
               <Button type="submit" className="col-span-2 mt-1" loading={pending}>Ölçümü kaydet</Button>
             </form>

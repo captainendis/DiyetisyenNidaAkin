@@ -2,6 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import type { AppointmentStatus, ClientStatus, MeetingType } from '@shared/constants';
+import type { Circumferences } from '@shared/measurements';
 
 export interface ClientListItem {
   id: string;
@@ -65,7 +66,7 @@ export interface ConsultationNote {
   updatedAt: string;
 }
 
-export interface Measurement {
+export interface Measurement extends Circumferences {
   id: string;
   measuredOn: string;
   heightCm: number | null;

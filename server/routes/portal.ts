@@ -44,6 +44,7 @@ import {
   type PortalRecipe,
   type PortalRecipeCard,
 } from '../../shared/portal';
+import { pickCircumferences, type Circumferences } from '../../shared/measurements';
 import type { PortalClassSession } from '../../shared/classes';
 import { CLASS_SEAT_HOLDING, DAYPARTS, PILATES_FORMAT_LABEL, parseDayparts, parseDays, pilatesPreferenceText } from '../../shared/constants';
 import { notifyStaff } from '../services/notifications';
@@ -263,13 +264,13 @@ function toMessage(m: { id: string; contentEnc: string; createdAt: Date; updated
 }
 
 function toMeasurement(m: { id: string; measuredOn: string; dataEnc: string }): PortalMeasurement {
-  let d: { heightCm?: number | null; weightKg?: number | null; targetWeightKg?: number | null } = {};
+  let d: { heightCm?: number | null; weightKg?: number | null; targetWeightKg?: number | null } & Partial<Circumferences> = {};
   try {
     d = decryptJson(m.dataEnc);
   } catch {
     /* çözülemeyen ölçüm boş gösterilir */
   }
-  return { id: m.id, measuredOn: m.measuredOn, heightCm: d.heightCm ?? null, weightKg: d.weightKg ?? null, targetWeightKg: d.targetWeightKg ?? null };
+  return { id: m.id, measuredOn: m.measuredOn, heightCm: d.heightCm ?? null, weightKg: d.weightKg ?? null, targetWeightKg: d.targetWeightKg ?? null, ...pickCircumferences(d) };
 }
 
 /** Danışanın görebileceği tarifler: kişiye özel varyasyonları + planlarına eklenmiş tarifler (plan adlarıyla) */
