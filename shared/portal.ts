@@ -11,6 +11,7 @@ import { DAYPARTS, PILATES_FORMATS, type AppointmentKind, type AppointmentStatus
 import type { PortalClassSession } from './classes';
 import type { NutritionPlanData } from './plan';
 import type { DietTag, RecipeCategory } from './recipe';
+import type { Circumferences } from './measurements';
 
 /** Etkinleştirme bağlantısının geçerlilik süresi (WhatsApp/SMS ile iletileceği için birkaç gün) */
 export const ACTIVATION_TTL_HOURS = 72;
@@ -171,8 +172,10 @@ export interface PortalRecipe extends PortalRecipeCard {
 }
 
 /** Danışana gösterilen ölçüm — diyetisyenin ölçüm notu (klinik olabilir) gösterilmez */
-export interface PortalMeasurement {
+export interface PortalMeasurement extends Circumferences {
   id: string;
+  bodyFatPct: number | null;
+  muscleKg: number | null;
   measuredOn: string;
   heightCm: number | null;
   weightKg: number | null;

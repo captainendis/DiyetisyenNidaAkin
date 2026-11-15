@@ -123,6 +123,11 @@ enum RecordSource {
   PANEL
 }
 
+enum ClientSex {
+  FEMALE
+  MALE
+}
+
 model Client {
   id                   String        @id @default(cuid())
   firstName            String
@@ -131,6 +136,8 @@ model Client {
   email                String?
   /// YYYY-MM-DD, isteğe bağlı
   birthDate            String?       @db.VarChar(10)
+  /// Vücut kompozisyonu tahmini (yağ oranı) için; isteğe bağlı
+  sex                  ClientSex?
   /// YYYY-MM-DD
   firstVisitDate       String?       @db.VarChar(10)
   preferredMeetingType MeetingType?

@@ -17,6 +17,7 @@ import { prisma, type Prisma } from '../lib/db';
 import { HttpError, badRequest, body, conflict, notFound, parse, query, readUpload, router, sendBuffer, type Ctx } from '../lib/http';
 import { deleteClientRecipeImages } from './recipes';
 import { decodePlan } from './plans';
+import { CIRCUMFERENCES, pickCircumferences, type Circumferences } from '../../shared/measurements';
 import { decryptNote } from '../services/recipe-notes';
 import { decryptContent } from '../services/recipe-content';
 import { recipeImageUrl } from '../../shared/recipe';
@@ -338,7 +339,7 @@ clientsRouter.delete('/:id/notes/:noteId', clinicalWrite, async (c) => {
 
 // ───────────────────────── Ölçümler ─────────────────────────
 
-interface MeasurementData { heightCm?: number | null; weightKg?: number | null; targetWeightKg?: number | null; note?: string | null }
+interface MeasurementData extends Partial<Circumferences> { heightCm?: number | null; weightKg?: number | null; targetWeightKg?: number | null; bodyFatPct?: number | null; muscleKg?: number | null; note?: string | null }
 
 function serializeMeasurement(m: { id: string; measuredOn: string; dataEnc: string; createdAt: Date }) {
   let d: MeasurementData = {};
@@ -354,6 +355,9 @@ function serializeMeasurement(m: { id: string; measuredOn: string; dataEnc: stri
     heightCm: d.heightCm ?? null,
     weightKg: d.weightKg ?? null,
     targetWeightKg: d.targetWeightKg ?? null,
+    bodyFatPct: d.bodyFatPct ?? null,
+    muscleKg: d.muscleKg ?? null,
+    ...pickCircumferences(d),
     note: d.note ?? null,
     bmi,
     createdAt: m.createdAt,
@@ -372,7 +376,8 @@ clientsRouter.post('/:id/measurements', clinicalWrite, async (c) => {
   const id = idParam(c);
   requireConsent(await getClientOr404(id));
   const { measuredOn, ...data } = parse(measurementSchema, await body(c));
-  if (data.heightCm == null && data.weightKg == null && data.targetWeightKg == null && !data.note) {
+  const hasValue = data.heightCm != null || data.weightKg != null || data.targetWeightKg != null || data.bodyFatPct != null || data.muscleKg != null || CIRCUMFERENCES.some(({ key }) => data[key] != null);
+  if (!hasValue && !data.note) {
     throw new HttpError(422, 'VALIDATION_ERROR', 'En az bir ölçüm değeri girin', { fields: { weightKg: 'En az bir ölçüm değeri girin' } });
   }
   const m = await prisma.measurement.create({

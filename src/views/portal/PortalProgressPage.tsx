@@ -8,17 +8,22 @@ import { portalApi } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { formatDayStr } from '@/lib/format';
 import type { PortalMeasurement } from '@shared/portal';
+import { CIRCUMFERENCES } from '@shared/measurements';
 import { WeightTrend } from '@/components/panel/clients/WeightTrend';
+import { BodyComposition } from '@/components/panel/clients/BodyComposition';
+import type { CompositionProfile } from '@shared/body-composition';
 import { Empty, LoadError, Loading, Panel, PanelTitle, PortalPageHeader } from '@/components/portal/ui';
 
 const num = (v: number | null, unit: string) => (v == null ? '—' : `${v.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ${unit}`);
 
 export default function PortalProgressPage() {
-  const { data, error, loading, reload } = useApi(() => portalApi.get<{ items: PortalMeasurement[] }>('/measurements'), []);
+  const { data, error, loading, reload } = useApi(() => portalApi.get<{ items: PortalMeasurement[]; profile: CompositionProfile }>('/measurements'), []);
   useEffect(() => {
     document.title = 'Ölçümlerim | Nida Akın';
   }, []);
   const items = data?.items ?? [];
+  const usedCirc = CIRCUMFERENCES.filter(({ key }) => items.some((m) => m[key] != null));
+  const circRows = items.filter((m) => usedCirc.some(({ key }) => m[key] != null));
   const chart = items.map((m) => ({ ...m, note: null, bmi: null, createdAt: m.measuredOn }));
 
   return (
@@ -32,10 +37,44 @@ export default function PortalProgressPage() {
         <Empty title="Henüz ölçüm yok.">Görüşmede alınan ölçümlerin burada görünecek.</Empty>
       ) : (
         <div className="space-y-6">
+          {data?.profile && (
+            <Panel>
+              <PanelTitle>Vücut kompozisyonu</PanelTitle>
+              <BodyComposition items={items} profile={data.profile} audience="client" />
+            </Panel>
+          )}
           {chart.filter((m) => m.weightKg != null).length > 1 && (
             <Panel>
               <PanelTitle>Kilo</PanelTitle>
               <WeightTrend items={chart} />
+            </Panel>
+          )}
+          {usedCirc.length > 0 && (
+            <Panel className="p-0 sm:p-0">
+              <div className="px-5 pt-5 sm:px-6"><PanelTitle>Mezura ölçüleri</PanelTitle></div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[0.95rem]">
+                  <caption className="sr-only">Mezura ölçüleri (cm)</caption>
+                  <thead>
+                    <tr className="border-b border-espresso/10 text-[0.85rem] font-semibold text-taupe">
+                      <th scope="col" className="px-5 py-3 font-bold">Tarih</th>
+                      {usedCirc.map(({ key, label }) => (
+                        <th key={key} scope="col" className="whitespace-nowrap px-3 py-3 text-right font-bold">{label}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-espresso/10 tabular-nums">
+                    {circRows.map((m) => (
+                      <tr key={m.id}>
+                        <td className="whitespace-nowrap px-5 py-3">{formatDayStr(m.measuredOn, 'd MMM yyyy')}</td>
+                        {usedCirc.map(({ key }) => (
+                          <td key={key} className="px-3 py-3 text-right">{num(m[key], 'cm')}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </Panel>
           )}
           <Panel className="p-0 sm:p-0">
