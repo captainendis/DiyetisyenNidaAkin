@@ -75,10 +75,11 @@ authRouter.post('/forgot-password', passwordResetLimiter, async (c) => {
   const { email } = parse(forgotPasswordSchema, await body(c));
   const user = await prisma.user.findUnique({ where: { email } });
   // Kullanıcının var olup olmadığı yanıttan anlaşılmamalı
+  const emailConfigured = await isEmailConfigured();
   const response = {
     ok: true,
-    emailConfigured: isEmailConfigured(),
-    message: isEmailConfigured()
+    emailConfigured,
+    message: emailConfigured
       ? 'Bu adrese kayıtlı bir hesap varsa şifre sıfırlama bağlantısı gönderildi.'
       : 'E-posta gönderimi henüz yapılandırılmadı. Şifrenizi sıfırlamak için sistem yöneticinize başvurun (README → "Şifre sıfırlama").',
   };
@@ -90,7 +91,7 @@ authRouter.post('/forgot-password', passwordResetLimiter, async (c) => {
   });
   const link = `${env.publicSiteUrl}/panel/sifre-sifirla?token=${token}`;
   await audit(c, 'auth.password_reset_requested', 'user', user.id);
-  if (isEmailConfigured()) {
+  if (emailConfigured) {
     await sendMail({
       to: user.email,
       subject: 'Şifre sıfırlama — Nida Akın Panel',
