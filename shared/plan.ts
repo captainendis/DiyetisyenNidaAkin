@@ -73,7 +73,7 @@ export const nutritionPlanDataSchema = z.object({
     show: z.boolean(),
     label: z.string().trim().max(40),
   }),
-  meals: z.array(planMealSchema).min(1, 'En az bir öğün ekleyin').max(7),
+  meals: z.array(planMealSchema).max(7),
   habits: z.object({
     title: z.string().trim().max(60),
     items: z.array(z.object({ title: z.string().trim().max(30), text: z.string().trim().max(220) })).max(6),
@@ -128,25 +128,20 @@ export function planTitleFor(firstName: string) {
 
 const opt = (...lines: string[]) => lines;
 
-/** Boş plan iskeleti */
+/** Boş plan: öğün, başlık ya da hazır metin yok; yalnızca zorunlu plan başlığı ve imza */
 export function emptyPlan(signature = 'Dyt. Nida Akın'): NutritionPlanData {
   return {
     title: 'Beslenme planı',
-    subtitle: 'Her öğünde seçeneklerden yalnızca birini seç.',
+    subtitle: '',
     theme: 'green',
-    water: { show: true, liters: '', glasses: 0, glassMl: 240 },
-    activity: { show: true, label: '' },
-    meals: [
-      { time: '', name: 'Kahvaltı', options: [[], [], []] },
-      { time: '', name: 'Ara öğün', options: [[], [], []] },
-      { time: '', name: 'Öğle yemeği', options: [[], [], []] },
-      { time: '', name: 'Akşam yemeği', options: [[], [], []] },
-    ],
-    habits: { title: 'Planı taşıyan alışkanlıklar', items: [] },
-    portions: { title: '1 porsiyon meyve', items: [] },
-    footerNote: 'Bir öğün kaçarsa gün bozulmaz. Hedef kısa süreli değil, sürdürülebilir bir değişim.',
+    water: { show: false, liters: '', glasses: 0, glassMl: 240 },
+    activity: { show: false, label: '' },
+    meals: [],
+    habits: { title: '', items: [] },
+    portions: { title: '', items: [] },
+    footerNote: '',
     signature,
-    recipes: { title: 'Tarif önerileri', items: [] },
+    recipes: { title: '', items: [] },
   };
 }
 

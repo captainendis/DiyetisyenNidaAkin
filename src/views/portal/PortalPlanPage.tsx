@@ -65,8 +65,8 @@ export default function PortalPlanPage() {
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
         {d.habits.items.length > 0 && (
           <section className="rounded-lg bg-espresso p-6 text-cream sm:p-7">
-            <h2 className="font-display text-[1.6rem] font-medium text-ivory">{d.habits.title}</h2>
-            <ul className="mt-4 space-y-3">
+            {d.habits.title && <h2 className="mb-4 font-display text-[1.6rem] font-medium text-ivory">{d.habits.title}</h2>}
+            <ul className=" space-y-3">
               {d.habits.items.map((h, i) => (
                 <li key={i} className="text-[0.98rem] leading-relaxed"><b className="font-semibold text-rose">{h.title}</b> {h.text}</li>
               ))}
@@ -75,7 +75,7 @@ export default function PortalPlanPage() {
         )}
         {d.portions.items.length > 0 && (
           <Panel>
-            <PanelTitle>{d.portions.title}</PanelTitle>
+            {d.portions.title && <PanelTitle>{d.portions.title}</PanelTitle>}
             <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {d.portions.items.map((p, i) => (
                 <li key={i} className="rounded-lg bg-cream/60 px-3 py-2">

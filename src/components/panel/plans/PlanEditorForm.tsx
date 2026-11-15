@@ -300,6 +300,7 @@ export function PlanEditorForm({ data, set, library, onLibraryChange, client }: 
           )
         }
       >
+        {!data.meals.length && <p className="text-[0.92rem] text-taupe">Henüz öğün yok. “Öğün” ile ekleyin.</p>}
         {data.meals.map((m, i) => (
           <MealEditor key={i} meal={m} index={i} count={data.meals.length} set={set} />
         ))}
