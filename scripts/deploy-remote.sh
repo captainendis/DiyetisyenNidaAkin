@@ -78,6 +78,9 @@ fi
 # arka plan thread'i açar; sınıra çarpınca prisma CLI ya SIGABRT ile çöker ya da migrate deploy sessizce takılır
 # (günlükte yanıltıcı "P1001 Can't reach database server" görünür). Bu betikteki tüm node/npm/npx çağrıları için tek thread.
 export NODE_OPTIONS="--v8-pool-size=1${NODE_OPTIONS:+ $NODE_OPTIONS}"
+# Prisma şema motoru (Rust/tokio) da çekirdek sayısı kadar thread açar (48 çekirdekli sunucuda ~50) ve ortam
+# değişkeniyle kısılamıyor. Betiği 2 çekirdeğe bağlıyoruz; bağlama alt süreçlere miras geçer (ölçüldü: 51 → 5 thread).
+if command -v taskset >/dev/null 2>&1; then taskset -cp 0,1 $$ >/dev/null 2>&1 || true; fi
 command -v node >/dev/null 2>&1 || fail "node bulunamadı. NODE_ACTIVATE ile Node ortamını belirtin."
 node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a>20||(a===20&&b>=19)?0:1)' \
   || fail "Node.js 20.19+ gerekli (bulunan: $(node -v))."
