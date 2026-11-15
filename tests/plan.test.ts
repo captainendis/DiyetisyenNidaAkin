@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { describe, expect, it } from 'vitest';
-import { genitive, planTitleFor, samplePlanTemplate, nutritionPlanDataSchema } from '../shared/plan';
+import { emptyPlan, genitive, planTitleFor, samplePlanTemplate, nutritionPlanDataSchema } from '../shared/plan';
 import { renderPlanHtml } from '../shared/plan-template';
 
 describe('genitive (Türkçe iyelik eki)', () => {
@@ -16,6 +16,12 @@ describe('genitive (Türkçe iyelik eki)', () => {
 describe('plan şablonu', () => {
   it('örnek şablon şemaya uyar', () => {
     expect(nutritionPlanDataSchema.safeParse(samplePlanTemplate()).success).toBe(true);
+  });
+  it('boş şablon şemaya uyar ve içerik taşımaz', () => {
+    const p = emptyPlan();
+    expect(nutritionPlanDataSchema.safeParse(p).success).toBe(true);
+    expect(p.meals.flatMap((m) => m.options.flat())).toHaveLength(0);
+    expect(p.subtitle).not.toContain('1. ay');
   });
   it('kullanıcı metnini HTML olarak kaçırır', () => {
     const plan = samplePlanTemplate();

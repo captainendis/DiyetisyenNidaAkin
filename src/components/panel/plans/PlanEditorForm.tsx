@@ -250,7 +250,7 @@ export function PlanEditorForm({ data, set, library, onLibraryChange, client }: 
     <div>
       <Section title="Başlık">
         <Input label="Başlık" value={data.title} maxLength={60} onChange={(e) => set((d) => void (d.title = e.target.value))} hint="Danışan seçiliyse otomatik “Adın beslenme planı” olarak gelir." />
-        <Input label="Alt başlık" value={data.subtitle} maxLength={160} onChange={(e) => set((d) => void (d.subtitle = e.target.value))} placeholder="1. ay, 1. liste. Her öğünde üç seçenekten yalnızca birini seç." />
+        <Input label="Alt başlık" value={data.subtitle} maxLength={160} onChange={(e) => set((d) => void (d.subtitle = e.target.value))} placeholder="Ör. Her öğünde seçeneklerden yalnızca birini seç." />
         <ThemePicker value={data.theme} onChange={(v) => set((d) => void (d.theme = v))} />
       </Section>
 
