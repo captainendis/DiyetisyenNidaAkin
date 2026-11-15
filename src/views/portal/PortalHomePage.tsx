@@ -3,7 +3,10 @@
 
 'use client';
 
-/** /hesabim — güncel liste (öğün saatleriyle), sıradaki görüşme, son mesaj, kilo durumu */
+/**
+ * /hesabim — güncel liste (öğün saatleriyle), sıradaki görüşme, son mesaj, kilo durumu.
+ * Pilates danışanında sıradaki ders; yalnızca pilatese gelen danışanda beslenme kartları yerine pilates özeti.
+ */
 import { useEffect } from 'react';
 import { Link } from '@/lib/router';
 import { portalApi } from '@/lib/api';
@@ -14,6 +17,7 @@ import type { PortalOverview, PortalPlan } from '@shared/portal';
 import { usePortalAuth } from '@/components/portal/PortalAuth';
 import { PlanTimeline } from '@/components/portal/PlanTimeline';
 import { LoadError, Loading, Panel, PanelTitle, PortalLinkButton } from '@/components/portal/ui';
+import { cn } from '@/lib/text';
 
 const kg = (v: number) => `${v.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} kg`;
 
@@ -30,6 +34,25 @@ export default function PortalHomePage() {
   if (loading && !data) return <Loading rows={4} />;
   if (error || !data) return <LoadError message={error?.message} onRetry={reload} />;
 
+  const nutrition = me?.programs.nutrition ?? true;
+  const pilates = me?.programs.pilates ?? false;
+  const nextClassPanel = (big: boolean) => (
+    <Panel className={big ? 'sm:p-7' : undefined}>
+      <PanelTitle action={<Link to="/hesabim/pilates" className="text-[0.88rem] font-medium text-taupe hover:text-espresso">{big ? 'Tüm dersler' : 'Pilates'}</Link>}>Sıradaki pilates dersin</PanelTitle>
+      {data.nextClass ? (
+        <>
+          <p className={cn('font-display nums leading-tight', big ? 'text-[2rem]' : 'text-[1.6rem]')}>{formatDate(data.nextClass.startsAt)}</p>
+          <p className="mt-1 text-[1rem] font-semibold tabular-nums">{formatTime(data.nextClass.startsAt)}–{formatTime(data.nextClass.endsAt)}</p>
+          <p className="mt-2 text-[0.9rem] text-taupe">{data.nextClass.title}</p>
+        </>
+      ) : (
+        <p className="text-[0.95rem] leading-relaxed text-cocoa">
+          Planlanmış dersin yok. <Link to="/hesabim/pilates" className="font-semibold text-espresso underline underline-offset-4">Ders talep et</Link>
+        </p>
+      )}
+    </Panel>
+  );
+
   const w = data.weight;
   const change = w.current != null && w.first != null ? Math.round((w.current - w.first) * 10) / 10 : null;
 
@@ -41,6 +64,7 @@ export default function PortalHomePage() {
       </header>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        {!nutrition ? nextClassPanel(true) : (
         <Panel className="sm:p-7">
           {data.latestPlan ? (
             <>
@@ -62,8 +86,11 @@ export default function PortalHomePage() {
             </>
           )}
         </Panel>
+        )}
 
         <div className="space-y-6">
+          {nutrition && pilates && nextClassPanel(false)}
+          {nutrition && (
           <Panel>
             <PanelTitle>Sıradaki görüşme</PanelTitle>
             {data.nextAppointment?.startsAt ? (
@@ -81,8 +108,9 @@ export default function PortalHomePage() {
               </p>
             )}
           </Panel>
+          )}
 
-          {(w.current != null || w.target != null) && (
+          {nutrition && (w.current != null || w.target != null) && (
             <Panel>
               <PanelTitle action={<Link to="/hesabim/olcumler" className="text-[0.88rem] font-medium text-taupe hover:text-espresso">Ayrıntı</Link>}>Kilo</PanelTitle>
               {w.current != null && <p className="font-display nums text-[2rem] leading-none">{kg(w.current)}</p>}

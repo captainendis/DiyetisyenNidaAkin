@@ -84,3 +84,14 @@ export interface PortalClassSession {
   status: ClassSessionStatus;
   myStatus: ClassAttendanceStatus;
 }
+
+/** Grup not defteri kaydı (panel) */
+export interface ClassGroupNoteDTO {
+  id: string;
+  kind: 'DONE' | 'PLANNED';
+  noteDate: string | null;
+  body: string;
+  author: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -205,6 +205,28 @@ describe('pilates grupları ve dersler', () => {
     expect(res.body.upcoming[0].myStatus).toBe('BOOKED');
   });
 
+  it('grup not defteri: yapılacak not eklenir, yapıldı işaretlenir; içerik şifreli saklanır', async () => {
+    const text = `Yan plank varyasyonları ${Date.now()}`;
+    const add = await post(`/api/classes/groups/${groupId}/notes`, { kind: 'PLANNED', body: text });
+    expect(add.status).toBe(201);
+    const id = add.body.note.id;
+    expect(add.body.note).toMatchObject({ kind: 'PLANNED', body: text, noteDate: null });
+
+    const raw = await prisma.classGroupNote.findUniqueOrThrow({ where: { id } });
+    expect(raw.bodyEnc).not.toContain('plank');
+
+    const done = await patch(`/api/classes/notes/${id}`, { kind: 'DONE', noteDate: date });
+    expect(done.status).toBe(200);
+    expect(done.body.note).toMatchObject({ kind: 'DONE', noteDate: date, body: text });
+
+    const list = await agent.get(`/api/classes/groups/${groupId}/notes`);
+    expect(list.body.items.map((n: { id: string }) => n.id)).toContain(id);
+
+    expect((await post(`/api/classes/groups/${groupId}/notes`, { kind: 'DONE', body: '   ' })).status).toBe(422);
+    expect((await del(`/api/classes/notes/${id}`)).status).toBe(200);
+    expect((await agent.get(`/api/classes/groups/${groupId}/notes`)).body.items).toHaveLength(0);
+  });
+
   it('planlı dersi olan grup silinemez; pasife alınınca yeni ders açılamaz', async () => {
     const d = await del(`/api/classes/groups/${groupId}`);
     expect(d.status).toBe(409);

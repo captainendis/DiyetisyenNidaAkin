@@ -13,13 +13,18 @@ import { Logo } from '@/components/icons/Logo';
 import { RequirePortalAuth, usePortalAuth } from '@/components/portal/PortalAuth';
 import { cn } from '@/lib/text';
 
-/** Menü yalnızca metin: etiketler kısa ve açık, ikon aynı bilgiyi tekrar ederdi */
-const NAV = [
+/**
+ * Menü yalnızca metin: etiketler kısa ve açık, ikon aynı bilgiyi tekrar ederdi.
+ * `only`: yalnızca o hizmeti alan danışana gösterilir (yalnızca pilatese gelen danışan beslenme menülerini görmez).
+ */
+type Program = 'nutrition' | 'pilates';
+const ALL_NAV: { to: string; label: string; end?: boolean; only?: Program }[] = [
   { to: '/hesabim', label: 'Özet', end: true },
-  { to: '/hesabim/listeler', label: 'Listelerim' },
-  { to: '/hesabim/tarifler', label: 'Tarifler' },
-  { to: '/hesabim/randevular', label: 'Randevular' },
-  { to: '/hesabim/olcumler', label: 'Ölçümler' },
+  { to: '/hesabim/pilates', label: 'Pilates', only: 'pilates' },
+  { to: '/hesabim/listeler', label: 'Listelerim', only: 'nutrition' },
+  { to: '/hesabim/tarifler', label: 'Tarifler', only: 'nutrition' },
+  { to: '/hesabim/randevular', label: 'Randevular', only: 'nutrition' },
+  { to: '/hesabim/olcumler', label: 'Ölçümler', only: 'nutrition' },
   { to: '/hesabim/mesajlar', label: 'Mesajlar' },
   { to: '/hesabim/dosyalar', label: 'Dosyalar' },
   { to: '/hesabim/hesap', label: 'Hesap' },
@@ -29,6 +34,7 @@ function Layout() {
   const { me, logout } = usePortalAuth();
   const { pathname } = useLocation();
   const strip = useRef<HTMLUListElement>(null);
+  const NAV = ALL_NAV.filter((n) => !n.only || (me?.programs?.[n.only] ?? n.only === 'nutrition'));
 
   // Telefonda etkin menü öğesini şeritte görünür tut
   useEffect(() => {

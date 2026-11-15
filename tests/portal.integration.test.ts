@@ -192,9 +192,30 @@ describe('danışanın gördükleri', () => {
       expect(res.body.items).toEqual([expect.objectContaining({ id: session.id, title: 'Portal Pilates', status: 'SCHEDULED', myStatus: 'BOOKED' })]);
       expect(JSON.stringify(res.body)).not.toContain(clientB);
       expect(JSON.stringify(res.body)).not.toContain('Başka');
+
+      const pil = await portal.get('/api/portal/pilates');
+      expect(pil.status).toBe(200);
+      expect(pil.body.upcoming).toEqual([expect.objectContaining({ id: session.id, myStatus: 'BOOKED' })]);
+      expect(JSON.stringify(pil.body)).not.toContain(clientB);
+
+      const me = await portal.get('/api/portal/auth/me');
+      expect(me.body.me.programs).toEqual({ nutrition: true, pilates: true });
     } finally {
       await prisma.classSession.delete({ where: { id: session.id } });
     }
+  });
+});
+
+describe('pilates talebi (danışan hesabı)', () => {
+  it('talep Randevular\'a saatsiz pilates talebi olarak düşer; ders türü zorunlu', async () => {
+    const bad = await portal.post('/api/portal/pilates/requests').set('X-CSRF-Token', portalCsrf).send({ preferredDays: [2] });
+    expect(bad.status).toBe(422);
+    const res = await portal.post('/api/portal/pilates/requests').set('X-CSRF-Token', portalCsrf).send({ pilatesFormat: 'PRIVATE', preferredDays: [4, 2], preferredDayparts: ['EVENING'], message: 'Telafi' });
+    expect(res.status).toBe(201);
+    const a = await prisma.appointment.findFirstOrThrow({ where: { clientId: clientA, kind: 'PILATES' }, orderBy: { createdAt: 'desc' } });
+    expect(a).toMatchObject({ status: 'NEW_REQUEST', pilatesFormat: 'PRIVATE', preferredDays: '2,4', preferredDayparts: 'EVENING', startsAt: null, clientMessage: 'Telafi' });
+    const pil = await portal.get('/api/portal/pilates');
+    expect(pil.body.requests).toEqual([expect.objectContaining({ id: a.id, pilatesFormat: 'PRIVATE', preferredDays: [2, 4] })]);
   });
 });
 

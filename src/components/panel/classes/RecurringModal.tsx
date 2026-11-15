@@ -7,13 +7,19 @@ import { CalendarCheck2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { cn, formatDayStr, todayStr } from '@/lib/format';
 import { WEEKDAY_LABEL } from '@shared/constants';
-import { Button, Input, Modal, Switch, useFeedback } from '@/components/panel/ui';
+import { Button, Input, Modal, Select, Switch, useFeedback } from '@/components/panel/ui';
 import type { ClassGroupDTO, ClassRecurringResult } from './shared';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 7];
 
-export function RecurringModal({ open, group, onClose, onDone }: { open: boolean; group: ClassGroupDTO | null; onClose: () => void; onDone: () => void }) {
+/** `groups` verilirse grup modal içinde seçilir (Randevular sayfası); `group` verilirse sabittir */
+export function RecurringModal({
+  open, group: fixedGroup, groups, onClose, onDone,
+}: { open: boolean; group?: ClassGroupDTO | null; groups?: ClassGroupDTO[]; onClose: () => void; onDone: () => void }) {
   const fb = useFeedback();
+  const choices = (groups ?? []).filter((g) => g.isActive);
+  const [groupId, setGroupId] = useState('');
+  const group = fixedGroup ?? choices.find((g) => g.id === groupId) ?? null;
   const [times, setTimes] = useState<Record<number, string>>({});
   const [startDate, setStartDate] = useState(todayStr());
   const [weeks, setWeeks] = useState('8');
@@ -22,6 +28,11 @@ export function RecurringModal({ open, group, onClose, onDone }: { open: boolean
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<ClassRecurringResult | null>(null);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (open && !fixedGroup && !choices.some((g) => g.id === groupId)) setGroupId(choices[0]?.id ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, fixedGroup, groups]);
 
   useEffect(() => {
     if (!open || !group) return;
@@ -33,7 +44,7 @@ export function RecurringModal({ open, group, onClose, onDone }: { open: boolean
     setOutside(false);
     setResult(null);
     setError('');
-  }, [open, group]);
+  }, [open, group?.id]);
 
   const toggle = (d: number) =>
     setTimes((t) => {
@@ -86,7 +97,7 @@ export function RecurringModal({ open, group, onClose, onDone }: { open: boolean
         ) : (
           <>
             <Button variant="secondary" onClick={onClose}>Vazgeç</Button>
-            <Button onClick={submit} loading={pending} disabled={!slots.length}>{estimate ? `${estimate} ders oluştur` : 'Dersleri oluştur'}</Button>
+            <Button onClick={submit} loading={pending} disabled={!slots.length || !group}>{estimate ? `${estimate} ders oluştur` : 'Dersleri oluştur'}</Button>
           </>
         )
       }
@@ -108,12 +119,19 @@ export function RecurringModal({ open, group, onClose, onDone }: { open: boolean
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-[0.8rem] text-panel-muted">Bu tarihler için “Tek ders” ile farklı bir saat seçebilirsiniz.</p>
+              <p className="mt-2 text-[0.8rem] text-panel-muted">Bu tarihler için “Pilates dersi” ile farklı bir saat seçebilirsiniz.</p>
             </div>
           )}
         </div>
       ) : (
         <div className="space-y-5">
+          {!fixedGroup && (
+            choices.length ? (
+              <Select label="Grup" value={groupId} onChange={(e) => setGroupId(e.target.value)} options={choices.map((g) => ({ value: g.id, label: `${g.name} (${g.members.length}/${g.capacity})` }))} />
+            ) : (
+              <p className="rounded-lg bg-panel-bg px-4 py-3 text-sm text-panel-muted">Önce Pilates sayfasından bir grup oluşturun.</p>
+            )
+          )}
           <fieldset>
             <legend className="mb-2 text-[0.8rem] font-semibold text-cocoa">Günler ve saatler</legend>
             <div className="grid gap-2 sm:grid-cols-2">
