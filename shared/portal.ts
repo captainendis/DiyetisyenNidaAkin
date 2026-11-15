@@ -7,7 +7,8 @@
  */
 import { z } from 'zod';
 import { emailSchema, passwordPolicy } from './schemas';
-import type { AppointmentStatus, MeetingType } from './constants';
+import { DAYPARTS, PILATES_FORMATS, type AppointmentStatus, type Daypart, type MeetingType, type PilatesFormat } from './constants';
+import type { PortalClassSession } from './classes';
 import type { NutritionPlanData } from './plan';
 import type { DietTag, RecipeCategory } from './recipe';
 
@@ -77,7 +78,26 @@ export interface PortalMe {
   lastName: string;
   email: string;
   csrfToken: string;
+  /** Danışanın aldığı hizmetler: menü buna göre şekillenir (yalnızca pilatese gelen danışan beslenme menülerini görmez) */
+  programs: { nutrition: boolean; pilates: boolean };
 }
+
+/** Danışan hesabı — pilates bölümü */
+export interface PortalPilates {
+  groups: { id: string; name: string; durationMinutes: number; pattern: { weekday: number; time: string }[] }[];
+  upcoming: PortalClassSession[];
+  past: PortalClassSession[];
+  stats: { attended: number; noShow: number; excused: number };
+  /** Açık (henüz planlanmamış) pilates talepleri */
+  requests: { id: string; createdAt: string; pilatesFormat: PilatesFormat | null; preferredDays: number[]; preferredDayparts: Daypart[]; status: 'NEW_REQUEST' | 'PENDING' }[];
+}
+
+export const portalPilatesRequestSchema = z.object({
+  pilatesFormat: z.enum(PILATES_FORMATS, { message: 'Grup dersi mi birebir ders mi istediğinizi seçin' }),
+  preferredDays: z.array(z.number().int().min(1).max(7)).max(7).default([]),
+  preferredDayparts: z.array(z.enum(DAYPARTS)).max(3).default([]),
+  message: z.string().trim().max(1000, 'Mesaj en fazla 1000 karakter olabilir').optional().nullable(),
+});
 
 export interface PortalAppointment {
   id: string;
@@ -158,6 +178,8 @@ export interface PortalFile {
 
 export interface PortalOverview {
   nextAppointment: PortalAppointment | null;
+  /** Sıradaki pilates dersi (kayıtlı olduğu, iptal edilmemiş) */
+  nextClass: PortalClassSession | null;
   latestPlan: PortalPlanListItem | null;
   latestMessage: PortalMessage | null;
   weight: { current: number | null; first: number | null; target: number | null; measuredOn: string | null };

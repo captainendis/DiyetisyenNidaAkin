@@ -17,7 +17,7 @@ function SessionList({ rows, past }: { rows: Row[]; past?: boolean }) {
     <ul className="divide-y divide-panel-line">
       {rows.map((s) => (
         <li key={s.id}>
-          <Link to={`/panel/pilates?ders=${s.id}&d=${s.date}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 hover:bg-panel-bg/60">
+          <Link to={`/panel/randevular?view=week&d=${s.date}&ders=${s.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 hover:bg-panel-bg/60">
             <span className="tabular w-44 shrink-0 font-semibold text-espresso capitalize">{formatDayStr(s.date, 'd MMM, ccc')} · {s.time}</span>
             <span className="min-w-0 flex-1 truncate text-sm text-cocoa">{s.title}</span>
             {past && s.status !== 'COMPLETED' ? <SessionStatusBadge status={s.status} /> : <AttendanceBadge status={s.myStatus} />}

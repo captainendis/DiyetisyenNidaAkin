@@ -68,6 +68,7 @@ model User {
   clientAccountsCreated ClientAccount[]
   clientMessages     ClientMessage[]
   classSessions      ClassSession[]
+  classGroupNotes    ClassGroupNote[]
 
   @@map("users")
 }
@@ -727,6 +728,7 @@ model ClassGroup {
 
   members  ClassGroupMember[]
   sessions ClassSession[]
+  notes    ClassGroupNote[]
 
   @@map("class_groups")
 }
@@ -791,4 +793,28 @@ model AppLock {
   name String @id @db.VarChar(64)
 
   @@map("app_locks")
+}
+
+/// Grup not defteri: derste yapılanlar ve sonraki derslerde yapılacaklar
+enum ClassGroupNoteKind {
+  DONE
+  PLANNED
+}
+
+model ClassGroupNote {
+  id          String             @id @default(cuid())
+  groupId     String
+  group       ClassGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  kind        ClassGroupNoteKind @default(DONE)
+  /// Notun ilgili olduğu gün (YYYY-MM-DD), isteğe bağlı
+  noteDate    String?            @db.VarChar(10)
+  /// Sakatlık/ağrı gibi sağlık bilgisi içerebilir: AES-256-GCM ile şifreli
+  bodyEnc     String             @db.Text
+  createdById String?
+  createdBy   User?              @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime           @default(now()) @db.DateTime(3)
+  updatedAt   DateTime           @updatedAt @db.DateTime(3)
+
+  @@index([groupId, createdAt])
+  @@map("class_group_notes")
 }

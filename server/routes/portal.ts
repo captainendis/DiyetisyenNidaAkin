@@ -28,6 +28,7 @@ import {
   portalChangePasswordSchema,
   portalForgotSchema,
   portalLoginSchema,
+  portalPilatesRequestSchema,
   portalSetPasswordSchema,
   portalTokenQuerySchema,
   type PortalAppointment,
@@ -35,12 +36,16 @@ import {
   type PortalMeasurement,
   type PortalMessage,
   type PortalOverview,
+  type PortalPilates,
   type PortalPlan,
   type PortalPlanListItem,
   type PortalRecipe,
   type PortalRecipeCard,
 } from '../../shared/portal';
 import type { PortalClassSession } from '../../shared/classes';
+import { CLASS_SEAT_HOLDING, DAYPARTS, PILATES_FORMAT_LABEL, parseDayparts, parseDays, pilatesPreferenceText } from '../../shared/constants';
+import { notifyStaff } from '../services/notifications';
+import { publicFormLimiter } from '../middleware/rate-limit';
 
 const MAX_FAILED = 5;
 const LOCK_MINUTES = 15;
@@ -98,10 +103,30 @@ portalRouter.post('/auth/logout', async (c) => {
   return c.json({ ok: true });
 });
 
-portalRouter.get('/auth/me', (c) => {
+/**
+ * Danışanın aldığı hizmetler. Pilates: bir gruba üye, bir derse kayıtlı ya da pilates talebi var.
+ * Beslenme: listesi, ölçümü, kişisel tarifi ya da danışmanlık randevusu var; hiçbir iz yoksa varsayılan beslenmedir.
+ */
+async function clientPrograms(clientId: string) {
+  const [groups, classes, pilatesReq, plans, measurements, recipes, consults] = await Promise.all([
+    prisma.classGroupMember.count({ where: { clientId } }),
+    prisma.classAttendance.count({ where: { clientId } }),
+    prisma.appointment.count({ where: { clientId, kind: 'PILATES' } }),
+    prisma.nutritionPlan.count({ where: { clientId } }),
+    prisma.measurement.count({ where: { clientId } }),
+    prisma.recipe.count({ where: { clientId } }),
+    prisma.appointment.count({ where: { clientId, kind: 'CONSULTATION' } }),
+  ]);
+  const pilates = groups + classes + pilatesReq > 0;
+  const nutrition = plans + measurements + recipes + consults > 0 || !pilates;
+  return { nutrition, pilates };
+}
+
+portalRouter.get('/auth/me', async (c) => {
   const u = c.var.portalUser;
   if (!u) throw unauthorized();
-  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, csrfToken: u.csrfToken } });
+  const programs = await clientPrograms(u.clientId);
+  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, csrfToken: u.csrfToken, programs } });
 });
 
 async function findValidToken(token: string) {
@@ -260,11 +285,20 @@ async function visibleRecipeIds(clientId: string) {
   return { ids: [...new Set([...inPlans.keys(), ...personal.map((r) => r.id)])], inPlans };
 }
 
+const portalSession = (r: { status: string; session: { id: string; title: string; startsAt: Date; endsAt: Date; status: string } }): PortalClassSession => ({
+  id: r.session.id,
+  title: r.session.title,
+  startsAt: r.session.startsAt.toISOString(),
+  endsAt: r.session.endsAt.toISOString(),
+  status: r.session.status as PortalClassSession['status'],
+  myStatus: r.status as PortalClassSession['myStatus'],
+});
+
 // ───────────────────────── Özet ─────────────────────────
 
 portalRouter.get('/overview', async (c) => {
   const clientId = portalUser(c).clientId;
-  const [next, latestPlan, latestMessage, measurements, planCount, messageCount, fileCount, recipes] = await Promise.all([
+  const [next, latestPlan, latestMessage, measurements, planCount, messageCount, fileCount, recipes, nextClass] = await Promise.all([
     prisma.appointment.findFirst({
       where: { clientId, status: { in: ['CONFIRMED', 'PENDING'] }, startsAt: { gt: new Date() } },
       orderBy: { startsAt: 'asc' },
@@ -277,6 +311,11 @@ portalRouter.get('/overview', async (c) => {
     prisma.clientMessage.count({ where: { clientId } }),
     prisma.clientFile.count({ where: { clientId, visibleToClient: true } }),
     visibleRecipeIds(clientId),
+    prisma.classAttendance.findFirst({
+      where: { clientId, status: 'BOOKED', session: { startsAt: { gt: new Date() }, status: 'SCHEDULED' } },
+      select: { status: true, session: { select: { id: true, title: true, startsAt: true, endsAt: true, status: true } } },
+      orderBy: { session: { startsAt: 'asc' } },
+    }),
   ]);
   const ms = measurements.map(toMeasurement);
   const weights = ms.filter((m) => m.weightKg != null);
@@ -284,6 +323,7 @@ portalRouter.get('/overview', async (c) => {
   const target = [...ms].reverse().find((m) => m.targetWeightKg != null)?.targetWeightKg ?? null;
   const out: PortalOverview = {
     nextAppointment: next ? toAppointment(next) : null,
+    nextClass: nextClass ? portalSession(nextClass) : null,
     latestPlan: latestPlan ? toPlanItem(latestPlan) : null,
     latestMessage: latestMessage ? toMessage(latestMessage) : null,
     weight: { current: last?.weightKg ?? null, first: weights[0]?.weightKg ?? null, target, measuredOn: last?.measuredOn ?? null },
@@ -399,6 +439,111 @@ portalRouter.get('/classes', async (c) => {
     myStatus: r.status,
   }));
   return c.json({ items });
+});
+
+// ───────────────────────── Pilates ─────────────────────────
+
+
+/** Gruplarım, derslerim, katılım özeti ve açık taleplerim — diğer katılımcıların bilgisi yer almaz */
+portalRouter.get('/pilates', async (c) => {
+  const clientId = portalUser(c).clientId;
+  const now = new Date();
+  const sessionSelect = { id: true, title: true, startsAt: true, endsAt: true, status: true, groupId: true } as const;
+  const [memberships, upcoming, past, counts, requests] = await Promise.all([
+    prisma.classGroupMember.findMany({
+      where: { clientId, group: { isActive: true } },
+      select: { group: { select: { id: true, name: true, defaultDurationMinutes: true } } },
+      orderBy: { group: { name: 'asc' } },
+    }),
+    prisma.classAttendance.findMany({
+      where: { clientId, session: { startsAt: { gte: now }, status: { not: 'CANCELLED' } } },
+      select: { status: true, session: { select: sessionSelect } },
+      orderBy: { session: { startsAt: 'asc' } },
+      take: 40,
+    }),
+    prisma.classAttendance.findMany({
+      where: { clientId, session: { startsAt: { lt: now } } },
+      select: { status: true, session: { select: sessionSelect } },
+      orderBy: { session: { startsAt: 'desc' } },
+      take: 30,
+    }),
+    prisma.classAttendance.groupBy({ by: ['status'], where: { clientId, session: { startsAt: { lt: now }, status: { not: 'CANCELLED' } } }, _count: true }),
+    prisma.appointment.findMany({
+      where: { clientId, kind: 'PILATES', status: { in: ['NEW_REQUEST', 'PENDING'] } },
+      select: { id: true, createdAt: true, status: true, pilatesFormat: true, preferredDays: true, preferredDayparts: true },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    }),
+  ]);
+  // Grubun haftalık düzeni: danışanın önümüzdeki 4 haftadaki derslerinden (gün + saat)
+  const horizon = now.getTime() + 28 * 86_400_000;
+  const groups = memberships.map(({ group }) => {
+    const seen = new Map<string, { weekday: number; time: string }>();
+    for (const u of upcoming) {
+      if (u.session.groupId !== group.id || u.session.startsAt.getTime() > horizon || !CLASS_SEAT_HOLDING.includes(u.status as never)) continue;
+      const local = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(u.session.startsAt);
+      const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(local.find((p) => p.type === 'weekday')!.value) + 1;
+      const time = `${local.find((p) => p.type === 'hour')!.value}:${local.find((p) => p.type === 'minute')!.value}`;
+      seen.set(`${wd}-${time}`, { weekday: wd, time });
+    }
+    const pattern = [...seen.values()].sort((a, b) => a.weekday - b.weekday || a.time.localeCompare(b.time));
+    return { id: group.id, name: group.name, durationMinutes: group.defaultDurationMinutes, pattern };
+  });
+  const count = (s: string) => counts.find((x) => x.status === s)?._count ?? 0;
+  const out: PortalPilates = {
+    groups,
+    upcoming: upcoming.map(portalSession),
+    past: past.map(portalSession),
+    stats: { attended: count('ATTENDED'), noShow: count('NO_SHOW'), excused: count('EXCUSED') },
+    requests: requests.map((r) => ({
+      id: r.id,
+      createdAt: r.createdAt.toISOString(),
+      status: r.status as 'NEW_REQUEST' | 'PENDING',
+      pilatesFormat: r.pilatesFormat,
+      preferredDays: parseDays(r.preferredDays),
+      preferredDayparts: parseDayparts(r.preferredDayparts),
+    })),
+  };
+  return c.json(out);
+});
+
+/** Danışan hesabından pilates ders talebi: Randevular'a saatsiz yeni talep olarak düşer */
+portalRouter.post('/pilates/requests', publicFormLimiter, async (c) => {
+  const u = portalUser(c);
+  const input = parse(portalPilatesRequestSchema, await body(c));
+  const client = await prisma.client.findUniqueOrThrow({ where: { id: u.clientId }, select: { id: true, firstName: true, lastName: true, phone: true, email: true } });
+  const open = await prisma.appointment.count({ where: { clientId: client.id, kind: 'PILATES', status: { in: ['NEW_REQUEST', 'PENDING'] } } });
+  if (open >= 3) throw new HttpError(409, 'TOO_MANY_REQUESTS', 'Yanıt bekleyen 3 talebiniz var. Yeni talep için önce bunların planlanmasını bekleyin ya da mesaj yazın.');
+  const days = [...new Set(input.preferredDays)].sort();
+  const parts = DAYPARTS.filter((d) => input.preferredDayparts.includes(d));
+  const now = new Date();
+  const a = await prisma.appointment.create({
+    data: {
+      clientId: client.id,
+      contactName: `${client.firstName} ${client.lastName}`.trim(),
+      contactPhone: client.phone,
+      contactEmail: client.email,
+      meetingType: 'IN_PERSON',
+      kind: 'PILATES',
+      pilatesFormat: input.pilatesFormat,
+      preferredDays: days.length ? days.join(',') : null,
+      preferredDayparts: parts.length ? parts.join(',') : null,
+      status: 'NEW_REQUEST',
+      source: 'WEBSITE',
+      clientMessage: input.message?.trim() || null,
+      kvkkNoticeAcceptedAt: now,
+      statusHistory: { create: { fromStatus: null, toStatus: 'NEW_REQUEST', note: 'Danışan hesabından pilates talebi' } },
+    },
+    select: { id: true },
+  });
+  await portalAudit(c, 'portal.pilates_requested', u.accountId, { appointmentId: a.id, format: input.pilatesFormat });
+  await notifyStaff('APPOINTMENT_REQUESTED', {
+    title: `Danışan hesabından pilates talebi: ${client.firstName} ${client.lastName}`.trim(),
+    body: `${PILATES_FORMAT_LABEL[input.pilatesFormat]} · ${pilatesPreferenceText(days, parts)}`,
+    appointmentId: a.id,
+    clientId: client.id,
+  });
+  return c.json({ ok: true, reference: a.id.slice(-6).toUpperCase() }, 201);
 });
 
 portalRouter.get('/measurements', async (c) => {

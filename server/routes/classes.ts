@@ -28,6 +28,8 @@ import {
   classAttendeeAddSchema,
   classGroupCreateSchema,
   classGroupMembersSchema,
+  classGroupNoteSchema,
+  classGroupNoteUpdateSchema,
   classGroupUpdateSchema,
   classRecurringSchema,
   classSessionCreateSchema,
@@ -36,7 +38,8 @@ import {
   classSessionUpdateSchema,
 } from '../../shared/schemas';
 import { CLASS_SEAT_HOLDING, type ClassAttendanceStatus, type ClassSessionStatus } from '../../shared/constants';
-import type { ClassRecurringResult, ClientClassSummary } from '../../shared/classes';
+import type { ClassGroupNoteDTO, ClassRecurringResult, ClientClassSummary } from '../../shared/classes';
+import { decryptNote, encryptNote } from '../services/recipe-notes';
 import { addDays, endOfDayExclusive, startOfDay, toDateStr, toTimeStr } from '../../shared/time';
 
 export const classesRouter = router();
@@ -104,6 +107,69 @@ classesRouter.put('/groups/:id/members', canWrite, async (c) => {
   await audit(c, 'class_group.members_changed', 'class_group', id, { members: input.memberIds.length, ...sync });
   const g = await prisma.classGroup.findUniqueOrThrow({ where: { id }, include: groupInclude });
   return c.json({ group: (await toGroupDTOs([g]))[0], sync });
+});
+
+// ───────────── Grup not defteri (yapılanlar / yapılacaklar) ─────────────
+
+const noteSelect = {
+  id: true, kind: true, noteDate: true, bodyEnc: true, createdAt: true, updatedAt: true,
+  createdBy: { select: { firstName: true, lastName: true } },
+} satisfies Prisma.ClassGroupNoteSelect;
+type NoteRow = Prisma.ClassGroupNoteGetPayload<{ select: typeof noteSelect }>;
+const toNoteDTO = (n: NoteRow): ClassGroupNoteDTO => ({
+  id: n.id,
+  kind: n.kind,
+  noteDate: n.noteDate,
+  body: decryptNote(n.bodyEnc),
+  author: n.createdBy ? `${n.createdBy.firstName} ${n.createdBy.lastName}`.trim() : null,
+  createdAt: n.createdAt.toISOString(),
+  updatedAt: n.updatedAt.toISOString(),
+});
+
+classesRouter.get('/groups/:id/notes', canRead, async (c) => {
+  const groupId = param(c);
+  const notes = await prisma.classGroupNote.findMany({ where: { groupId }, select: noteSelect, orderBy: [{ createdAt: 'desc' }], take: 300 });
+  return c.json({ items: notes.map(toNoteDTO) });
+});
+
+classesRouter.post('/groups/:id/notes', canWrite, async (c) => {
+  const groupId = param(c);
+  const input = parse(classGroupNoteSchema, await body(c));
+  const g = await prisma.classGroup.findUnique({ where: { id: groupId }, select: { id: true } });
+  if (!g) throw notFound('Grup bulunamadı');
+  const n = await prisma.classGroupNote.create({
+    data: { groupId, kind: input.kind, noteDate: input.noteDate ?? null, bodyEnc: encryptNote(input.body)!, createdById: authUser(c).id },
+    select: noteSelect,
+  });
+  await audit(c, 'class_group.note_added', 'class_group', groupId, { kind: input.kind });
+  return c.json({ note: toNoteDTO(n) }, 201);
+});
+
+classesRouter.patch('/notes/:id', canWrite, async (c) => {
+  const id = param(c);
+  const input = parse(classGroupNoteUpdateSchema, await body(c));
+  const existing = await prisma.classGroupNote.findUnique({ where: { id }, select: { groupId: true } });
+  if (!existing) throw notFound('Not bulunamadı');
+  const n = await prisma.classGroupNote.update({
+    where: { id },
+    data: {
+      ...(input.kind ? { kind: input.kind } : {}),
+      ...(input.noteDate !== undefined ? { noteDate: input.noteDate } : {}),
+      ...(input.body !== undefined ? { bodyEnc: encryptNote(input.body)! } : {}),
+    },
+    select: noteSelect,
+  });
+  await audit(c, 'class_group.note_updated', 'class_group', existing.groupId, { fields: Object.keys(input) });
+  return c.json({ note: toNoteDTO(n) });
+});
+
+classesRouter.delete('/notes/:id', canWrite, async (c) => {
+  const id = param(c);
+  const existing = await prisma.classGroupNote.findUnique({ where: { id }, select: { groupId: true } });
+  if (!existing) throw notFound('Not bulunamadı');
+  await prisma.classGroupNote.delete({ where: { id } });
+  await audit(c, 'class_group.note_deleted', 'class_group', existing.groupId);
+  return c.json({ ok: true });
 });
 
 classesRouter.delete('/groups/:id', canWrite, async (c) => {

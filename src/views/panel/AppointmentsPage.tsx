@@ -5,12 +5,13 @@
 
 /**
  * /panel/randevular — Liste | Gün | Hafta | Ay
- * URL parametreleri: view, d (görünüm tarihi), id (detay modalı), new=1 (&clientId, date, time)
+ * URL parametreleri: view, d (görünüm tarihi), id (detay modalı), new=1 (&clientId, date, time),
+ *   ders (pilates dersi detayı / yoklama). Pilates dersleri (tek ders ve haftalık program) de buradan girilir.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from '@/lib/router';
+import { Link, useSearchParams } from '@/lib/router';
 import { DateTime } from 'luxon';
-import { ChevronLeft, ChevronRight, Inbox, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Dumbbell, Inbox, Plus, Repeat } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -23,7 +24,10 @@ import NewAppointmentModal from '@/components/panel/appointments/NewAppointmentM
 import { AppointmentList, type ListFilters } from '@/components/panel/appointments/AppointmentList';
 import { MonthView, STATUS_DOT, TimeGrid } from '@/components/panel/appointments/CalendarViews';
 import { displayName, type AppointmentDTO, type DayPlanDTO } from '@/components/panel/appointments/types';
-import type { ClassSessionDTO } from '@shared/classes';
+import type { ClassGroupDTO, ClassSessionDTO } from '@shared/classes';
+import { NewSessionModal } from '@/components/panel/classes/NewSessionModal';
+import { RecurringModal } from '@/components/panel/classes/RecurringModal';
+import { SessionModal } from '@/components/panel/classes/SessionModal';
 
 type View = 'list' | 'day' | 'week' | 'month';
 const VIEWS: { value: View; label: string }[] = [
@@ -44,7 +48,6 @@ function Inner() {
   const [params, setParams] = useSearchParams();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const fb = useFeedback();
-  const navigate = useNavigate();
   const { can, refreshUnread } = usePanelAuth();
   const canWrite = can('appointments:write');
 
@@ -103,7 +106,11 @@ function Inner() {
     [cal.data, showCancelled],
   );
   const classes = useMemo(() => (cal.data?.classes ?? []).filter((c) => showCancelled || c.status !== 'CANCELLED'), [cal.data, showCancelled]);
-  const openClass = (id: string) => navigate(`/panel/pilates?ders=${id}`);
+  const openClass = (id: string) => update({ ders: id });
+  const classId = params.get('ders');
+  const [newClass, setNewClass] = useState<{ date?: string; time?: string } | null>(null);
+  const [recurringOpen, setRecurringOpen] = useState(false);
+  const groups = useApi(() => api.get<{ items: ClassGroupDTO[] }>('/classes/groups'), [refreshKey]);
   const days = useMemo(() => {
     const out: string[] = [];
     for (let d = DateTime.fromISO(from, { zone: TIME_ZONE }); d.toISODate()! <= to; d = d.plus({ days: 1 })) out.push(d.toISODate()!);
@@ -162,8 +169,16 @@ function Inner() {
     <>
       <PageHeader
         title="Randevular"
-        description="Talepleri onaylayın, takvimi düzenleyin, randevuları sürükleyerek yeniden planlayın."
-        actions={canWrite && <Button icon={<Plus className="h-4 w-4" />} onClick={() => update({ new: '1' })}>Yeni randevu</Button>}
+        description="Talepleri onaylayın, randevuları ve pilates derslerini planlayın; derse tıklayarak yoklama alın."
+        actions={
+          canWrite && (
+            <>
+              <Button variant="secondary" icon={<Repeat className="h-4 w-4" />} onClick={() => setRecurringOpen(true)}>Ders programı</Button>
+              <Button variant="secondary" icon={<Dumbbell className="h-4 w-4" />} onClick={() => setNewClass({ date: view === 'list' ? undefined : anchor })}>Pilates dersi</Button>
+              <Button icon={<Plus className="h-4 w-4" />} onClick={() => update({ new: '1' })}>Yeni randevu</Button>
+            </>
+          )
+        }
       />
 
       {!!unscheduled.data?.total && (
@@ -254,6 +269,18 @@ function Inner() {
         )}
       </Card>
 
+      <NewSessionModal
+        open={!!newClass}
+        groups={groups.data?.items ?? []}
+        initial={newClass ?? undefined}
+        onClose={() => setNewClass(null)}
+        onCreated={(s) => {
+          bump();
+          if (view !== 'list') update({ d: s.date });
+        }}
+      />
+      <RecurringModal open={recurringOpen} groups={groups.data?.items ?? []} onClose={() => setRecurringOpen(false)} onDone={bump} />
+      <SessionModal sessionId={classId} open={!!classId} onClose={() => update({ ders: null })} onChanged={bump} />
       <AppointmentDetailModal appointmentId={openId} open={!!openId} onClose={() => update({ id: null })} onChanged={bump} />
       <NewAppointmentModal
         open={newOpen}

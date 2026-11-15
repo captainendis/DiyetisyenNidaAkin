@@ -343,6 +343,12 @@ export const classGroupUpdateSchema = z.object({
   note: optionalNote,
   isActive: z.boolean().optional(),
 });
+export const classGroupNoteSchema = z.object({
+  kind: z.enum(['DONE', 'PLANNED']),
+  body: z.string().trim().min(1, 'Not boş olamaz').max(4000, 'Not en fazla 4000 karakter olabilir'),
+  noteDate: dateStr.optional().nullable(),
+});
+export const classGroupNoteUpdateSchema = classGroupNoteSchema.partial();
 export const classGroupMembersSchema = z.object({
   memberIds: idList,
   /** true: gelecekteki planlı derslerin katılımcı listesi de güncellenir */
