@@ -2,7 +2,6 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { Link } from '@/lib/router';
-import { Sprig } from '@/components/icons/Botanical';
 import { DietBadges } from '@/components/recipes/DietBadges';
 import { cn } from '@/lib/text';
 import { RECIPE_CATEGORY_LABEL, recipeImageUrl, type PublicRecipeCard } from '@shared/recipe';
@@ -22,12 +21,8 @@ export function RecipeImage({ recipe, className, eager }: { recipe: Pick<PublicR
       />
     );
   }
-  return (
-    <div className={cn('relative flex aspect-[4/3] w-full items-end overflow-hidden bg-[linear-gradient(150deg,#3b2b20_0%,#302219_60%,#211710_100%)] p-6', className)} aria-hidden>
-      <Sprig className="absolute top-6 right-6 w-24 text-gold/40" />
-      <span className="font-display text-[1.05rem] text-rose/80 italic">{RECIPE_CATEGORY_LABEL[recipe.category]}</span>
-    </div>
-  );
+  // Fotoğraf yoksa yer tutucu çizmiyoruz: 38 aynı kahverengi kutu listeyi tekdüzeleştiriyordu.
+  return null;
 }
 
 const time = (r: PublicRecipeCard) => (r.prepMinutes ?? 0) + (r.cookMinutes ?? 0);
@@ -37,10 +32,12 @@ export function PublicRecipeCardView({ recipe }: { recipe: PublicRecipeCard }) {
   return (
     <article className="group">
       <Link to={`/tarifler/${recipe.slug}`} className="block">
-        <div className="overflow-hidden">
-          <RecipeImage recipe={recipe} className="transition-transform duration-[1.2s] ease-[var(--ease-soft)] group-hover:scale-[1.03]" />
-        </div>
-        <div className="mt-5 flex items-center gap-3 text-[0.72rem] font-semibold tracking-[0.16em] text-taupe uppercase">
+        {recipe.imageBase && (
+          <div className="mb-5 overflow-hidden">
+            <RecipeImage recipe={recipe} className="transition-transform duration-[1.2s] ease-[var(--ease-soft)] group-hover:scale-[1.03]" />
+          </div>
+        )}
+        <div className={cn('flex items-center gap-3 text-[0.72rem] font-semibold tracking-[0.16em] text-taupe uppercase', !recipe.imageBase && 'border-t border-espresso/15 pt-5')}>
           <span>{RECIPE_CATEGORY_LABEL[recipe.category]}</span>
           {total > 0 && <><span aria-hidden className="h-px w-5 bg-gold/60" /><span>{total} dk</span></>}
         </div>

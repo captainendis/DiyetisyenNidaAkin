@@ -64,7 +64,7 @@ export default function RecipesListPage() {
       <PageHeader
         title="Tarifler"
         crumbs={crumbs}
-        lead="Danışanlarımla en çok paylaştığım, pratik ve dengeli tarifler. Porsiyonlar genel öneridir; kendi planınıza göre uyarlamak için bir uzmana danışın."
+        lead="Planlarda önerdiğim pratik ve dengeli tarifler. Porsiyonlar genel öneridir; kendi planınıza göre uyarlamak için bir uzmana danışın."
       />
       <section className="bg-ivory text-espresso">
         <div className="container-edge py-14 sm:py-20">

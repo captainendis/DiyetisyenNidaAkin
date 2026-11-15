@@ -35,8 +35,8 @@ export default function PortalRecipesPage() {
           {data.items.map((r) => (
             <li key={r.id}>
               <Link to={`/hesabim/tarifler/${r.id}`} className="group block">
-                <div className="overflow-hidden rounded-lg"><RecipeImage recipe={r} className="transition-transform duration-500 group-hover:scale-[1.02]" /></div>
-                <p className="mt-4 flex flex-wrap items-center gap-2 text-[0.88rem] font-semibold text-taupe">
+                {r.imageBase && <div className="mb-4 overflow-hidden rounded-lg"><RecipeImage recipe={r} className="transition-transform duration-500 group-hover:scale-[1.02]" /></div>}
+                <p className="flex flex-wrap items-center gap-2 text-[0.88rem] font-semibold text-taupe">
                   {RECIPE_CATEGORY_LABEL[r.category]}
                   {r.personal && <span className="rounded-full bg-espresso px-2 py-0.5 text-[0.72rem] text-ivory">Sana özel</span>}
                 </p>
