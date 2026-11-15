@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from '@/lib/router';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/sections/PageHeader';
+import { cn } from '@/lib/text';
 import { PublicRecipeCardView, RecipeImage } from '@/components/cards/RecipeCard';
 import { DietNotes } from '@/components/recipes/DietBadges';
 import { CtaBand } from '@/components/sections/CtaBand';
@@ -86,12 +87,14 @@ export default function RecipePage() {
       />
       <article className="bg-ivory text-espresso">
         <div className="container-edge grid gap-12 py-16 sm:py-24 lg:grid-cols-12 lg:gap-x-10">
-          <div className="lg:col-span-7">
-            <RecipeImage recipe={r} eager />
-          </div>
-          <aside className="lg:col-span-4 lg:col-start-9 lg:self-end">
+          {r.imageBase && (
+            <div className="lg:col-span-7">
+              <RecipeImage recipe={r} eager />
+            </div>
+          )}
+          <aside className={r.imageBase ? 'lg:col-span-4 lg:col-start-9 lg:self-end' : 'lg:col-span-12'}>
             {facts.length > 0 && (
-              <dl className="grid grid-cols-2 gap-px overflow-hidden border border-espresso/12 bg-espresso/12">
+              <dl className={cn('grid grid-cols-2 gap-px overflow-hidden border border-espresso/12 bg-espresso/12', !r.imageBase && 'sm:grid-cols-4')}>
                 {facts.map((f) => (
                   <div key={f.k} className="bg-ivory px-5 py-4">
                     <dt className="text-[0.7rem] font-semibold tracking-[0.18em] text-taupe uppercase">{f.k}</dt>

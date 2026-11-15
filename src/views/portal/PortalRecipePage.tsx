@@ -46,10 +46,10 @@ export default function PortalRecipePage() {
           </>
         }
       />
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-lg"><RecipeImage recipe={r} eager /></div>
+      <div className={r.imageBase ? 'grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]' : undefined}>
+        {r.imageBase && <div className="overflow-hidden rounded-lg"><RecipeImage recipe={r} eager /></div>}
         {facts.length > 0 && (
-          <dl className="grid h-fit grid-cols-2 gap-3 self-end">
+          <dl className={r.imageBase ? 'grid h-fit grid-cols-2 gap-3 self-end' : 'grid grid-cols-2 gap-3 sm:grid-cols-4'}>
             {facts.map(([k, v]) => (
               <div key={k} className="rounded-md bg-white px-4 py-3 ring-1 ring-espresso/[0.07]">
                 <dt className="text-[0.85rem] font-semibold text-taupe">{k}</dt>
