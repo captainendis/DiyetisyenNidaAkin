@@ -132,6 +132,9 @@ export const panelAppointmentCreateSchema = z.object({
   time: timeStr,
   durationMinutes: z.number().int().min(10).max(240).optional(),
   meetingType: z.enum(MEETING_TYPES),
+  /** Diyet (beslenme görüşmesi) ya da pilates (birebir/özel ders) */
+  kind: z.enum(APPOINTMENT_KINDS).default('CONSULTATION'),
+  pilatesFormat: z.enum(PILATES_FORMATS).optional().nullable(),
   status: z.enum(['PENDING', 'CONFIRMED']).default('CONFIRMED'),
   internalNote: z.string().trim().max(2000).optional().nullable(),
   /** Çalışma saatleri dışına bilinçli olarak özel randevu oluştur (çakışma kontrolü yine yapılır) */

@@ -183,15 +183,14 @@ function Inner() {
 
       {!!unscheduled.data?.total && (
         <Link
-          to="/panel/randevular?view=list&status=NEW_REQUEST"
-          onClick={() => setFilters({ from: '', to: '', statuses: ['NEW_REQUEST'], meetingType: '', kind: '', q: '' })}
+          to="/panel/talepler"
           className="mb-4 flex items-center gap-3 rounded-xl border border-rose/60 bg-rose/15 px-4 py-3 text-sm text-[#6f4336] hover:bg-rose/25"
         >
           <Inbox className="h-4 w-4 shrink-0" />
           <span>
             <strong className="tabular">{unscheduled.data.total}</strong> geri arama talebi saat atanmayı bekliyor — takvimde görünmezler.
           </span>
-          <span className="ml-auto font-semibold whitespace-nowrap underline underline-offset-4">Listeyi aç</span>
+          <span className="ml-auto font-semibold whitespace-nowrap underline underline-offset-4">Taleplere git</span>
         </Link>
       )}
 

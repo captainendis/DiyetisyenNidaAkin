@@ -23,7 +23,7 @@ const ALL_NAV: { to: string; label: string; end?: boolean; only?: Program }[] = 
   { to: '/hesabim/pilates', label: 'Pilates', only: 'pilates' },
   { to: '/hesabim/listeler', label: 'Listelerim', only: 'nutrition' },
   { to: '/hesabim/tarifler', label: 'Tarifler', only: 'nutrition' },
-  { to: '/hesabim/randevular', label: 'Randevular', only: 'nutrition' },
+  { to: '/hesabim/randevular', label: 'Randevular' },
   { to: '/hesabim/olcumler', label: 'Ölçümler', only: 'nutrition' },
   { to: '/hesabim/mesajlar', label: 'Mesajlar' },
   { to: '/hesabim/dosyalar', label: 'Dosyalar' },

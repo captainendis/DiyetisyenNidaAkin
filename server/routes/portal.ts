@@ -37,6 +37,8 @@ import {
   type PortalMessage,
   type PortalOverview,
   type PortalPilates,
+  type PortalPilatesAvailability,
+  type PortalRequest,
   type PortalPlan,
   type PortalPlanListItem,
   type PortalRecipe,
@@ -419,6 +421,51 @@ portalRouter.get('/appointments', async (c) => {
     select: apptSelect,
   });
   return c.json({ items: rows.map(toAppointment) });
+});
+
+/** Yanıt bekleyen taleplerim (diyet ve pilates) */
+portalRouter.get('/requests', async (c) => {
+  const rows = await prisma.appointment.findMany({
+    where: { clientId: portalUser(c).clientId, status: { in: ['NEW_REQUEST', 'PENDING'] } },
+    select: { id: true, kind: true, status: true, createdAt: true, startsAt: true, pilatesFormat: true, preferredDays: true, preferredDayparts: true, service: { select: { title: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  });
+  const items: PortalRequest[] = rows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    status: r.status as PortalRequest['status'],
+    createdAt: r.createdAt.toISOString(),
+    startsAt: r.startsAt?.toISOString() ?? null,
+    service: r.service?.title ?? null,
+    pilatesFormat: r.pilatesFormat,
+    preferredDays: parseDays(r.preferredDays),
+    preferredDayparts: parseDayparts(r.preferredDayparts),
+  }));
+  return c.json({ items });
+});
+
+/** Pilates boş yerleri (14 gün): aktif grupların boş kontenjanı ve boş yeri olan dersler — kimin katıldığı dönmez */
+portalRouter.get('/pilates/availability', async (c) => {
+  portalUser(c);
+  const now = new Date();
+  const until = new Date(now.getTime() + 14 * 86_400_000);
+  const [groups, sessions] = await Promise.all([
+    prisma.classGroup.findMany({ where: { isActive: true }, select: { id: true, name: true, capacity: true, _count: { select: { members: true } } }, orderBy: { name: 'asc' } }),
+    prisma.classSession.findMany({
+      where: { status: 'SCHEDULED', startsAt: { gt: now, lt: until } },
+      select: { id: true, title: true, startsAt: true, endsAt: true, capacity: true, attendees: { select: { status: true } } },
+      orderBy: { startsAt: 'asc' },
+    }),
+  ]);
+  const out: PortalPilatesAvailability = {
+    groups: groups.map((g) => ({ id: g.id, name: g.name, free: Math.max(0, g.capacity - g._count.members) })).filter((g) => g.free > 0),
+    sessions: sessions
+      .map((s) => ({ id: s.id, title: s.title, startsAt: s.startsAt.toISOString(), endsAt: s.endsAt.toISOString(), free: Math.max(0, s.capacity - s.attendees.filter((a) => CLASS_SEAT_HOLDING.includes(a.status)).length) }))
+      .filter((s) => s.free > 0)
+      .slice(0, 20),
+  };
+  return c.json(out);
 });
 
 /** Grup dersleri (pilates): yalnızca danışanın kendi katılımı — diğer katılımcıların bilgisi gösterilmez */

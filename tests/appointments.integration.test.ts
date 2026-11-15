@@ -142,6 +142,13 @@ describe('randevu çakışma kontrolü', () => {
     expect(list.body.items.every((a: { kind: string }) => a.kind === 'PILATES')).toBe(true);
   });
 
+  it('panelden pilates (birebir) randevusu oluşturulur; hizmet ve online seçimi yok sayılır', async () => {
+    const res = await post('/api/appointments', { ...panelBody('17:00', 31), contactName: 'Test Pilates Kişi', kind: 'PILATES', meetingType: 'ONLINE' });
+    expect(res.status).toBe(201);
+    createdIds.push(res.body.appointment.id);
+    expect(res.body.appointment).toMatchObject({ kind: 'PILATES', pilatesFormat: 'PRIVATE', meetingType: 'IN_PERSON', service: null });
+  });
+
   it('pilates talebinde ders türü zorunludur, saat seçilemez', async () => {
     const base = { fullName: 'Pilates Ziyaretçi', phone: '0555 000 0087', meetingType: 'IN_PERSON', kind: 'PILATES', kvkkNotice: true };
     const noFormat = await request(app).post('/api/public/appointments').send({ ...base, mode: 'callback' });

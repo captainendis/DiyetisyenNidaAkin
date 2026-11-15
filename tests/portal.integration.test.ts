@@ -216,6 +216,26 @@ describe('pilates talebi (danışan hesabı)', () => {
     expect(a).toMatchObject({ status: 'NEW_REQUEST', pilatesFormat: 'PRIVATE', preferredDays: '2,4', preferredDayparts: 'EVENING', startsAt: null, clientMessage: 'Telafi' });
     const pil = await portal.get('/api/portal/pilates');
     expect(pil.body.requests).toEqual([expect.objectContaining({ id: a.id, pilatesFormat: 'PRIVATE', preferredDays: [2, 4] })]);
+
+    const reqs = await portal.get('/api/portal/requests');
+    expect(reqs.status).toBe(200);
+    expect(reqs.body.items).toEqual(expect.arrayContaining([expect.objectContaining({ id: a.id, kind: 'PILATES', status: 'NEW_REQUEST' })]));
+  });
+
+  it('pilates boş yerleri yalnızca sayı döner; katılımcı bilgisi dönmez', async () => {
+    const start = new Date(Date.now() + 5 * 864e5);
+    const session = await prisma.classSession.create({
+      data: { title: 'Bos Yer Testi', startsAt: start, endsAt: new Date(start.getTime() + 50 * 60e3), capacity: 3, attendees: { create: [{ clientId: clientB }] } },
+    });
+    try {
+      const res = await portal.get('/api/portal/pilates/availability');
+      expect(res.status).toBe(200);
+      expect(res.body.sessions).toEqual(expect.arrayContaining([expect.objectContaining({ id: session.id, free: 2 })]));
+      expect(JSON.stringify(res.body)).not.toContain(clientB);
+      expect(JSON.stringify(res.body)).not.toContain('Başka');
+    } finally {
+      await prisma.classSession.delete({ where: { id: session.id } });
+    }
   });
 });
 
