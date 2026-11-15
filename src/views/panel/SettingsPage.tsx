@@ -11,10 +11,11 @@ import { ProfileSection } from '@/components/panel/settings/ProfileSection';
 import { SecuritySection } from '@/components/panel/settings/SecuritySection';
 import { AppointmentSection, BusinessSection, PrivacySection } from '@/components/panel/settings/BusinessSections';
 import { NotificationsSection } from '@/components/panel/settings/NotificationsSection';
+import { SmtpSection, WhatsappCloudSection, WhatsappTemplatesSection } from '@/components/panel/settings/ChannelsSections';
 import { UsersSection } from '@/components/panel/settings/UsersSection';
 
-type Tab = 'profil' | 'guvenlik' | 'isletme' | 'randevu' | 'bildirimler' | 'kvkk' | 'kullanicilar';
-const STORE_TABS: Tab[] = ['isletme', 'randevu', 'kvkk'];
+type Tab = 'profil' | 'guvenlik' | 'isletme' | 'randevu' | 'bildirimler' | 'kanallar' | 'kvkk' | 'kullanicilar';
+const STORE_TABS: Tab[] = ['isletme', 'randevu', 'kvkk', 'kanallar'];
 
 function StoreGate({ children }: { children: React.ReactNode }) {
   const { settings, loading, error, reload } = useSettingsStore();
@@ -37,6 +38,7 @@ export default function SettingsPage() {
         ] as const)
       : []),
     { value: 'bildirimler', label: 'Bildirim Tercihleri' },
+    ...(canBusiness ? ([{ value: 'kanallar', label: 'E-posta & WhatsApp' }] as const) : []),
     ...(canBusiness ? ([{ value: 'kvkk', label: 'KVKK & Gizlilik' }] as const) : []),
     ...(can('users:manage') ? ([{ value: 'kullanicilar', label: 'Kullanıcılar' }] as const) : []),
   ];
@@ -50,6 +52,13 @@ export default function SettingsPage() {
       {tab === 'isletme' && <BusinessSection />}
       {tab === 'randevu' && <AppointmentSection />}
       {tab === 'bildirimler' && <NotificationsSection />}
+      {tab === 'kanallar' && (
+        <div className="space-y-6">
+          <SmtpSection />
+          <WhatsappTemplatesSection />
+          <WhatsappCloudSection />
+        </div>
+      )}
       {tab === 'kvkk' && <PrivacySection />}
       {tab === 'kullanicilar' && <UsersSection />}
     </>

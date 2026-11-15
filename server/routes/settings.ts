@@ -12,6 +12,10 @@ import { authUser, requirePermission } from '../auth/session';
 import { notificationPrefsSchema, profileSchema } from '../../shared/schemas';
 import { channelStatus } from '../services/notifications';
 import { isEmailConfigured, sendMail } from '../services/mailer';
+import { getSmtpView, getWhatsappView, saveSmtp, saveWhatsapp } from '../services/integrations';
+import { sendWhatsappTest } from '../services/whatsapp';
+import { getSetting } from '../services/settings';
+import { smtpInputSchema, whatsappCloudInputSchema } from '../../shared/integrations';
 import { emailSchema } from '../../shared/schemas';
 import { ROLE_LABEL } from '../../shared/constants';
 
@@ -48,7 +52,7 @@ settingsRouter.patch('/profile', async (c) => {
 settingsRouter.get('/notification-prefs', async (c) => {
   const u = await prisma.user.findUniqueOrThrow({ where: { id: authUser(c).id }, select: { notificationPrefs: true } });
   const prefs = (u.notificationPrefs ?? {}) as { inApp?: Record<string, boolean>; email?: Record<string, boolean> };
-  return c.json({ prefs: { inApp: prefs.inApp ?? {}, email: prefs.email ?? {} }, channels: channelStatus() });
+  return c.json({ prefs: { inApp: prefs.inApp ?? {}, email: prefs.email ?? {} }, channels: await channelStatus() });
 });
 
 settingsRouter.patch('/notification-prefs', async (c) => {
@@ -58,8 +62,73 @@ settingsRouter.patch('/notification-prefs', async (c) => {
   return c.json({ prefs });
 });
 
-settingsRouter.get('/channels', (c) => {
-  return c.json({ channels: channelStatus() });
+settingsRouter.get('/channels', async (c) => {
+  return c.json({ channels: await channelStatus() });
+});
+
+// ───────────── E-posta (SMTP) ve WhatsApp ayarları ─────────────
+// Gizli değerler (SMTP şifresi, WhatsApp erişim anahtarı) şifreli saklanır ve hiçbir yanıtta dönmez.
+
+/** Hazır WhatsApp mesajları: randevu ekranındaki "WhatsApp'tan yaz" için tüm panel kullanıcılarına açık (gizli değer içermez) */
+settingsRouter.get('/whatsapp-templates', async (c) => {
+  return c.json({ templates: await getSetting('whatsappTemplates') });
+});
+
+settingsRouter.get('/smtp', requirePermission('settings:write'), async (c) => {
+  return c.json({ smtp: await getSmtpView(), envFallback: Boolean(env.SMTP_HOST && env.MAIL_FROM) });
+});
+
+settingsRouter.put('/smtp', requirePermission('settings:write'), async (c) => {
+  const input = parse(smtpInputSchema, await body(c));
+  const before = await getSmtpView();
+  const smtp = await saveSmtp(input, authUser(c).id);
+  await audit(c, 'settings.smtp_updated', 'website_setting', 'smtp', { host: smtp.host, port: smtp.port, secure: smtp.secure, passwordChanged: Boolean(input.password) || before.hasPassword !== smtp.hasPassword });
+  return c.json({ smtp });
+});
+
+settingsRouter.post('/smtp/test', requirePermission('settings:write'), async (c) => {
+  const me = await prisma.user.findUniqueOrThrow({ where: { id: authUser(c).id }, select: { email: true } });
+  const r = await sendMail({
+    to: me.email,
+    subject: 'Test e-postası — Nida Akın Panel',
+    text: 'Bu bir deneme iletisidir. Bu e-postayı aldıysanız SMTP ayarlarınız doğru çalışıyor demektir.',
+  });
+  if (r.sent) {
+    await audit(c, 'settings.smtp_test', 'website_setting', 'smtp', { ok: true });
+    return c.json({ ok: true, to: me.email });
+  }
+  if (r.reason === 'NOT_CONFIGURED') {
+    throw new HttpError(409, 'EMAIL_NOT_CONFIGURED', 'E-posta ayarları eksik. Sunucu adresi ve gönderen e-postasını girip kaydedin.');
+  }
+  await audit(c, 'settings.smtp_test', 'website_setting', 'smtp', { ok: false, error: r.error });
+  throw new HttpError(502, 'EMAIL_SEND_FAILED', `Test e-postası gönderilemedi. ${r.message}`);
+});
+
+settingsRouter.get('/whatsapp', requirePermission('settings:write'), async (c) => {
+  return c.json({ whatsapp: await getWhatsappView() });
+});
+
+settingsRouter.put('/whatsapp', requirePermission('settings:write'), async (c) => {
+  const input = parse(whatsappCloudInputSchema, await body(c));
+  const before = await getWhatsappView();
+  if (input.enabled && (!input.phoneNumberId || (!input.accessToken && !before.hasToken))) {
+    throw new HttpError(422, 'VALIDATION_ERROR', 'Etkinleştirmek için telefon numarası kimliği ve erişim anahtarı gerekli', {
+      fields: {
+        ...(!input.phoneNumberId ? { phoneNumberId: 'Telefon numarası kimliği gerekli' } : {}),
+        ...(!input.accessToken && !before.hasToken ? { accessToken: 'Erişim anahtarı gerekli' } : {}),
+      },
+    });
+  }
+  const whatsapp = await saveWhatsapp(input, authUser(c).id);
+  await audit(c, 'settings.whatsapp_updated', 'website_setting', 'whatsapp', { enabled: whatsapp.enabled, apiVersion: whatsapp.apiVersion, tokenChanged: Boolean(input.accessToken) });
+  return c.json({ whatsapp });
+});
+
+settingsRouter.post('/whatsapp/test', requirePermission('settings:write'), async (c) => {
+  const r = await sendWhatsappTest();
+  await audit(c, 'settings.whatsapp_test', 'website_setting', 'whatsapp', r.ok ? { ok: true } : { ok: false, error: r.message });
+  if (!r.ok) throw new HttpError(502, 'WHATSAPP_SEND_FAILED', `Test mesajı gönderilemedi. ${r.message}`);
+  return c.json({ ok: true });
 });
 
 settingsRouter.get('/sessions', async (c) => {
@@ -103,7 +172,7 @@ async function issueSetPasswordLink(user: { id: string; email: string; firstName
   ]);
   const link = `${env.publicSiteUrl}/panel/sifre-sifirla?token=${token}`;
   let emailed = false;
-  if (isEmailConfigured()) {
+  if (await isEmailConfigured()) {
     try {
       await sendMail({
         to: user.email,

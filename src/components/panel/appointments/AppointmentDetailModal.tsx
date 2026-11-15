@@ -15,6 +15,7 @@ import { formatDateTime, formatDayStr, formatPhone, relativeTime, todayStr } fro
 import { APPOINTMENT_STATUS_LABEL, MEETING_TYPE_LABEL, PILATES_FORMAT_LABEL, pilatesPreferenceText, type AppointmentStatus } from '@shared/constants';
 import { Button, ErrorState, Modal, Skeleton, StatusBadge, Switch, Textarea, useFeedback } from '../ui';
 import { SlotPicker } from './SlotPicker';
+import { WhatsappWrite } from './WhatsappWrite';
 import { displayName, TRANSITIONS, type AppointmentDetail } from './types';
 
 type Panel = null | 'reschedule' | 'reject' | 'cancel';
@@ -169,6 +170,8 @@ export default function AppointmentDetailModal({
               )}
             </div>
           )}
+
+          <WhatsappWrite a={a} name={name} />
 
           {(panel === 'reject' || panel === 'cancel') && (
             <div className="rounded-xl border border-panel-line bg-panel-bg/60 p-4">

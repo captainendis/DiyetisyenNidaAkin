@@ -179,7 +179,7 @@ portalRouter.post('/auth/set-password', passwordResetLimiter, async (c) => {
 
 portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (c) => {
   const { email } = parse(portalForgotSchema, await body(c));
-  const configured = isEmailConfigured();
+  const configured = await isEmailConfigured();
   const response = {
     ok: true,
     emailConfigured: configured,

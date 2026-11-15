@@ -53,12 +53,12 @@ export function NotificationsSection() {
           </li>
           <li className="flex items-center justify-between rounded-lg border border-panel-line px-4 py-3">
             <span className="font-medium text-espresso">WhatsApp</span>
-            <span className={waOn ? 'text-[0.8rem] font-semibold text-success-ink' : 'text-[0.8rem] text-panel-muted'}>{waOn ? 'Yapılandırıldı' : 'Entegrasyon henüz yok'}</span>
+            <span className={waOn ? 'text-[0.8rem] font-semibold text-success-ink' : 'text-[0.8rem] text-panel-muted'}>{waOn ? 'Yapılandırıldı' : 'Yapılandırılmadı'}</span>
           </li>
         </ul>
         {!emailOn && (
           <Notice>
-            E-posta kanalı henüz açık değil. Tercihleriniz kaydedilir ve kanal açıldığında uygulanır.
+            E-posta kanalı henüz açık değil. Tercihleriniz kaydedilir ve kanal açıldığında uygulanır. SMTP bilgilerini “E-posta & WhatsApp” sekmesinden girebilirsiniz.
           </Notice>
         )}
       </FormSection>

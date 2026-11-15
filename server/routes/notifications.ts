@@ -38,8 +38,8 @@ notificationsRouter.get('/unread-count', async (c) => {
   return c.json({ count });
 });
 
-notificationsRouter.get('/channels', (c) => {
-  return c.json({ channels: channelStatus() });
+notificationsRouter.get('/channels', async (c) => {
+  return c.json({ channels: await channelStatus() });
 });
 
 notificationsRouter.post('/read-all', async (c) => {
