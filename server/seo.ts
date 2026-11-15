@@ -14,7 +14,7 @@ import { prisma } from './lib/db';
 import { env } from './lib/env';
 import { getSettings } from './services/settings';
 import { DEFAULT_BLOG_CATEGORIES } from '../shared/constants';
-import { RECIPE_CATEGORY_LABEL, recipeImageUrl } from '../shared/recipe';
+import { DIET_TAG_SCHEMA, RECIPE_CATEGORY_LABEL, recipeImageUrl } from '../shared/recipe';
 import { decryptContent } from './services/recipe-content';
 
 const STATIC_ROUTES: { path: string; priority: string; changefreq: string }[] = [
@@ -190,7 +190,7 @@ export async function resolveMeta(pathname: string): Promise<PageMeta> {
     const r = await prisma.recipe.findFirst({ where: { slug: m[1], isPublished: true, clientId: null } });
     if (r) {
       // İçerik şifreli saklanır; yalnızca yayındaki tarif için çözülür
-      const { title, summary, ingredients, steps } = decryptContent(r.contentEnc);
+      const { title, summary, ingredients, steps, dietTags } = decryptContent(r.contentEnc);
       const image = r.imageBase ? `${env.publicSiteUrl}${recipeImageUrl(r.imageBase, 960)}` : null;
       const description = summary || `${title} tarifi: ${ingredients.slice(0, 4).join(', ')}.`;
       const iso = (min: number | null) => (min ? `PT${min}M` : undefined);
@@ -217,6 +217,7 @@ export async function resolveMeta(pathname: string): Promise<PageMeta> {
             ...(iso(r.cookMinutes) ? { cookTime: iso(r.cookMinutes) } : {}),
             ...(total ? { totalTime: `PT${total}M` } : {}),
             ...(r.kcal ? { nutrition: { '@type': 'NutritionInformation', calories: `${r.kcal} kcal` } } : {}),
+            ...(dietTags.length ? { suitableForDiet: dietTags.map((t) => DIET_TAG_SCHEMA[t]) } : {}),
             recipeIngredient: ingredients,
             recipeInstructions: steps.map((text, i) => ({ '@type': 'HowToStep', position: i + 1, text })),
             ...(r.publishedAt ? { datePublished: r.publishedAt.toISOString() } : {}),

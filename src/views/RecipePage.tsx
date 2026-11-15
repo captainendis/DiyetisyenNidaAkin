@@ -9,9 +9,10 @@ import { Link, useParams } from '@/lib/router';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/sections/PageHeader';
 import { PublicRecipeCardView, RecipeImage } from '@/components/cards/RecipeCard';
+import { DietNotes } from '@/components/recipes/DietBadges';
 import { CtaBand } from '@/components/sections/CtaBand';
 import { Seo, SITE_URL } from '@/components/seo/Seo';
-import { RECIPE_CATEGORY_LABEL, recipeImageUrl, type PublicRecipe, type PublicRecipeCard } from '@shared/recipe';
+import { DIET_TAG_SCHEMA, RECIPE_CATEGORY_LABEL, recipeImageUrl, type PublicRecipe, type PublicRecipeCard } from '@shared/recipe';
 import NotFoundPage from './NotFoundPage';
 
 const iso = (m: number | null) => (m ? `PT${m}M` : undefined);
@@ -70,6 +71,7 @@ export default function RecipePage() {
           ...(iso(r.cookMinutes) ? { cookTime: iso(r.cookMinutes) } : {}),
           ...(total ? { totalTime: `PT${total}M` } : {}),
           ...(r.kcal ? { nutrition: { '@type': 'NutritionInformation', calories: `${r.kcal} kcal` } } : {}),
+          ...(r.dietTags?.length ? { suitableForDiet: r.dietTags.map((t) => DIET_TAG_SCHEMA[t]) } : {}),
           recipeIngredient: r.ingredients,
           recipeInstructions: r.steps.map((text, i) => ({ '@type': 'HowToStep', position: i + 1, text })),
           ...(r.publishedAt ? { datePublished: r.publishedAt } : {}),
@@ -98,6 +100,7 @@ export default function RecipePage() {
                 ))}
               </dl>
             )}
+            <DietNotes tags={r.dietTags} className={facts.length > 0 ? 'mt-6' : undefined} />
           </aside>
 
           <section className="lg:col-span-4" aria-labelledby="ing-title">

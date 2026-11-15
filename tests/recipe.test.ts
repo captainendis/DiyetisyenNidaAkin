@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { describe, expect, it } from 'vitest';
-import { recipeInputSchema, recipeMeta, type PrintRecipe } from '../shared/recipe';
+import { recipeInputSchema, recipeMeta, visibleDietTags, type PrintRecipe } from '../shared/recipe';
 import { MAX_PLAN_RECIPES, nutritionPlanDataSchema, samplePlanTemplate } from '../shared/plan';
 import { renderPlanHtml } from '../shared/plan-template';
 
@@ -34,10 +34,21 @@ describe('tarif şeması', () => {
   });
   it('isteğe bağlı alanlara varsayılan verir', () => {
     const r = recipeInputSchema.parse({ title: 'Çorba', category: 'SOUP', ingredients: ['mercimek'], steps: ['pişir'] });
-    expect(r).toMatchObject({ summary: '', tip: '', servings: null, kcal: null, prepMinutes: null, cookMinutes: null });
+    expect(r).toMatchObject({ summary: '', tip: '', servings: null, kcal: null, prepMinutes: null, cookMinutes: null, dietTags: [] });
   });
   it('bilinmeyen kategoriyi reddeder', () => {
     expect(recipeInputSchema.safeParse({ title: 'X', category: 'PIZZA', ingredients: ['a'], steps: ['b'] }).success).toBe(false);
+  });
+  it('vegan seçilirse vejetaryen eklenir; tekilleştirir ve sıralar', () => {
+    const base = { title: 'X', category: 'SOUP', ingredients: ['a'], steps: ['b'] };
+    expect(recipeInputSchema.parse({ ...base, dietTags: ['VEGAN'] }).dietTags).toEqual(['VEGAN', 'VEGETARIAN']);
+    expect(recipeInputSchema.parse({ ...base, dietTags: ['LACTOSE_FREE', 'GLUTEN_FREE', 'GLUTEN_FREE', 'VEGETARIAN'] }).dietTags).toEqual(['VEGETARIAN', 'GLUTEN_FREE', 'LACTOSE_FREE']);
+    expect(recipeInputSchema.safeParse({ ...base, dietTags: ['KETO'] }).success).toBe(false);
+  });
+  it('vegan varsa yalnızca vegan gösterilir', () => {
+    expect(visibleDietTags(['VEGETARIAN', 'VEGAN', 'GLUTEN_FREE'])).toEqual(['VEGAN', 'GLUTEN_FREE']);
+    expect(visibleDietTags(['VEGETARIAN'])).toEqual(['VEGETARIAN']);
+    expect(visibleDietTags(undefined)).toEqual([]);
   });
   it('künye satırı üretir', () => {
     expect(recipeMeta({ servings: 2, prepMinutes: 10, cookMinutes: 0, kcal: 190 })).toEqual(['2 porsiyon', '10 dk hazırlık', 'porsiyonu ~190 kcal']);

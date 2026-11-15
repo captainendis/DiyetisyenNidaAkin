@@ -10,6 +10,7 @@ import { useApi } from '@/hooks/useApi';
 import { RECIPE_CATEGORY_LABEL } from '@shared/recipe';
 import type { PortalRecipe } from '@shared/portal';
 import { RecipeImage } from '@/components/cards/RecipeCard';
+import { DietNotes } from '@/components/recipes/DietBadges';
 import { Empty, LoadError, Loading, Panel, PanelTitle, PortalPageHeader } from '@/components/portal/ui';
 
 export default function PortalRecipePage() {
@@ -58,6 +59,7 @@ export default function PortalRecipePage() {
           </dl>
         )}
       </div>
+      <DietNotes tags={r.dietTags} className="mt-6" />
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <Panel>
           <PanelTitle>Malzemeler</PanelTitle>

@@ -47,6 +47,7 @@ export function toRecipe(r: Row): Recipe {
     ingredients: c.ingredients,
     steps: c.steps,
     tip: c.tip,
+    dietTags: c.dietTags,
     isPublished: r.isPublished,
     isFeatured: !!r.featuredAt,
     variantNote: decryptNote(r.variantNoteEnc),
