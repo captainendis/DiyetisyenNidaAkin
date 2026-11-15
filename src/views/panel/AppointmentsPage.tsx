@@ -59,6 +59,7 @@ function Inner() {
     to: '',
     statuses: (params.getAll('status') as AppointmentStatus[]) ?? [],
     meetingType: '',
+    kind: params.get('kind') === 'PILATES' ? 'PILATES' : '',
     q: '',
   }));
 
@@ -168,7 +169,7 @@ function Inner() {
       {!!unscheduled.data?.total && (
         <Link
           to="/panel/randevular?view=list&status=NEW_REQUEST"
-          onClick={() => setFilters({ from: '', to: '', statuses: ['NEW_REQUEST'], meetingType: '', q: '' })}
+          onClick={() => setFilters({ from: '', to: '', statuses: ['NEW_REQUEST'], meetingType: '', kind: '', q: '' })}
           className="mb-4 flex items-center gap-3 rounded-xl border border-rose/60 bg-rose/15 px-4 py-3 text-sm text-[#6f4336] hover:bg-rose/25"
         >
           <Inbox className="h-4 w-4 shrink-0" />

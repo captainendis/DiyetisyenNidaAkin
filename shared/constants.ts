@@ -38,6 +38,51 @@ export const MEETING_TYPE_LABEL: Record<MeetingType, string> = {
   ONLINE: 'Online',
 };
 
+/** Talebin konusu — pilates talepleri de randevular listesine düşer */
+export const APPOINTMENT_KINDS = ['CONSULTATION', 'PILATES'] as const;
+export type AppointmentKind = (typeof APPOINTMENT_KINDS)[number];
+export const APPOINTMENT_KIND_LABEL: Record<AppointmentKind, string> = {
+  CONSULTATION: 'Beslenme görüşmesi',
+  PILATES: 'Pilates',
+};
+
+export const PILATES_FORMATS = ['GROUP', 'PRIVATE'] as const;
+export type PilatesFormat = (typeof PILATES_FORMATS)[number];
+export const PILATES_FORMAT_LABEL: Record<PilatesFormat, string> = {
+  GROUP: 'Grup dersi',
+  PRIVATE: 'Birebir ders',
+};
+
+/** Pilates talebinde gün içi tercih (çalışma saatleri 09.00–21.00) */
+export const DAYPARTS = ['MORNING', 'AFTERNOON', 'EVENING'] as const;
+export type Daypart = (typeof DAYPARTS)[number];
+export const DAYPART_LABEL: Record<Daypart, string> = {
+  MORNING: 'Sabah',
+  AFTERNOON: 'Öğleden sonra',
+  EVENING: 'Akşam',
+};
+export const DAYPART_HOURS: Record<Daypart, string> = {
+  MORNING: '09.00–12.00',
+  AFTERNOON: '12.00–17.00',
+  EVENING: '17.00–21.00',
+};
+
+/** "1,3,5" ↔ [1,3,5] — tercih alanları veritabanında virgüllü metin olarak tutulur */
+export const parseDays = (v: string | null | undefined) =>
+  (v ?? '').split(',').map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 7);
+export const parseDayparts = (v: string | null | undefined) =>
+  (v ?? '').split(',').filter((x): x is Daypart => (DAYPARTS as readonly string[]).includes(x));
+
+const WEEKDAY_SHORT = ['', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+/** "Pzt, Çar · Sabah" — boş tercihler "fark etmez" olarak yazılır */
+export function pilatesPreferenceText(days: string | number[] | null | undefined, dayparts: string | Daypart[] | null | undefined) {
+  const d = Array.isArray(days) ? days : parseDays(days);
+  const p = Array.isArray(dayparts) ? dayparts : parseDayparts(dayparts);
+  const dayText = d.length ? d.map((n) => WEEKDAY_SHORT[n]).join(', ') : 'Gün fark etmez';
+  const partText = p.length ? p.map((x) => DAYPART_LABEL[x]).join(', ') : 'saat fark etmez';
+  return `${dayText} · ${partText}`;
+}
+
 export const CLIENT_STATUSES = ['ACTIVE', 'PASSIVE', 'ARCHIVED'] as const;
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];
 export const CLIENT_STATUS_LABEL: Record<ClientStatus, string> = {

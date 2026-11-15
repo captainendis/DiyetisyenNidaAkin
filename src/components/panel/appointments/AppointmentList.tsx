@@ -7,7 +7,7 @@ import { CalendarX2, Check, Eye, Search, SlidersHorizontal, X } from 'lucide-rea
 import { api } from '@/lib/api';
 import { useApi, useDebounced } from '@/hooks/useApi';
 import { formatDate, formatDayStr, formatPhone, relativeTime } from '@/lib/format';
-import { APPOINTMENT_STATUSES, APPOINTMENT_STATUS_LABEL, MEETING_TYPE_LABEL, type AppointmentStatus, type MeetingType } from '@shared/constants';
+import { APPOINTMENT_KIND_LABEL, APPOINTMENT_STATUSES, APPOINTMENT_STATUS_LABEL, MEETING_TYPE_LABEL, PILATES_FORMAT_LABEL, type AppointmentKind, type AppointmentStatus, type MeetingType } from '@shared/constants';
 import { cn } from '@/lib/format';
 import { Button, EmptyState, ErrorState, IconButton, Pagination, ResponsiveTable, SkeletonRows, StatusBadge, useFeedback } from '../ui';
 import { ApiError } from '@/lib/api';
@@ -18,8 +18,13 @@ export interface ListFilters {
   to: string;
   statuses: AppointmentStatus[];
   meetingType: '' | MeetingType;
+  kind: '' | AppointmentKind;
   q: string;
 }
+
+/** Görüşme türü sütunu: pilates talebinde ders türü gösterilir */
+export const appointmentTypeLabel = (a: AppointmentDTO) =>
+  a.kind === 'PILATES' ? `Pilates${a.pilatesFormat ? ` · ${PILATES_FORMAT_LABEL[a.pilatesFormat]}` : ''}` : MEETING_TYPE_LABEL[a.meetingType];
 
 export function AppointmentList({
   filters, setFilters, onOpen, refreshKey, onChanged,
@@ -39,7 +44,7 @@ export function AppointmentList({
     if (dq !== filters.q) setFilters({ ...filters, q: dq });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dq]);
-  useEffect(() => setPage(1), [filters.from, filters.to, filters.statuses.join(), filters.meetingType, filters.q]);
+  useEffect(() => setPage(1), [filters.from, filters.to, filters.statuses.join(), filters.meetingType, filters.kind, filters.q]);
 
   const { data, error, loading, reload } = useApi(
     () =>
@@ -48,17 +53,18 @@ export function AppointmentList({
         to: filters.to || undefined,
         status: filters.statuses.length ? filters.statuses : undefined,
         meetingType: filters.meetingType || undefined,
+        kind: filters.kind || undefined,
         q: filters.q || undefined,
         page,
         pageSize: 25,
         sort: '-startsAt',
       }),
-    [filters.from, filters.to, filters.statuses.join(), filters.meetingType, filters.q, page, refreshKey],
+    [filters.from, filters.to, filters.statuses.join(), filters.meetingType, filters.kind, filters.q, page, refreshKey],
   );
 
   const toggleStatus = (s: AppointmentStatus) =>
     setFilters({ ...filters, statuses: filters.statuses.includes(s) ? filters.statuses.filter((x) => x !== s) : [...filters.statuses, s] });
-  const active = !!(filters.from || filters.to || filters.statuses.length || filters.meetingType || filters.q);
+  const active = !!(filters.from || filters.to || filters.statuses.length || filters.meetingType || filters.kind || filters.q);
 
   const quickConfirm = async (a: AppointmentDTO) => {
     try {
@@ -114,6 +120,16 @@ export function AppointmentList({
               <option value="IN_PERSON">{MEETING_TYPE_LABEL.IN_PERSON}</option>
               <option value="ONLINE">{MEETING_TYPE_LABEL.ONLINE}</option>
             </select>
+            <select
+              value={filters.kind}
+              onChange={(e) => setFilters({ ...filters, kind: e.target.value as ListFilters['kind'] })}
+              aria-label="Talep konusu"
+              className="h-9 rounded-lg border border-panel-line bg-white px-2 text-sm"
+            >
+              <option value="">Tüm talepler</option>
+              <option value="CONSULTATION">{APPOINTMENT_KIND_LABEL.CONSULTATION}</option>
+              <option value="PILATES">{APPOINTMENT_KIND_LABEL.PILATES}</option>
+            </select>
           </div>
         </div>
         <div className={cn('flex-wrap items-center gap-1.5 sm:flex', showFilters ? 'flex' : 'hidden')} role="group" aria-label="Durum filtresi">
@@ -132,7 +148,7 @@ export function AppointmentList({
             );
           })}
           {active && (
-            <button type="button" onClick={() => { setQ(''); setFilters({ from: '', to: '', statuses: [], meetingType: '', q: '' }); }} className="ml-1 inline-flex items-center gap-1 text-[0.78rem] font-semibold text-panel-muted hover:text-cocoa">
+            <button type="button" onClick={() => { setQ(''); setFilters({ from: '', to: '', statuses: [], meetingType: '', kind: '', q: '' }); }} className="ml-1 inline-flex items-center gap-1 text-[0.78rem] font-semibold text-panel-muted hover:text-cocoa">
               <X className="h-3.5 w-3.5" /> Filtreleri temizle
             </button>
           )}
@@ -168,7 +184,7 @@ export function AppointmentList({
               },
               { key: 'date', header: 'Tarih', cell: when },
               { key: 'time', header: 'Saat', cell: (a) => <span className="tabular">{a.time ? `${a.time}` : '—'}</span> },
-              { key: 'type', header: 'Görüşme türü', cell: (a) => MEETING_TYPE_LABEL[a.meetingType] },
+              { key: 'type', header: 'Tür', cell: (a) => appointmentTypeLabel(a) },
               { key: 'status', header: 'Durum', cell: (a) => <StatusBadge status={a.status} /> },
               { key: 'created', header: 'Oluşturulma', cell: (a) => <span className="text-panel-muted tabular" title={formatDate(a.createdAt)}>{relativeTime(a.createdAt)}</span> },
               {
@@ -192,7 +208,7 @@ export function AppointmentList({
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-espresso">{displayName(a)}</p>
                   <p className="mt-0.5 text-[0.8rem] text-panel-muted">
-                    {a.date ? <span className="tabular">{formatDayStr(a.date, 'd MMM, ccc')} · {a.time}</span> : 'Saat atanmadı'} · {MEETING_TYPE_LABEL[a.meetingType]}
+                    {a.date ? <span className="tabular">{formatDayStr(a.date, 'd MMM, ccc')} · {a.time}</span> : 'Saat atanmadı'} · {appointmentTypeLabel(a)}
                   </p>
                 </div>
                 <StatusBadge status={a.status} />

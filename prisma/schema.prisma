@@ -177,6 +177,19 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
+/// Talebin konusu: beslenme görüşmesi ya da pilates dersi
+enum AppointmentKind {
+  CONSULTATION
+  PILATES
+}
+
+enum PilatesFormat {
+  /// Küçük grup dersi (en fazla 3 kişi)
+  GROUP
+  /// Birebir ders
+  PRIVATE
+}
+
 model Appointment {
   id                   String            @id @default(cuid())
   clientId             String?
@@ -191,6 +204,13 @@ model Appointment {
   startsAt             DateTime?         @db.DateTime(3)
   endsAt               DateTime?         @db.DateTime(3)
   meetingType          MeetingType       @default(IN_PERSON)
+  kind                 AppointmentKind   @default(CONSULTATION)
+  /// Yalnızca pilates taleplerinde
+  pilatesFormat        PilatesFormat?
+  /// Ziyaretçinin tercih ettiği ISO günler, virgülle ("1,3,5"); boşsa fark etmez
+  preferredDays        String?           @db.VarChar(20)
+  /// Tercih edilen gün içi aralıklar, virgülle ("MORNING,EVENING"); boşsa fark etmez
+  preferredDayparts    String?           @db.VarChar(40)
   status               AppointmentStatus @default(PENDING)
   source               RecordSource      @default(PANEL)
   clientMessage        String? @db.Text
@@ -212,6 +232,7 @@ model Appointment {
   @@index([startsAt])
   @@index([status])
   @@index([clientId])
+  @@index([kind])
   @@map("appointments")
 }
 

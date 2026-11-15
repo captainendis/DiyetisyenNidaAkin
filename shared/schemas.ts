@@ -15,6 +15,9 @@ import {
   BLOCKED_DATE_REASONS,
   CLIENT_STATUSES,
   MEETING_TYPES,
+  APPOINTMENT_KINDS,
+  PILATES_FORMATS,
+  DAYPARTS,
   POST_STATUSES,
   SERVICE_ICONS,
 } from './constants';
@@ -63,6 +66,11 @@ export const publicAppointmentRequestSchema = z
     phone: phoneSchema,
     email: emailSchema,
     meetingType: z.enum(MEETING_TYPES, { message: 'Görüşme tercihinizi seçin' }),
+    kind: z.enum(APPOINTMENT_KINDS).default('CONSULTATION'),
+    /** Pilates talebi: grup ya da birebir; tercih edilen günler ve gün içi aralıklar (boşsa fark etmez) */
+    pilatesFormat: z.enum(PILATES_FORMATS, { message: 'Ders türünü seçin' }).optional().nullable(),
+    preferredDays: z.array(z.number().int().min(1).max(7)).max(7).optional().nullable(),
+    preferredDayparts: z.array(z.enum(DAYPARTS)).max(3).optional().nullable(),
     serviceId: z.string().max(40).optional().nullable(),
     /** "slot": belirli bir saat seçildi — "callback": saat seçmeden iletişim talebi */
     mode: z.enum(['slot', 'callback']),
@@ -75,6 +83,12 @@ export const publicAppointmentRequestSchema = z
     website: z.string().max(0).optional(),
   })
   .superRefine((v, ctx) => {
+    if (v.kind === 'PILATES') {
+      if (!v.pilatesFormat) ctx.addIssue({ code: 'custom', path: ['pilatesFormat'], message: 'Grup dersi mi birebir ders mi istediğinizi seçin' });
+      if (v.mode !== 'callback') ctx.addIssue({ code: 'custom', path: ['mode'], message: 'Pilates ders saati sizinle birlikte planlanır' });
+      if (v.meetingType !== 'IN_PERSON') ctx.addIssue({ code: 'custom', path: ['meetingType'], message: 'Pilates dersleri stüdyoda yapılır' });
+      return;
+    }
     if (v.mode === 'slot' && (!v.date || !v.time)) {
       ctx.addIssue({ code: 'custom', path: ['time'], message: 'Lütfen bir gün ve saat seçin' });
     }
@@ -145,6 +159,7 @@ export const appointmentListQuerySchema = z.object({
   to: dateStr.optional(),
   status: z.union([appointmentStatusSchema, z.array(appointmentStatusSchema)]).optional(),
   meetingType: z.enum(MEETING_TYPES).optional(),
+  kind: z.enum(APPOINTMENT_KINDS).optional(),
   q: z.string().trim().max(80).optional(),
   clientId: z.string().max(40).optional(),
   page: z.coerce.number().int().min(1).default(1),

@@ -68,6 +68,7 @@ appointmentsRouter.get('/', canRead, async (c) => {
 
   if (statuses) and.push({ status: { in: statuses } });
   if (q.meetingType) and.push({ meetingType: q.meetingType });
+  if (q.kind) and.push({ kind: q.kind });
   if (q.clientId) and.push({ clientId: q.clientId });
   if (q.from || q.to) {
     const range: Prisma.DateTimeNullableFilter = {};

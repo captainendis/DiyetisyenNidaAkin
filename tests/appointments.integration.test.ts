@@ -122,6 +122,34 @@ describe('randevu çakışma kontrolü', () => {
     expect(detail.body.appointment.statusHistory.map((h: { toStatus: string }) => h.toStatus)).toContain('CONFIRMED');
   });
 
+  it('pilates talebi saatsiz yeni talep olarak randevulara düşer ve türüne göre filtrelenir', async () => {
+    const res = await request(app)
+      .post('/api/public/appointments')
+      .send({
+        fullName: 'Pilates Ziyaretçi', phone: '0555 000 0088', email: 'pilates@example.com', meetingType: 'IN_PERSON',
+        kind: 'PILATES', pilatesFormat: 'GROUP', preferredDays: [3, 1, 3], preferredDayparts: ['EVENING', 'MORNING'], mode: 'callback', kvkkNotice: true,
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.status).toBe('NEW_REQUEST');
+    const row = await prisma.appointment.findFirstOrThrow({ where: { contactPhone: { startsWith: TAG_PHONE }, kind: 'PILATES' }, orderBy: { createdAt: 'desc' } });
+    createdIds.push(row.id);
+    expect(row).toMatchObject({ pilatesFormat: 'GROUP', preferredDays: '1,3', preferredDayparts: 'MORNING,EVENING', startsAt: null, serviceId: null });
+
+    const list = await agent.get('/api/appointments').query({ kind: 'PILATES', status: 'NEW_REQUEST' });
+    expect(list.status).toBe(200);
+    const item = list.body.items.find((a: { id: string }) => a.id === row.id);
+    expect(item).toMatchObject({ kind: 'PILATES', pilatesFormat: 'GROUP', preferredDays: [1, 3], preferredDayparts: ['MORNING', 'EVENING'] });
+    expect(list.body.items.every((a: { kind: string }) => a.kind === 'PILATES')).toBe(true);
+  });
+
+  it('pilates talebinde ders türü zorunludur, saat seçilemez', async () => {
+    const base = { fullName: 'Pilates Ziyaretçi', phone: '0555 000 0087', meetingType: 'IN_PERSON', kind: 'PILATES', kvkkNotice: true };
+    const noFormat = await request(app).post('/api/public/appointments').send({ ...base, mode: 'callback' });
+    expect(noFormat.status).toBe(422);
+    const withSlot = await request(app).post('/api/public/appointments').send({ ...base, pilatesFormat: 'PRIVATE', mode: 'slot', date, time: '10:00' });
+    expect(withSlot.status).toBe(422);
+  });
+
   it('geçersiz durum geçişi reddedilir', async () => {
     const id = createdIds[0];
     const res = await post(`/api/appointments/${id}/status`, { status: 'NEW_REQUEST' });

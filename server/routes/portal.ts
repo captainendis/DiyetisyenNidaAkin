@@ -193,17 +193,17 @@ portalRouter.post('/auth/change-password', async (c) => {
 // ───────────────────────── Yardımcılar ─────────────────────────
 
 const apptSelect = {
-  id: true, startsAt: true, endsAt: true, status: true, meetingType: true, service: { select: { title: true } },
+  id: true, startsAt: true, endsAt: true, status: true, meetingType: true, kind: true, service: { select: { title: true } },
 } as const;
 
-function toAppointment(a: { id: string; startsAt: Date | null; endsAt: Date | null; status: PortalAppointment['status']; meetingType: PortalAppointment['meetingType']; service: { title: string } | null }): PortalAppointment {
+function toAppointment(a: { id: string; startsAt: Date | null; endsAt: Date | null; status: PortalAppointment['status']; meetingType: PortalAppointment['meetingType']; kind: 'CONSULTATION' | 'PILATES'; service: { title: string } | null }): PortalAppointment {
   return {
     id: a.id,
     startsAt: a.startsAt?.toISOString() ?? null,
     endsAt: a.endsAt?.toISOString() ?? null,
     status: a.status,
     meetingType: a.meetingType,
-    service: a.service?.title ?? null,
+    service: a.kind === 'PILATES' ? 'Pilates' : (a.service?.title ?? null),
   };
 }
 

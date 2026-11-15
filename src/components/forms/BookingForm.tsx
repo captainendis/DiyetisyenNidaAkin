@@ -3,8 +3,9 @@
 
 /**
  * Randevu talep formu — 3 adım + sonuç.
- *  1) Görüşme: hizmet (isteğe bağlı) + görüşme tercihi
- *  2) Zaman: müsait gün/saat seçimi ya da "saat seçmeden iletişim talebi"
+ *  1) Görüşme: konu (beslenme görüşmesi / pilates), hizmet ya da ders türü, görüşme tercihi
+ *  2) Zaman: müsait gün/saat seçimi ya da "saat seçmeden iletişim talebi";
+ *     pilatesde yalnızca tercih edilen günler ve gün içi aralık (ders saati birlikte planlanır)
  *  3) Bilgiler: ad soyad, telefon, e-posta, mesaj, KVKK
  * Sonuç ekranı dürüsttür: talep "onay bekliyor" olarak alınır; kesin randevu gösterilmez.
  */
@@ -16,7 +17,10 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight, Loader2, PhoneCall } from 
 import { api, ApiError } from '@/lib/api';
 import { useSite } from '@/data/SiteContext';
 import { publicAppointmentRequestSchema } from '@shared/schemas';
-import { MEETING_TYPE_LABEL, TIME_ZONE, type MeetingType } from '@shared/constants';
+import {
+  DAYPARTS, DAYPART_HOURS, DAYPART_LABEL, MEETING_TYPE_LABEL, PILATES_FORMAT_LABEL, TIME_ZONE, WEEKDAY_LABEL, pilatesPreferenceText,
+  type AppointmentKind, type Daypart, type MeetingType, type PilatesFormat,
+} from '@shared/constants';
 import { ServiceIcon } from '@/components/icons/ServiceIcon';
 import { WhatsappIcon } from '@/components/icons/SocialIcons';
 import { cn } from '@/lib/text';
@@ -99,16 +103,30 @@ function MonthCalendar({
   );
 }
 
-export function BookingForm({ initialServiceId, variant = 'modal', onStepChange }: { initialServiceId?: string | null; variant?: 'modal' | 'page'; onStepChange?: (s: Step) => void }) {
+const PILATES_FORMAT_NOTE: Record<PilatesFormat, string> = {
+  GROUP: 'Küçük gruplarla, aynı seviyedeki kişilerle ders.',
+  PRIVATE: 'Yalnızca size ayrılmış, birebir ders.',
+};
+
+const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+
+export function BookingForm({
+  initialServiceId, initialKind = 'CONSULTATION', variant = 'modal', onStepChange,
+}: { initialServiceId?: string | null; initialKind?: AppointmentKind; variant?: 'modal' | 'page'; onStepChange?: (s: Step) => void }) {
   const { site } = useSite();
   const reduce = useReducedMotion();
   const cfg = site.settings.appointment;
   const meetingOptions = (['IN_PERSON', 'ONLINE'] as MeetingType[]).filter((m) => (m === 'IN_PERSON' ? cfg.inPersonEnabled : cfg.onlineEnabled));
 
   const [step, setStep] = useState<Step>(1);
+  const [kind, setKind] = useState<AppointmentKind>(initialKind);
+  const pilates = kind === 'PILATES';
+  const [pilatesFormat, setPilatesFormat] = useState<PilatesFormat | null>(null);
+  const [prefDays, setPrefDays] = useState<number[]>([]);
+  const [prefParts, setPrefParts] = useState<Daypart[]>([]);
   const [serviceId, setServiceId] = useState<string | null>(initialServiceId ?? null);
   const [meetingType, setMeetingType] = useState<MeetingType | null>(meetingOptions.length === 1 ? meetingOptions[0] : null);
-  const [mode, setMode] = useState<'slot' | 'callback'>('slot');
+  const [mode, setMode] = useState<'slot' | 'callback'>(initialKind === 'PILATES' ? 'callback' : 'slot');
   const today = DateTime.now().setZone(TIME_ZONE).startOf('day');
   const [month, setMonth] = useState<DateTime>(today.startOf("month"));
   const [days, setDays] = useState<Map<string, number>>(new Map());
@@ -160,7 +178,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
 
   // Tüm aralıkta hiç müsait gün yoksa (takvim kapalı) bunu bir kez tespit et
   useEffect(() => {
-    if (step !== 2 || anyAvailable !== null) return;
+    if (step !== 2 || anyAvailable !== null || pilates) return;
     api
       .get<DaysRes>('/public/availability/days', { from: today.toISODate()!, to: maxDate.toISODate()!, serviceId: serviceId ?? undefined })
       .then((r) => setAnyAvailable(r.days.some((d) => d.available > 0)))
@@ -187,6 +205,15 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
   const goNext = () => {
     setNotice(null);
     if (step === 1) {
+      if (pilates) {
+        if (!pilatesFormat) {
+          setErrors({ pilatesFormat: 'Grup dersi mi birebir ders mi istediğinizi seçin' });
+          return;
+        }
+        setErrors({});
+        setStep(2);
+        return;
+      }
       if (!meetingType) {
         setErrors({ meetingType: 'Görüşme tercihinizi seçin' });
         return;
@@ -208,11 +235,15 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
       fullName: form.fullName,
       phone: form.phone,
       email: form.email,
-      meetingType: meetingType ?? undefined,
-      serviceId,
-      mode,
-      date: mode === 'slot' ? date : null,
-      time: mode === 'slot' ? time : null,
+      meetingType: pilates ? ('IN_PERSON' as const) : (meetingType ?? undefined),
+      kind,
+      pilatesFormat: pilates ? pilatesFormat : null,
+      preferredDays: pilates ? prefDays : null,
+      preferredDayparts: pilates ? prefParts : null,
+      serviceId: pilates ? null : serviceId,
+      mode: pilates ? ('callback' as const) : mode,
+      date: !pilates && mode === 'slot' ? date : null,
+      time: !pilates && mode === 'slot' ? time : null,
       message: form.message || null,
       kvkkNotice: form.kvkkNotice,
       explicitConsent: form.explicitConsent,
@@ -223,7 +254,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
       const f: Record<string, string> = {};
       for (const i of parsed.error.issues) f[String(i.path[0] ?? '_')] ??= i.message;
       setErrors(f);
-      if (f.meetingType) setStep(1);
+      if (f.meetingType || f.pilatesFormat) setStep(1);
       else if (f.time) setStep(2);
       return;
     }
@@ -250,7 +281,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
 
   const whatsappNumber = result?.whatsapp ?? site.settings.contact.whatsapp;
   const waText = encodeURIComponent(
-    `Merhaba, web sitesinden randevu talebi oluşturdum${result ? ` (Referans: ${result.reference})` : ''}.`,
+    `Merhaba, web sitesinden ${pilates ? 'pilates' : 'randevu'} talebi oluşturdum${result ? ` (Referans: ${result.reference})` : ''}.`,
   );
 
   const slide = useMemo(
@@ -270,9 +301,61 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
         {step === 1 && (
           <motion.div key="s1" {...slide}>
             <h3 className="font-display text-[1.9rem] leading-tight font-medium sm:text-[2.2rem]">Size nasıl yardımcı olabilirim?</h3>
-            <p className="mt-2 text-[0.95rem] text-taupe">Bir hizmet seçebilir ya da bu adımı boş bırakabilirsiniz; ilk görüşmede birlikte netleştiririz.</p>
 
-            <fieldset className="mt-7">
+            <div className="mt-6 inline-flex border border-espresso/15 p-1 text-[0.92rem]" role="radiogroup" aria-label="Talep konusu">
+              {(['CONSULTATION', 'PILATES'] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="radio"
+                  aria-checked={kind === k}
+                  onClick={() => {
+                    setKind(k);
+                    setMode(k === 'PILATES' ? 'callback' : 'slot');
+                    setErrors({});
+                  }}
+                  className={cn('px-4 py-2 transition-colors', kind === k ? 'bg-espresso text-cream' : 'text-taupe hover:text-espresso')}
+                >
+                  {k === 'PILATES' ? 'Pilates dersi' : 'Beslenme danışmanlığı'}
+                </button>
+              ))}
+            </div>
+
+            {pilates ? (
+              <fieldset className="mt-7">
+                <legend className="text-[0.95rem] text-taupe">Grup dersine mi katılmak istersiniz, birebir ders mi?</legend>
+                <div className="mt-4 grid gap-px overflow-hidden border border-espresso/12 bg-espresso/12 sm:grid-cols-2">
+                  {(['GROUP', 'PRIVATE'] as const).map((f) => {
+                    const active = pilatesFormat === f;
+                    return (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => {
+                          setPilatesFormat(f);
+                          setErrors({});
+                        }}
+                        aria-pressed={active}
+                        className={cn('px-5 py-4 text-left transition-colors', active ? 'bg-espresso text-cream' : 'bg-ivory hover:bg-cream')}
+                      >
+                        <span className="block font-display text-[1.3rem] leading-tight">{PILATES_FORMAT_LABEL[f]}</span>
+                        <span className={cn('mt-1 block text-[0.85rem]', active ? 'text-cream/75' : 'text-taupe')}>{PILATES_FORMAT_NOTE[f]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.pilatesFormat && <p className="mt-2 text-[0.8rem] text-danger-ink" role="alert">{errors.pilatesFormat}</p>}
+                {site.settings.contact.venueName && (
+                  <p className="mt-4 max-w-md text-[0.85rem] leading-relaxed text-taupe">
+                    Dersler {site.settings.contact.venueName}’da yapılır{site.settings.contact.district ? ` (${site.settings.contact.district})` : ''}.
+                  </p>
+                )}
+              </fieldset>
+            ) : (
+            <>
+            <p className="mt-6 text-[0.95rem] text-taupe">Bir hizmet seçebilir ya da bu adımı boş bırakabilirsiniz; ilk görüşmede birlikte netleştiririz.</p>
+
+            <fieldset className="mt-5">
               <legend className="sr-only">Hizmet</legend>
               <div className="grid gap-px overflow-hidden border border-espresso/12 bg-espresso/12 sm:grid-cols-2">
                 {[{ id: null as string | null, title: 'Henüz karar vermedim', icon: 'sprout' }, ...site.services.map((s) => ({ id: s.id as string | null, title: s.title, icon: s.icon }))].map((s, i, all) => {
@@ -323,10 +406,54 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
                 </p>
               )}
             </fieldset>
+            </>
+            )}
           </motion.div>
         )}
 
-        {step === 2 && (
+        {step === 2 && pilates && (
+          <motion.div key="s2p" {...slide}>
+            <h3 className="font-display text-[1.9rem] leading-tight font-medium sm:text-[2.2rem]">Hangi zamanlar size uyar?</h3>
+            <p className="mt-2 max-w-lg text-[0.95rem] leading-relaxed text-taupe">
+              Ders saati, {pilatesFormat === 'GROUP' ? 'grupların doluluğuna' : 'takvime'} göre sizinle birlikte belirlenir. Boş bırakırsanız “fark etmez” olarak iletilir.
+            </p>
+            <fieldset className="mt-7">
+              <legend className="text-[0.7rem] font-semibold tracking-[0.16em] text-taupe uppercase">Günler</legend>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    aria-pressed={prefDays.includes(d)}
+                    onClick={() => setPrefDays((l) => toggle(l, d))}
+                    className={cn('border px-4 py-2.5 text-[0.92rem] transition-colors', prefDays.includes(d) ? 'border-espresso bg-espresso text-cream' : 'border-espresso/20 hover:border-espresso/50')}
+                  >
+                    {WEEKDAY_LABEL[d]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="mt-7">
+              <legend className="text-[0.7rem] font-semibold tracking-[0.16em] text-taupe uppercase">Gün içinde</legend>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {DAYPARTS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    aria-pressed={prefParts.includes(p)}
+                    onClick={() => setPrefParts((l) => toggle(l, p))}
+                    className={cn('min-w-36 border px-4 py-2.5 text-left transition-colors', prefParts.includes(p) ? 'border-espresso bg-espresso text-cream' : 'border-espresso/20 hover:border-espresso/50')}
+                  >
+                    <span className="block text-[0.95rem]">{DAYPART_LABEL[p]}</span>
+                    <span className={cn('block text-[0.78rem] tabular-nums', prefParts.includes(p) ? 'text-cream/70' : 'text-taupe')}>{DAYPART_HOURS[p]}</span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </motion.div>
+        )}
+
+        {step === 2 && !pilates && (
           <motion.div key="s2" {...slide}>
             <h3 className="font-display text-[1.9rem] leading-tight font-medium sm:text-[2.2rem]">Size uygun zamanı seçin</h3>
             {cfg.allowRequestWithoutTime && (
@@ -432,9 +559,15 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
           <motion.div key="s3" {...slide}>
             <h3 className="font-display text-[1.9rem] leading-tight font-medium sm:text-[2.2rem]">Sizi nasıl tanıyalım?</h3>
             <p className="mt-2 text-[0.92rem] text-taupe">
-              {MEETING_TYPE_LABEL[meetingType ?? 'IN_PERSON']}
-              {service ? ` · ${service.title}` : ''}
-              {mode === 'slot' && selectedLabel ? ` · ${selectedLabel}, ${time}` : ' · Zaman birlikte planlanacak'}
+              {pilates ? (
+                <>Pilates · {pilatesFormat ? PILATES_FORMAT_LABEL[pilatesFormat] : ''} · {pilatesPreferenceText(prefDays, prefParts)}</>
+              ) : (
+                <>
+                  {MEETING_TYPE_LABEL[meetingType ?? 'IN_PERSON']}
+                  {service ? ` · ${service.title}` : ''}
+                  {mode === 'slot' && selectedLabel ? ` · ${selectedLabel}, ${time}` : ' · Zaman birlikte planlanacak'}
+                </>
+              )}
             </p>
             <div className="mt-7 grid gap-6 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -450,7 +583,7 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
               </FieldShell>
               <div className="sm:col-span-2">
                 <FieldShell label="Mesajınız (isteğe bağlı)" htmlFor="b-msg" error={errors.message} hint="Lütfen bu alanda sağlık durumunuza ilişkin ayrıntı paylaşmayın; bu bilgiler görüşmede konuşulur.">
-                  <textarea id="b-msg" rows={3} className={cn(fieldCls, 'resize-none')} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Görüşme öncesi iletmek istedikleriniz" maxLength={1000} />
+                  <textarea id="b-msg" rows={3} className={cn(fieldCls, 'resize-none')} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder={pilates ? 'Ör. daha önce pilates yaptınız mı, hangi seviyedesiniz?' : 'Görüşme öncesi iletmek istedikleriniz'} maxLength={1000} />
                 </FieldShell>
               </div>
             </div>
@@ -489,7 +622,9 @@ export function BookingForm({ initialServiceId, variant = 'modal', onStepChange 
             <h3 className="mt-7 font-display text-[2.1rem] leading-tight font-medium sm:text-[2.6rem]">Talebiniz alındı.</h3>
             <p className="mt-2 text-[0.75rem] font-semibold tracking-[0.18em] text-rose-ink uppercase">Durum: Onay bekliyor</p>
             <p className="mt-5 max-w-lg text-[1rem] leading-relaxed text-cocoa/80">
-              {result.status === 'NEW_REQUEST'
+              {pilates
+                ? `Pilates talebiniz (${pilatesFormat ? PILATES_FORMAT_LABEL[pilatesFormat].toLocaleLowerCase('tr') : 'ders'}) bize ulaştı. ${pilatesFormat === 'GROUP' ? 'Size uygun bir grup' : 'Uygun bir ders saati'} belirlendiğinde sizinle iletişime geçilecek.`
+                : result.status === 'NEW_REQUEST'
                 ? 'İletişim talebiniz bize ulaştı. Talebiniz incelendikten sonra sizinle iletişime geçilerek görüşme zamanı birlikte belirlenecek.'
                 : `${selectedLabel}, ${time} için talebiniz bize ulaştı. Bu henüz kesinleşmiş bir randevu değildir; uygunluk kontrolünden sonra sizinle iletişime geçilecek.`}
             </p>

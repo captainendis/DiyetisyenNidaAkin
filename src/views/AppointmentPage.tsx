@@ -18,14 +18,16 @@ export default function AppointmentPage() {
   const crumbs = [{ name: 'Randevu', path: '/randevu' }];
   const serviceSlug = params.get('hizmet');
   const serviceId = site.services.find((s) => s.slug === serviceSlug)?.id ?? null;
+  // /randevu?tur=pilates — pilates dersi talebiyle açılır
+  const kind = params.get('tur') === 'pilates' ? 'PILATES' : 'CONSULTATION';
   return (
     <>
-      <Seo title="Randevu Talebi" description="Diyetisyen Nida Akın ile görüşmek için çevrim içi randevu talebi oluşturun." breadcrumbs={crumbs} />
+      <Seo title="Randevu Talebi" description="Diyetisyen Nida Akın ile beslenme görüşmesi ya da pilates dersi için çevrim içi talep oluşturun." breadcrumbs={crumbs} />
       <PageHeader title="Randevu talebi" crumbs={crumbs} lead={site.settings.appointment.formNote} />
       <section className="bg-ivory text-espresso">
         <div className="container-edge grid gap-14 py-16 sm:py-24 lg:grid-cols-12 lg:gap-x-12">
           <div className="lg:col-span-8">
-            <BookingForm key={serviceId ?? 'none'} variant="page" initialServiceId={serviceId} />
+            <BookingForm key={`${kind}-${serviceId ?? 'none'}`} variant="page" initialServiceId={serviceId} initialKind={kind} />
           </div>
           <aside className="hidden lg:col-span-3 lg:col-start-10 lg:block">
             <div className="sticky top-28">

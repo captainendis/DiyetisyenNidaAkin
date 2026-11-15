@@ -18,8 +18,12 @@ import {
   APPOINTMENT_STATUS_LABEL,
   HARD_CONFLICT_STATUSES,
   SLOT_HOLDING_STATUSES,
+  parseDayparts,
+  parseDays,
+  type AppointmentKind,
   type AppointmentStatus,
   type MeetingType,
+  type PilatesFormat,
 } from '../../shared/constants';
 import { formatDateTime, isoWeekday } from '../../shared/time';
 
@@ -36,6 +40,10 @@ export function toDTO(a: AppointmentRow) {
     id: a.id,
     status: a.status as AppointmentStatus,
     meetingType: a.meetingType as MeetingType,
+    kind: a.kind as AppointmentKind,
+    pilatesFormat: a.pilatesFormat as PilatesFormat | null,
+    preferredDays: parseDays(a.preferredDays),
+    preferredDayparts: parseDayparts(a.preferredDayparts),
     source: a.source,
     startsAt: a.startsAt,
     endsAt: a.endsAt,
