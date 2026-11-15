@@ -35,16 +35,16 @@ export function NewPlanModal({
     if (!open) return;
     setQ(''); setClient(null); setAsTemplate(defaultTemplate); setName(''); setErr({});
   }, [open, defaultTemplate]);
+  // Varsayılan kaynak: boş plan (fromId boş); şablon isteğe bağlı seçilir
   useEffect(() => {
-    // Varsayılan kaynak: ilk şablon
-    if (templates.data?.items.length && !fromId) setFromId(templates.data.items[0]!.id);
-  }, [templates.data, fromId]);
+    if (open) setFromId('');
+  }, [open]);
 
   const targetClientId = fixedClientId ?? client?.id ?? null;
 
   const create = async () => {
     setErr({});
-    if (!name.trim()) return setErr({ name: 'Plan adı gerekli (ör. “1. ay, 1. liste”)' });
+    if (!name.trim()) return setErr({ name: 'Plan adı gerekli' });
     if (!asTemplate && !targetClientId) return setErr({ client: 'Bir danışan seçin ya da şablon olarak kaydedin' });
     setPending(true);
     try {
@@ -111,12 +111,12 @@ export function NewPlanModal({
             )}
           </div>
         )}
-        <Input label="Plan adı" required placeholder="1. ay, 1. liste" value={name} maxLength={80} error={err.name} onChange={(e) => setName(e.target.value)} hint="Yalnızca panelde listeleme için kullanılır." />
+        <Input label="Plan adı" required placeholder="Ör. Kasım planı" value={name} maxLength={80} error={err.name} onChange={(e) => setName(e.target.value)} hint="Yalnızca panelde listeleme için kullanılır." />
         <Select
           label="Başlangıç"
           value={fromId}
           onChange={(e) => setFromId(e.target.value)}
-          options={[...(templates.data?.items ?? []).map((t) => ({ value: t.id, label: `Şablon: ${t.name}` })), { value: '', label: 'Boş plan' }]}
+          options={[{ value: '', label: 'Boş plan' }, ...(templates.data?.items ?? []).map((t) => ({ value: t.id, label: `Şablon: ${t.name}` }))]}
           hint="Şablonun içeriği kopyalanır; şablonun kendisi değişmez."
         />
       </div>
