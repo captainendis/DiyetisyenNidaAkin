@@ -54,15 +54,15 @@ DANIŞANLAR İÇİN
 • Bildirimler: Randevun onaylandığında, yeni listen ya da mesajın olduğunda haber verir.
 
 DİYETİSYEN VE EKİBİ İÇİN
-Web panelinin tamamı cepte: günlük gündem, randevu talepleri ve onayları, takvimde sürükle-bırak ile yeniden planlama, danışan dosyası (ölçümler, görüşme notları, dosyalar), beslenme planı düzenleyici ve A4 önizleme, tarif kütüphanesi, pilates grupları ve yoklama, web sitesi içeriği, blog, raporlar ve ayarlar.
+Web panelinin tamamı cepte: günlük gündem, randevu talepleri ve onayları, takvimde sürükle-bırak ile yeniden planlama, danışan takibi (ölçümler, notlar, paylaşılan dosyalar), beslenme planı düzenleyici ve A4 önizleme, tarif kütüphanesi, pilates grupları ve yoklama, web sitesi içeriği, blog, raporlar ve ayarlar.
 
 GÜVENLİK
 • Hesaplar diyetisyen tarafından açılır; uygulamada kayıt olunmaz.
-• Klinik bilgiler sunucuda şifreli saklanır; oturum anahtarı cihazın güvenli deposunda tutulur.
+• Ölçümler, notlar ve mesajlar sunucuda şifreli saklanır; oturum anahtarı cihazın güvenli deposunda tutulur.
 • İsteğe bağlı Face ID / parmak izi kilidi.
 • Reklam, analiz ya da izleme aracı yoktur.
 
-Uygulama tıbbi tavsiye yerine geçmez; beslenme planın diyetisyeninle yaptığın görüşmeye dayanır.
+Uygulama bir beslenme ve kilo takip aracıdır; teşhis veya tedavi amacı taşımaz ve tıbbi tavsiye yerine geçmez. Beslenme planın diyetisyeninle yaptığın görüşmeye dayanır.
 ```
 
 **Anahtar kelimeler (App Store, en fazla 100 karakter, virgülle)**
@@ -107,8 +107,9 @@ standart HTTPS kullanılır).
 | Dosyalar ve belgeler | Uygulama işlevselliği — İsteğe bağlı |
 | Cihaz veya diğer kimlikler | Bildirim adresi — Uygulama işlevselliği — İsteğe bağlı |
 
-**Sağlık uygulamaları beyanı (Play):** "Sağlık ve fitness" → kişisel beslenme takibi / diyetisyen-danışan
-iletişimi. Tıbbi cihaz değildir; teşhis koymaz.
+**Sağlık uygulamaları beyanı (Play):** yalnızca "Beslenme ve kilo yönetimi" (Sağlık ve Fitness). Tıbbi değildir;
+teşhis veya tedavi koymaz. "Sağlık hizmetleri ve yönetimi" gibi **tıbbi** bir özellik işaretlenirse Google, uygulamanın
+kurumsal (organization) geliştirici hesabından yayımlanmasını şart koşar; kişisel hesapta ret gelir (2026-11-21).
 
 **İçerik derecelendirmesi anketi:** şiddet/cinsellik/kumar yok, kullanıcılar arası serbest iletişim yok
 (yalnızca diyetisyen → danışan mesajı) → beklenen sonuç: **3+ / PEGI 3**.

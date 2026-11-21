@@ -9,7 +9,19 @@
  */
 const { withAndroidManifest } = require('@expo/config-plugins');
 
-const OPTIONAL = ['android.hardware.screen.portrait', 'android.hardware.wifi'];
+// Kamera izni (dosya/fotoğraf yükleme) arka kamerayı ve otomatik odağı, parmak izi izni (uygulama kilidi) okuyucuyu
+// Play'de örtük olarak zorunlu kılar; dokunmatik ekran da varsayılan olarak zorunlu sayılır. Bunlar olmayan cihazlar
+// (bazı telefonlar, Chromebook, Android TV) uygulamayı hiç göremiyordu. Hepsi isteğe bağlı özellik.
+const OPTIONAL = [
+  'android.hardware.screen.portrait',
+  'android.hardware.wifi',
+  'android.hardware.camera',
+  'android.hardware.camera.autofocus',
+  'android.hardware.camera.any',
+  'android.hardware.microphone',
+  'android.hardware.fingerprint',
+  'android.hardware.touchscreen',
+];
 
 module.exports = function withOptionalHardware(config) {
   return withAndroidManifest(config, (cfg) => {
