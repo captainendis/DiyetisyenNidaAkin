@@ -7,13 +7,15 @@
  *  - CSRF: oturuma bağlı token. Durum değiştiren her panel isteği "X-CSRF-Token" başlığını taşımalı.
  *    Token, /api/auth/me yanıtında döner (cookie'ye yazılmaz).
  *  - Kayan süre: aktif kullanımda son görülme güncellenir; mutlak süre dolunca oturum biter.
+ *  - Mobil uygulama: cookie yerine "Authorization: Bearer" (bkz. lib/http.ts → isMobileClient). Token yalnızca
+ *    giriş yanıtında bir kez döner; DB'de yine yalnızca özeti tutulur. CSRF başlığı mobilde de zorunludur.
  */
 import { createMiddleware } from 'hono/factory';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { prisma } from '../lib/db';
 import { env } from '../lib/env';
 import { randomToken, safeEqual, sha256 } from '../lib/crypto';
-import { clientIp, forbidden, unauthorized, userAgent, type AppEnv, type Ctx } from '../lib/http';
+import { bearerToken, clientIp, forbidden, isMobileClient, unauthorized, userAgent, type AppEnv, type Ctx } from '../lib/http';
 import type { Permission } from './permissions';
 
 export const SESSION_COOKIE = 'na_sid';
@@ -30,7 +32,9 @@ export interface AuthUser {
   csrfToken: string;
 }
 
-export async function createSession(c: Ctx, userId: string, remember: boolean) {
+export async function createSession(c: Ctx, userId: string, rememberMe: boolean) {
+  const mobile = isMobileClient(c);
+  const remember = rememberMe || mobile;
   const token = randomToken(32);
   const csrfToken = randomToken(24);
   const ttlMs = remember ? env.SESSION_REMEMBER_DAYS * 864e5 : env.SESSION_TTL_HOURS * 36e5;
@@ -46,6 +50,8 @@ export async function createSession(c: Ctx, userId: string, remember: boolean) {
       userAgent: userAgent(c),
     },
   });
+  // Mobil uygulama: token yanıt gövdesinde döner (cookie yazılmaz)
+  if (mobile) return { csrfToken, token, expiresAt };
   setCookie(c, SESSION_COOKIE, token, {
     httpOnly: true,
     secure: env.isProd,
@@ -54,18 +60,21 @@ export async function createSession(c: Ctx, userId: string, remember: boolean) {
     // "Beni hatırla" seçilmediyse tarayıcı oturumu cookie'si (tarayıcı kapanınca silinir)
     ...(remember ? { expires: expiresAt } : {}),
   });
-  return { csrfToken };
+  return { csrfToken, token: null, expiresAt };
 }
 
+/** Oturum token'ı: mobilde Authorization: Bearer, tarayıcıda cookie */
+const sessionToken = (c: Ctx) => bearerToken(c) ?? getCookie(c, SESSION_COOKIE);
+
 export async function destroySession(c: Ctx) {
-  const token = getCookie(c, SESSION_COOKIE);
+  const token = sessionToken(c);
   if (token) await prisma.session.deleteMany({ where: { tokenHash: sha256(token) } });
   deleteCookie(c, SESSION_COOKIE, { path: '/', httpOnly: true, secure: env.isProd, sameSite: 'Strict' });
 }
 
-/** Cookie varsa oturumu çözer ve c.var.user'ı doldurur (zorunlu kılmaz) */
+/** Cookie (ya da mobilde Bearer token) varsa oturumu çözer ve c.var.user'ı doldurur (zorunlu kılmaz) */
 export const loadSession = createMiddleware<AppEnv>(async (c, next) => {
-  const token = getCookie(c, SESSION_COOKIE);
+  const token = sessionToken(c);
   if (!token) return next();
   const session = await prisma.session.findUnique({
     where: { tokenHash: sha256(token) },

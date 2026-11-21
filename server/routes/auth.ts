@@ -49,12 +49,13 @@ authRouter.post('/login', loginLimiter, async (c) => {
     where: { id: user.id },
     data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() },
   });
-  await createSession(c, user.id, remember);
+  const session = await createSession(c, user.id, remember);
   // Oturum bu istekte henüz yüklenmedi; denetim kaydı için kullanıcıyı geçici olarak bağla
   c.set('user', { id: user.id } as never);
-  await audit(c, 'auth.login', 'user', user.id, { remember });
+  await audit(c, 'auth.login', 'user', user.id, { remember, mobile: !!session.token });
   c.set('user', undefined);
-  return c.json({ ok: true });
+  // Mobil uygulama: ham token + CSRF yalnızca burada bir kez döner
+  return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken, expiresAt: session.expiresAt.toISOString() } : { ok: true });
 });
 
 authRouter.post('/logout', async (c) => {
@@ -133,7 +134,8 @@ authRouter.post('/change-password', requireAuth, async (c) => {
   // passwordChangedAt'ten önce oluşturulan tüm oturumlar geçersiz olur → mevcut oturumu yeniden oluştur
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash, passwordChangedAt: new Date() } });
   await prisma.session.deleteMany({ where: { userId: user.id } });
-  const { csrfToken } = await createSession(c, user.id, false);
+  const { csrfToken, token } = await createSession(c, user.id, false);
   await audit(c, 'auth.password_changed', 'user', user.id);
-  return c.json({ ok: true, csrfToken });
+  // Tüm oturumlar kapandı; mobil uygulama yeni token'ı saklar
+  return c.json(token ? { ok: true, csrfToken, token } : { ok: true, csrfToken });
 });

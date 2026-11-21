@@ -94,9 +94,10 @@ portalRouter.post('/auth/login', loginLimiter, async (c) => {
     throw generic;
   }
   await prisma.clientAccount.update({ where: { id: account.id }, data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() } });
-  await createClientSession(c, account.id, remember);
-  await portalAudit(c, 'portal.login', account.id, { remember });
-  return c.json({ ok: true });
+  const session = await createClientSession(c, account.id, remember);
+  await portalAudit(c, 'portal.login', account.id, { remember, mobile: !!session.token });
+  // Mobil uygulama: ham token + CSRF yalnızca burada bir kez döner
+  return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken, expiresAt: session.expiresAt.toISOString() } : { ok: true });
 });
 
 portalRouter.post('/auth/logout', async (c) => {
@@ -173,9 +174,9 @@ portalRouter.post('/auth/set-password', passwordResetLimiter, async (c) => {
     prisma.clientAccountToken.updateMany({ where: { accountId: t.accountId, usedAt: null }, data: { usedAt: now } }),
     prisma.clientSession.deleteMany({ where: { accountId: t.accountId } }),
   ]);
-  await createClientSession(c, t.accountId, false);
+  const session = await createClientSession(c, t.accountId, false);
   await portalAudit(c, t.purpose === 'ACTIVATE' ? 'portal.activated' : 'portal.password_reset', t.accountId);
-  return c.json({ ok: true });
+  return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken } : { ok: true });
 });
 
 portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (c) => {
@@ -213,9 +214,9 @@ portalRouter.post('/auth/change-password', async (c) => {
     prisma.clientAccount.update({ where: { id: account.id }, data: { passwordHash: await hashPassword(newPassword), passwordChangedAt: changedAt } }),
     prisma.clientSession.deleteMany({ where: { accountId: account.id } }),
   ]);
-  await createClientSession(c, account.id, false);
+  const session = await createClientSession(c, account.id, false);
   await portalAudit(c, 'portal.password_changed', account.id);
-  return c.json({ ok: true });
+  return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken } : { ok: true });
 });
 
 // ───────────────────────── Yardımcılar ─────────────────────────
