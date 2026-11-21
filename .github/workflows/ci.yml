@@ -85,3 +85,39 @@ jobs:
           NODE_ENV: production
           APP_REVISION: ${{ github.sha }}
         run: npm run build
+
+  mobile:
+    name: Mobil uygulama (tip kontrolü + paket)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Bağımlılıklar
+        run: npm ci --no-audit --no-fund
+
+      - name: Tip kontrolü
+        run: npx tsc --noEmit
+
+      # A4 önizlemedeki sığdırma betiği shared/plan-template.ts'ten üretilir — güncel mi?
+      - name: Üretilen dosyalar güncel
+        run: |
+          npm run gen:fit
+          git diff --exit-code -- src/features/plans/fitScript.generated.ts
+
+      # Metro paketi (Android + iOS) derlenebiliyor mu — ../shared çözümü dahil
+      - name: Paket derlemesi
+        env:
+          CI: 1
+        run: |
+          npx expo export --platform android --output-dir /tmp/expo-android
+          npx expo export --platform ios --output-dir /tmp/expo-ios

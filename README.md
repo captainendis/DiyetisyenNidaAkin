@@ -22,12 +22,13 @@ Diyetisyen Nida Akın için geliştirilmiş, **premium editorial tasarımlı her
 9. [Randevu sistemi nasıl çalışır](#randevu-sistemi-nasıl-çalışır)
    - [Pilates (grup dersleri)](#pilates-grup-dersleri)
 10. [Güvenlik ve KVKK](#güvenlik-ve-kvkk)
-11. [API özeti](#api-özeti)
-12. [Test](#test)
-13. [Üretim derlemesi ve dağıtım](#üretim-derlemesi-ve-dağıtım)
-14. [Yedekleme ve veri saklama](#yedekleme-ve-veri-saklama)
-15. [Görseller](#görseller)
-16. [Yayın öncesi kontrol listesi](#yayın-öncesi-kontrol-listesi)
+11. [Mobil uygulama](#mobil-uygulama)
+12. [API özeti](#api-özeti)
+13. [Test](#test)
+14. [Üretim derlemesi ve dağıtım](#üretim-derlemesi-ve-dağıtım)
+15. [Yedekleme ve veri saklama](#yedekleme-ve-veri-saklama)
+16. [Görseller](#görseller)
+17. [Yayın öncesi kontrol listesi](#yayın-öncesi-kontrol-listesi)
 
 ---
 
@@ -78,6 +79,7 @@ Tek bir Node süreci (Next.js) hem sayfaları hem API'yi sunar; Docker gerekmez.
 │   ├── data/                  # SiteContext (panelden yönetilen içerik)
 │   ├── lib/router.tsx         # Link / useNavigate / useParams … (next/navigation üzerinde)
 │   ├── config/ hooks/ styles/
+├── mobile/                    # iOS + Android uygulaması (Expo) — danışan ve panel girişi
 ├── scripts/                   # create-admin, reset-password, retention, backup, migrate-pg-to-mysql, prepare-images
 ├── public/                    # Statik dosyalar: görseller (AVIF + WebP), favicon, yazdırma fontları
 └── assets-src/                # Kaynak görseller
@@ -132,6 +134,7 @@ Tam liste ve açıklamalar `.env.example` içindedir.
 | `UPLOAD_DIR` | ✔ (üretim) | Yüklemeler (varsayılan `./storage`). Üretimde uygulama klasörünün **dışında mutlak bir yol** verin (derlemede silinmesin). `private/` alt klasörü şifreli danışan dosyalarıdır, asla statik servis edilmez |
 | `SMTP_*`, `MAIL_FROM` | | İsteğe bağlı. Boşsa e-posta **gönderilmez** ve sistem gönderiyormuş gibi davranmaz |
 | `DEMO_MODE` | | `true` ise panelde "Demo modu" uyarısı görünür ve demo seed çalıştırılabilir |
+| `APPLE_TEAM_ID` / `ANDROID_CERT_SHA256` | | İsteğe bağlı. E-postadaki bağlantıların mobil uygulamada açılması için (bkz. [Mobil uygulama](#mobil-uygulama)) |
 
 ## Veritabanı ve migration
 
@@ -357,6 +360,51 @@ sağlık verisi tutulmaz, yalnızca katılım bilgisi.
 > envanteri, VERBİS yükümlülüğü, saklama-imha politikası ve yurt dışı aktarım (barındırma/e-posta sağlayıcısı)
 > değerlendirmesi yayın öncesinde bir hukuk uzmanı tarafından yapılmalıdır.
 
+## Mobil uygulama
+
+`mobile/` klasöründe **iOS ve Android** için tek bir Expo (React Native) uygulaması vardır: açılışta
+**Danışan girişi** (Hesabım) ya da **Nida Akın & ekip** (Panel) seçilir. Web panelinin ve Hesabım'ın tüm
+özellikleri mobilde de bulunur; aynı API'yi kullanır. Kurulum, derleme (EAS) ve geliştirme kuralları:
+[mobile/README.md](mobile/README.md).
+
+**Mobil oturum (API):** tarayıcı cookie kullanır; mobil uygulama cookie kullanmaz. Giriş isteği
+`X-App-Client: mobile` başlığını taşırsa (`POST /api/auth/login`, `POST /api/portal/auth/login`,
+`POST /api/portal/auth/set-password`) yanıt gövdesinde `{ token, csrfToken, expiresAt }` döner ve cookie yazılmaz.
+Sonraki isteklerde `Authorization: Bearer <token>` gönderilir; durum değiştiren isteklerde `X-CSRF-Token`
+mobilde de zorunludur. Mobil oturumlar "beni hatırla" süresiyle (`SESSION_REMEMBER_DAYS`) açılır; veritabanında
+yine yalnızca token özeti tutulur. Şifre değişikliği tüm oturumları kapatır ve yanıtta yeni token döner.
+Personel token'ı danışan uçlarını, danışan token'ı personel uçlarını açmaz (`tests/mobile-auth.integration.test.ts`).
+
+**Anlık bildirim (push):** mobil uygulama girişten sonra bildirim izni ister ve Expo push token'ını kaydeder
+(personel `POST /api/devices`, danışan `POST /api/portal/devices`; çıkışta `DELETE …/devices/:token`). Aynı telefon
+başka hesapla girerse token yeni hesaba taşınır. Sunucu (`server/services/push.ts`) Expo Push Service'e arka planda
+gönderir, hata isteği bozmaz; Expo `DeviceNotRegistered` dönerse token silinir.
+- **Personel:** her panel bildirimi (yeni talep, onay, iptal, yaklaşan randevu, yeni danışan) — Ayarlar → Bildirim
+  tercihleri'ndeki **Mobil** sütunuyla olay bazında kapatılabilir (varsayılan açık).
+- **Danışan:** randevu onaylandı / saati değişti / iptal edildi, yeni beslenme listesi, diyetisyenden yeni mesaj,
+  yaklaşan randevu hatırlatması, pilates dersi iptali. Metinde sağlık bilgisi ya da mesaj içeriği yer almaz.
+- Bildirime dokununca `data.url` ekranı açılır (ör. `/panel/randevular/<id>`, `/hesabim/mesajlar`).
+- Kurulum: `cd mobile && npx eas-cli init` (app.json'a `extra.eas.projectId` yazar; yoksa uygulama kaydı atlar),
+  Android için FCM anahtarı `npx eas-cli credentials` ile yüklenir, iOS APNs anahtarını EAS derlemede yönetir.
+  `EXPO_ACCESS_TOKEN` yalnızca Expo hesabında "Enhanced push security" açıksa gerekir (`.env.example`).
+
+**E-postadaki bağlantılar uygulamada açılır (iOS Universal Links · Android App Links).** Sunucunun e-postaladığı
+tek kullanımlık bağlantılar — danışan daveti `/hesabim/etkinlestir?token=…`, danışan şifre sıfırlama
+`/hesabim/sifre-sifirla?token=…`, personel şifre sıfırlama `/panel/sifre-sifirla?token=…` — uygulama yüklü bir
+telefonda doğrudan uygulamada açılır; uygulama yoksa ya da masaüstünde web sayfası açılır. Sitenin geri kalanı
+her zaman tarayıcıda açılır. Site bunun için iki doğrulama dosyası sunar (`src/app/.well-known/`):
+
+| Dosya | Ortam değişkeni | Değer nereden alınır |
+| --- | --- | --- |
+| `/.well-known/apple-app-site-association` | `APPLE_TEAM_ID` | Apple Developer → Account → **Membership details → Team ID** (10 karakter) |
+| `/.well-known/assetlinks.json` | `ANDROID_CERT_SHA256` | Google Play Console → uygulama → **Test ve yayınlama → Uygulama bütünlüğü → Uygulama imzalama** → "SHA-256 sertifika parmak izi" (Play imzalama anahtarı). Yerel/EAS dahili derlemeler için `npx eas-cli credentials` → Android → keystore'un SHA-256'sı. Birden fazla değeri virgülle ayırın |
+
+Değişken boşsa ilgili dosya 404 döner ve bağlantılar yalnızca tarayıcıda açılır. Değişkeni girip uygulamayı
+yeniden başlattıktan sonra kontrol: `curl -i https://nidaakin.com/.well-known/apple-app-site-association`
+(200, `application/json`, yönlendirme yok). Apple dosyayı CDN'den önbelleğe alır; değişiklik cihazlara birkaç
+saat içinde ulaşabilir. Uygulamadaki karşılığı `mobile/app.json` (`ios.associatedDomains`,
+`android.intentFilters`) ve `mobile/src/app/+native-intent.tsx`'tir — bkz. [mobile/README.md](mobile/README.md).
+
 ## API özeti
 
 Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } }` — doğrulama hatalarında
@@ -367,7 +415,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 
 | Yöntem | Yol | Açıklama |
 | --- | --- | --- |
-| POST | `/login` | `{ email, password, remember }` → oturum cookie'si. 401 hatalı bilgi · 423 hesap kilitli · 429 hız sınırı |
+| POST | `/login` | `{ email, password, remember }` → oturum cookie'si (mobil uygulamada token, bkz. [Mobil uygulama](#mobil-uygulama)). 401 hatalı bilgi · 423 hesap kilitli · 429 hız sınırı |
 | POST | `/logout` | Oturumu kapatır |
 | GET | `/me` | Kullanıcı, izinler ve CSRF token'ı |
 | POST | `/forgot-password` · `/reset-password` · `/change-password` | Şifre işlemleri |
@@ -401,6 +449,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/home` · `GET /api/public/recipes/:slug` |
 | Pilates (grup dersleri) | `GET/POST /api/classes/groups` · `GET/PATCH/DELETE /groups/:id` · `PUT /groups/:id/members` · `POST /groups/:id/recurring` · `GET/POST /api/classes/sessions` (`?from&to&groupId&clientId&includeCancelled`) · `GET/PATCH/DELETE /sessions/:id` · `POST /sessions/:id/status` · `POST /sessions/:id/attendees` · `PATCH/DELETE /sessions/:id/attendees/:clientId` · `GET /clients/:clientId` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
+| Mobil cihazlar | `POST /api/devices` `{ token, platform }` · `DELETE /api/devices/:token` (ya da gövdede `token`) — danışan: `/api/portal/devices` |
 <!-- api:end -->
 
 ## Test
@@ -441,7 +490,7 @@ npm start              # = node .next/standalone/server.js  (PORT, varsayılan 3
    Startup file: `app.cjs` (standalone sunucuyu başlatan küçük CommonJS dosyası).
 4. Ortam değişkenlerini aynı ekrandan girin: `NODE_ENV=production`, `DATABASE_URL`, `DATA_ENCRYPTION_KEY`,
    `PUBLIC_SITE_URL`, `TRUST_PROXY=1`, `UPLOAD_DIR=/home/KULLANICI/nidaakin-storage` (uygulama klasörünün dışında),
-   isteğe bağlı `SMTP_*`.
+   isteğe bağlı `SMTP_*`, `APPLE_TEAM_ID`, `ANDROID_CERT_SHA256`.
 5. Terminalde `npm run db:deploy`, ilk kurulumda `npm run prod:seed` ve `npm run prod:admin:create`; ardından
    **Restart**.
 

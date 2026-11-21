@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
   // Çıktıya taşınmaması gerekenler: yüklenen (şifreli) dosyalar, yedekler, belgeler, kaynak/test klasörleri
   outputFileTracingExcludes: {
     // Dikkat: 'dist' gibi genel adlar node_modules/next/dist ile de eşleşir; buraya eklemeyin
-    '*': ['./storage/**', './backups/**', './docs/**', './tests/**', './src/**', './assets-src/**', './scripts/**', './prisma/migrations/**', './coverage/**'],
+    '*': ['./storage/**', './backups/**', './docs/**', './tests/**', './src/**', './assets-src/**', './scripts/**', './prisma/migrations/**', './coverage/**', './mobile/**'],
   },
   // Tip denetimi ayrıca yapılır (npm run typecheck)
   typescript: { ignoreBuildErrors: true },

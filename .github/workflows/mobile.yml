@@ -1,0 +1,261 @@
+# Copyright (c) 2026 Nida Akın. All rights reserved.
+# Developed by PaperAxis · paperaxis.com
+#
+# Mobil uygulama derlemesi — GitHub'ın kendi runner'larında (EAS bulut derlemesi gerekmez).
+#  - Android (ubuntu): APK (doğrudan kurulum) + AAB (Google Play). Play'e yükleme isteğe bağlı.
+#  - iOS (macOS): IPA → doğrudan TestFlight'a yükleme (App Store Connect API anahtarıyla otomatik imza).
+#
+# Ne zaman çalışır?
+#  - mobile/ veya shared/ değişen her push'ta: yalnızca Android doğrulama derlemesi (imza sırrı yoksa debug imzası)
+#  - Actions → "Mobil derleme" → Run workflow: platform ve Play kanalı seçilerek elle
+#  - "mobile-v*" etiketi (ör. mobile-v1.0.0): iki platform + mağazalara yükleme
+#
+# Gerekli sırlar (Settings → Secrets and variables → Actions) — kurulum: docs/MOBIL-DERLEME.md
+#  Android imza : ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#  Google Play  : PLAY_SERVICE_ACCOUNT_JSON
+#  Bildirim     : GOOGLE_SERVICES_JSON (Firebase, Android) · değişken EAS_PROJECT_ID (Expo push)
+#  iOS          : APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (App Store Connect API anahtarı, "Admin" rolü)
+name: Mobil derleme
+
+on:
+  push:
+    # Not: "tags" tek başına verilirse dal push'ları tetiklemez — dallar da açıkça listelenmeli.
+    # (Etiket push'larında "paths" değerlendirilmez.)
+    branches: ['**']
+    tags: ['mobile-v*']
+    paths: ['mobile/**', 'shared/**', '.github/workflows/mobile.yml']
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform
+        type: choice
+        options: [android, ios, both]
+        default: android
+      play_track:
+        description: Google Play kanalı (boş = yükleme yok)
+        type: choice
+        options: ['', internal, alpha, beta, production]
+        default: ''
+      play_status:
+        description: Play sürüm durumu (uygulama henüz yayınlanmadıysa "draft" olmalı)
+        type: choice
+        options: [draft, completed]
+        default: draft
+      testflight:
+        description: iOS derlemesini TestFlight'a yükle
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  # Mağaza derleme numarası: her çalıştırmada artar (Android versionCode / iOS buildNumber)
+  BUILD_NUMBER: ${{ github.run_number }}
+  EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
+  CI: 1
+
+jobs:
+  android:
+    name: Android (APK + AAB)
+    if: github.event_name != 'workflow_dispatch' || inputs.platform != 'ios'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Bağımlılıklar
+        run: npm ci --no-audit --no-fund
+
+      - name: Tip kontrolü
+        run: npx tsc --noEmit
+
+      # Sırlar varsa: imza anahtarı ve Firebase yapılandırması (dosyalar runner'da kalır, depoya girmez)
+      - name: İmza ve Firebase dosyaları
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.keystore"
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.keystore" >> "$GITHUB_ENV"
+            echo "::notice::Sürüm imzası: yükleme anahtarı"
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 yok — debug imzalı derleme (yalnızca test için, Play kabul etmez)"
+          fi
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > "$RUNNER_TEMP/google-services.json"
+            echo "GOOGLE_SERVICES_JSON_PATH=$RUNNER_TEMP/google-services.json" >> "$GITHUB_ENV"
+          else
+            echo "::warning::GOOGLE_SERVICES_JSON yok — Android'de anlık bildirim çalışmaz"
+          fi
+
+      - name: Yerel proje (expo prebuild)
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Derleme
+        working-directory: mobile/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          NODE_ENV: production
+        run: ./gradlew assembleRelease bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64
+
+      - name: Dosyaları adlandır
+        id: out
+        run: |
+          V=$(node -p "require('./app.json').expo.version")
+          mkdir -p "$RUNNER_TEMP/out"
+          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/out/nida-akin-$V-$BUILD_NUMBER.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/out/nida-akin-$V-$BUILD_NUMBER.aab"
+          echo "dir=$RUNNER_TEMP/out" >> "$GITHUB_OUTPUT"
+          echo "aab=$RUNNER_TEMP/out/nida-akin-$V-$BUILD_NUMBER.aab" >> "$GITHUB_OUTPUT"
+          ls -la "$RUNNER_TEMP/out"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ github.run_number }}
+          path: ${{ steps.out.outputs.dir }}
+          retention-days: 30
+
+      # Play'e yükleme: elle seçilen kanal ya da mobile-v* etiketi (dahili test kanalı)
+      - name: Google Play'e yükle
+        if: (inputs.play_track != '' && inputs.play_track != null) || startsWith(github.ref, 'refs/tags/mobile-v')
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.nidaakin.app
+          releaseFiles: ${{ steps.out.outputs.aab }}
+          track: ${{ inputs.play_track || 'internal' }}
+          status: ${{ inputs.play_status || 'draft' }}
+
+  ios:
+    name: iOS (IPA → TestFlight)
+    # macOS dakikaları pahalıdır: yalnızca elle ya da etiketle
+    if: (github.event_name == 'workflow_dispatch' && inputs.platform != 'android') || startsWith(github.ref, 'refs/tags/mobile-v')
+    runs-on: macos-15
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Bağımlılıklar
+        run: npm ci --no-audit --no-fund
+
+      - name: App Store Connect API anahtarı
+        id: asc
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          if [ -z "$APPLE_TEAM_ID" ] || [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_ISSUER_ID" ] || [ -z "$ASC_KEY_P8" ]; then
+            echo "::warning::Apple sırları eksik — imzasız simülatör derlemesi yapılacak (yalnızca derlenebilirlik denetimi)"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_KEY_P8" > "$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8"
+          echo "key=$RUNNER_TEMP/asc/AuthKey_$ASC_KEY_ID.p8" >> "$GITHUB_OUTPUT"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Yerel proje (expo prebuild + CocoaPods)
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Çalışma alanı
+        id: ws
+        run: |
+          WS=$(ls -d ios/*.xcworkspace | head -1)
+          echo "workspace=$WS" >> "$GITHUB_OUTPUT"
+          echo "scheme=$(basename "$WS" .xcworkspace)" >> "$GITHUB_OUTPUT"
+
+      - name: Simülatör derlemesi (imzasız)
+        if: steps.asc.outputs.signed != 'true'
+        run: |
+          set -o pipefail
+          xcodebuild -workspace "${{ steps.ws.outputs.workspace }}" -scheme "${{ steps.ws.outputs.scheme }}" \
+            -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -50
+
+      - name: Arşiv (otomatik imza)
+        if: steps.asc.outputs.signed == 'true'
+        run: |
+          set -o pipefail
+          xcodebuild -workspace "${{ steps.ws.outputs.workspace }}" -scheme "${{ steps.ws.outputs.scheme }}" \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/NidaAkin.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${{ steps.asc.outputs.key }}" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            archive | tail -80
+
+      - name: IPA (ve TestFlight'a yükleme)
+        if: steps.asc.outputs.signed == 'true'
+        env:
+          UPLOAD: ${{ (github.event_name == 'workflow_dispatch' && inputs.testflight) || startsWith(github.ref, 'refs/tags/mobile-v') }}
+        run: |
+          set -o pipefail
+          DEST=export; [ "$UPLOAD" = "true" ] && DEST=upload
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>$DEST</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/NidaAkin.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/ipa" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${{ steps.asc.outputs.key }}" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" | tail -40
+          [ "$DEST" = "upload" ] && echo "::notice::TestFlight'a yüklendi (işlenmesi 10–30 dk sürebilir)"
+          ls -la "$RUNNER_TEMP/ipa" || true
+
+      - uses: actions/upload-artifact@v4
+        if: steps.asc.outputs.signed == 'true'
+        with:
+          name: ios-${{ github.run_number }}
+          path: ${{ runner.temp }}/ipa
+          retention-days: 30
+          if-no-files-found: ignore

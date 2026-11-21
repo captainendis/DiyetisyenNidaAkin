@@ -31,6 +31,7 @@ import { recipesRouter } from './routes/recipes';
 import { portalRouter } from './routes/portal';
 import { clientPortalAdminRouter } from './routes/client-portal-admin';
 import { classesRouter } from './routes/classes';
+import { staffDevicesRouter } from './routes/devices';
 
 /** Oturum + CSRF gerektiren personel uçları */
 const STAFF: [string, Hono<AppEnv>][] = [
@@ -49,6 +50,8 @@ const STAFF: [string, Hono<AppEnv>][] = [
   ['/plans', plansRouter],
   ['/recipes', recipesRouter],
   ['/classes', classesRouter],
+  // Mobil anlık bildirim cihaz kaydı (Expo push token)
+  ['/devices', staffDevicesRouter],
 ];
 
 function build() {

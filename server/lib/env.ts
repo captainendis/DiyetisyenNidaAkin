@@ -24,6 +24,8 @@ const schema = z.object({
   SMTP_PASS: z.string().optional().default(''),
   MAIL_FROM: z.string().optional().default(''),
   DEMO_MODE: z.string().optional().default('false').transform((v) => v === 'true'),
+  /** Mobil anlık bildirim: Expo hesabında "Enhanced push security" açıksa gerekli (isteğe bağlı) */
+  EXPO_ACCESS_TOKEN: z.string().optional().default(''),
 });
 
 const parsed = schema.safeParse(process.env);

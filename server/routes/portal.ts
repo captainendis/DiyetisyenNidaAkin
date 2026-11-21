@@ -49,6 +49,7 @@ import type { PortalClassSession } from '../../shared/classes';
 import { CLASS_SEAT_HOLDING, DAYPARTS, PILATES_FORMAT_LABEL, parseDayparts, parseDays, pilatesPreferenceText } from '../../shared/constants';
 import { notifyStaff } from '../services/notifications';
 import { publicFormLimiter } from '../middleware/rate-limit';
+import { portalDevicesRouter } from './devices';
 
 const MAX_FAILED = 5;
 const LOCK_MINUTES = 15;
@@ -94,9 +95,10 @@ portalRouter.post('/auth/login', loginLimiter, async (c) => {
     throw generic;
   }
   await prisma.clientAccount.update({ where: { id: account.id }, data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: new Date() } });
-  await createClientSession(c, account.id, remember);
-  await portalAudit(c, 'portal.login', account.id, { remember });
-  return c.json({ ok: true });
+  const session = await createClientSession(c, account.id, remember);
+  await portalAudit(c, 'portal.login', account.id, { remember, mobile: !!session.token });
+  // Mobil uygulama: ham token + CSRF yalnızca burada bir kez döner
+  return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken, expiresAt: session.expiresAt.toISOString() } : { ok: true });
 });
 
 portalRouter.post('/auth/logout', async (c) => {
@@ -128,8 +130,9 @@ async function clientPrograms(clientId: string) {
 portalRouter.get('/auth/me', async (c) => {
   const u = c.var.portalUser;
   if (!u) throw unauthorized();
-  const programs = await clientPrograms(u.clientId);
-  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, csrfToken: u.csrfToken, programs } });
+  const [programs, client] = await Promise.all([clientPrograms(u.clientId), prisma.client.findUnique({ where: { id: u.clientId }, select: { phone: true } })]);
+  // phone: randevu talebi formunu (mobil uygulama) önceden doldurmak için — danışanın kendi kaydı
+  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, phone: client?.phone ?? null, csrfToken: u.csrfToken, programs } });
 });
 
 async function findValidToken(token: string) {
@@ -173,9 +176,9 @@ portalRouter.post('/auth/set-password', passwordResetLimiter, async (c) => {
     prisma.clientAccountToken.updateMany({ where: { accountId: t.accountId, usedAt: null }, data: { usedAt: now } }),
     prisma.clientSession.deleteMany({ where: { accountId: t.accountId } }),
   ]);
-  await createClientSession(c, t.accountId, false);
+  const session = await createClientSession(c, t.accountId, false);
   await portalAudit(c, t.purpose === 'ACTIVATE' ? 'portal.activated' : 'portal.password_reset', t.accountId);
-  return c.json({ ok: true });
+  return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken } : { ok: true });
 });
 
 portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (c) => {
@@ -201,6 +204,9 @@ portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (c) => {
 // ── Bundan sonraki her uç danışan oturumu gerektirir ──
 portalRouter.use('*', requireClientAuth);
 
+// Mobil anlık bildirim cihaz kaydı: POST /api/portal/devices · DELETE /api/portal/devices/:token
+portalRouter.route('/devices', portalDevicesRouter);
+
 portalRouter.post('/auth/change-password', async (c) => {
   const { currentPassword, newPassword } = parse(portalChangePasswordSchema, await body(c));
   const u = portalUser(c);
@@ -213,9 +219,9 @@ portalRouter.post('/auth/change-password', async (c) => {
     prisma.clientAccount.update({ where: { id: account.id }, data: { passwordHash: await hashPassword(newPassword), passwordChangedAt: changedAt } }),
     prisma.clientSession.deleteMany({ where: { accountId: account.id } }),
   ]);
-  await createClientSession(c, account.id, false);
+  const session = await createClientSession(c, account.id, false);
   await portalAudit(c, 'portal.password_changed', account.id);
-  return c.json({ ok: true });
+  return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken } : { ok: true });
 });
 
 // ───────────────────────── Yardımcılar ─────────────────────────

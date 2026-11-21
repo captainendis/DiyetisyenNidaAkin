@@ -121,6 +121,22 @@ export function clientIp(c: Ctx): string | null {
 
 export const userAgent = (c: Ctx) => c.req.header('user-agent')?.slice(0, 300) ?? null;
 
+// ───────────────────────── Mobil uygulama ─────────────────────────
+
+/**
+ * Mobil uygulama (Expo) istekleri "X-App-Client: mobile" başlığını taşır. Uygulamada cookie yoktur:
+ * oturum açılınca ham token yanıt gövdesinde döner ve cihazın güvenli deposunda (Keychain/Keystore) saklanır,
+ * sonraki isteklerde "Authorization: Bearer <token>" olarak gönderilir. Mobil oturumlar her zaman "beni hatırla"dır.
+ */
+export const isMobileClient = (c: Ctx) => c.req.header('x-app-client') === 'mobile';
+
+/** Authorization: Bearer <token> (yoksa null). Biçim bozuksa da null — cookie yoluna düşülür. */
+export function bearerToken(c: Ctx): string | null {
+  const h = c.req.header('authorization') ?? '';
+  const m = /^Bearer ([A-Za-z0-9_-]{20,200})$/.exec(h);
+  return m ? m[1]! : null;
+}
+
 // ───────────────────────── Dosya yükleme / indirme ─────────────────────────
 
 export interface UploadedFile {

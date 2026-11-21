@@ -8,13 +8,14 @@
  *  - Aynı güvenlik kuralları: HttpOnly + SameSite=Strict cookie, DB'de yalnızca SHA-256 özeti,
  *    durum değiştiren isteklerde oturuma bağlı CSRF token, şifre değişince eski oturumlar geçersiz.
  *  - Danışan kaydı arşivlenmiş ya da hesap kapatılmışsa oturum düşer.
+ *  - Mobil uygulama: cookie yerine "Authorization: Bearer" (bkz. lib/http.ts → isMobileClient).
  */
 import { createMiddleware } from 'hono/factory';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { prisma } from '../lib/db';
 import { env } from '../lib/env';
 import { randomToken, safeEqual, sha256 } from '../lib/crypto';
-import { clientIp, forbidden, unauthorized, userAgent, type AppEnv, type Ctx } from '../lib/http';
+import { bearerToken, clientIp, forbidden, isMobileClient, unauthorized, userAgent, type AppEnv, type Ctx } from '../lib/http';
 
 export const CLIENT_SESSION_COOKIE = 'na_csid';
 
@@ -30,7 +31,9 @@ export interface PortalUser {
 
 const cookieOpts = () => ({ httpOnly: true, secure: env.isProd, sameSite: 'Strict' as const, path: '/' });
 
-export async function createClientSession(c: Ctx, accountId: string, remember: boolean) {
+export async function createClientSession(c: Ctx, accountId: string, rememberMe: boolean) {
+  const mobile = isMobileClient(c);
+  const remember = rememberMe || mobile;
   const token = randomToken(32);
   const csrfToken = randomToken(24);
   const ttlMs = remember ? env.SESSION_REMEMBER_DAYS * 864e5 : env.SESSION_TTL_HOURS * 36e5;
@@ -46,18 +49,24 @@ export async function createClientSession(c: Ctx, accountId: string, remember: b
       userAgent: userAgent(c),
     },
   });
+  // Mobil uygulama: token yanıt gövdesinde döner (cookie yazılmaz)
+  if (mobile) return { token, csrfToken, expiresAt };
   setCookie(c, CLIENT_SESSION_COOKIE, token, { ...cookieOpts(), ...(remember ? { expires: expiresAt } : {}) });
+  return { token: null, csrfToken, expiresAt };
 }
 
+/** Oturum token'ı: mobilde Authorization: Bearer, tarayıcıda cookie */
+const clientSessionToken = (c: Ctx) => bearerToken(c) ?? getCookie(c, CLIENT_SESSION_COOKIE);
+
 export async function destroyClientSession(c: Ctx) {
-  const token = getCookie(c, CLIENT_SESSION_COOKIE);
+  const token = clientSessionToken(c);
   if (token) await prisma.clientSession.deleteMany({ where: { tokenHash: sha256(token) } });
   deleteCookie(c, CLIENT_SESSION_COOKIE, cookieOpts());
 }
 
 /** Cookie varsa danışan oturumunu çözer ve c.var.portalUser'ı doldurur (zorunlu kılmaz) */
 export const loadClientSession = createMiddleware<AppEnv>(async (c, next) => {
-  const token = getCookie(c, CLIENT_SESSION_COOKIE);
+  const token = clientSessionToken(c);
   if (!token) return next();
   const session = await prisma.clientSession.findUnique({
     where: { tokenHash: sha256(token) },

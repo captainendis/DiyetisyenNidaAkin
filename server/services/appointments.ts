@@ -27,6 +27,7 @@ import {
 } from '../../shared/constants';
 import { formatDateTime, isoWeekday } from '../../shared/time';
 import { whatsappNotifyClient } from './whatsapp';
+import { pushToClient, shortWhen } from './push';
 
 export const appointmentInclude = {
   client: { select: { id: true, firstName: true, lastName: true, phone: true, email: true } },
@@ -114,11 +115,13 @@ export async function getAppointmentOr404(id: string, db: Tx | typeof prisma = p
  */
 export async function changeStatus(c: Ctx, id: string, to: AppointmentStatus, note: string | null | undefined) {
   let createdClient: { id: string; name: string } | null = null;
+  let changed = false;
 
   const updated = await withAppointmentLock(async (tx) => {
     const a = await getAppointmentOr404(id, tx);
     const from = a.status as AppointmentStatus;
     if (from === to) return a;
+    changed = true;
     if (!TRANSITIONS[from].includes(to)) {
       throw conflict('INVALID_TRANSITION', `"${APPOINTMENT_STATUS_LABEL[from]}" durumundaki randevu "${APPOINTMENT_STATUS_LABEL[to]}" durumuna alınamaz.`);
     }
@@ -179,8 +182,11 @@ export async function changeStatus(c: Ctx, id: string, to: AppointmentStatus, no
   if (to === 'CONFIRMED') {
     void whatsappNotifyClient('confirmedClient', id);
     await notifyStaff('APPOINTMENT_CONFIRMED', { title: `Randevu onaylandı: ${updated.contactName}`, body: when, appointmentId: id, clientId: updated.clientId });
+    // Danışanın mobil uygulamasına (hesabı ve kayıtlı cihazı varsa); not/sağlık bilgisi içermez
+    if (changed) pushToClient(updated.clientId, { title: 'Randevun onaylandı', body: shortWhen(updated.startsAt), url: '/hesabim/randevular', data: { type: 'APPOINTMENT_CONFIRMED' } });
   } else if (to === 'CANCELLED') {
     await notifyStaff('APPOINTMENT_CANCELLED', { title: `Randevu iptal edildi: ${updated.contactName}`, body: note ? `${when} — ${note}` : when, appointmentId: id, clientId: updated.clientId });
+    if (changed) pushToClient(updated.clientId, { title: 'Randevun iptal edildi', body: shortWhen(updated.startsAt) || null, url: '/hesabim/randevular', data: { type: 'APPOINTMENT_CANCELLED' } });
   }
   return updated;
 }
@@ -191,7 +197,8 @@ export async function reschedule(
   id: string,
   input: { date?: string; time?: string; durationMinutes?: number; allowOutsideHours?: boolean; extra?: Prisma.AppointmentUpdateInput },
 ) {
-  return withAppointmentLock(async (tx) => {
+  let movedConfirmed = false;
+  const row = await withAppointmentLock(async (tx) => {
     const a = await getAppointmentOr404(id, tx);
     const cur = appointmentLocalParts(a.startsAt);
     const timeChange = input.date !== undefined || input.time !== undefined || input.durationMinutes !== undefined;
@@ -239,9 +246,13 @@ export async function reschedule(
         },
       });
       await audit(c, 'appointment.rescheduled', 'appointment', id, {}, tx);
+      movedConfirmed = a.status === 'CONFIRMED' && a.startsAt?.getTime() !== timeData.startsAt.getTime();
     } else if (input.extra && Object.keys(input.extra).length) {
       await audit(c, 'appointment.updated', 'appointment', id, { fields: Object.keys(input.extra) }, tx);
     }
     return row;
   });
+  // Onaylı randevunun saati değişti → danışanın mobil uygulamasına
+  if (movedConfirmed) pushToClient(row.clientId, { title: 'Randevunun saati değişti', body: shortWhen(row.startsAt), url: '/hesabim/randevular', data: { type: 'APPOINTMENT_RESCHEDULED' } });
+  return row;
 }

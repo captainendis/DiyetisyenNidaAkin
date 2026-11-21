@@ -330,7 +330,19 @@ export const profileSchema = z.object({
 export const notificationPrefsSchema = z.object({
   inApp: z.record(z.string(), z.boolean()),
   email: z.record(z.string(), z.boolean()),
+  /** Mobil anlık bildirim — olay bazında; kayıt yoksa AÇIK sayılır (eski istemciler alanı göndermeyebilir) */
+  push: z.record(z.string(), z.boolean()).optional().default({}),
 });
+
+// ───────────────────────── Mobil anlık bildirim (Expo push) ─────────────────────────
+
+/** Expo push token biçimi: ExponentPushToken[…] ya da ExpoPushToken[…] */
+export const EXPO_PUSH_TOKEN_RE = /^Expo(?:nent)?PushToken\[[A-Za-z0-9_-]{8,160}\]$/;
+export const PUSH_PLATFORMS = ['IOS', 'ANDROID'] as const;
+export type PushPlatform = (typeof PUSH_PLATFORMS)[number];
+export const pushTokenSchema = z.string().trim().max(191).regex(EXPO_PUSH_TOKEN_RE, 'Geçersiz bildirim anahtarı');
+/** POST /api/devices · POST /api/portal/devices */
+export const pushDeviceSchema = z.object({ token: pushTokenSchema, platform: z.enum(PUSH_PLATFORMS, { message: 'Geçersiz platform' }) });
 
 export const reportQuerySchema = z.object({ from: dateStr, to: dateStr });
 

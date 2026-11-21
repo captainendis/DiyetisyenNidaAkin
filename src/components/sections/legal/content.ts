@@ -134,7 +134,7 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
       return {
         title: 'Gizlilik',
         accent: 'Politikası',
-        description: 'Web sitesi kullanımı sırasında kişisel verilerin korunmasına ilişkin gizlilik politikası (taslak).',
+        description: 'Web sitesi ve mobil uygulama kullanımı sırasında kişisel verilerin korunmasına ilişkin gizlilik politikası (taslak).',
         intro: 'Bu politika, web sitesini ziyaret ettiğinizde ve randevu talep formunu kullandığınızda bilgilerinizin nasıl korunduğunu özetler.',
         sections: [
           { heading: 'Veri minimizasyonu', paragraphs: ['Yalnızca randevu talebinizi değerlendirmek için gerekli olan bilgiler istenir. Formda sağlık bilgisi talep edilmez.'] },
@@ -147,6 +147,16 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
             ],
           },
           { heading: 'Saklama süresi', paragraphs: ['Kişisel veriler, işleme amacının gerektirdiği süre ve ilgili mevzuatta öngörülen süreler boyunca saklanır; süre sonunda silinir, yok edilir veya anonim hâle getirilir. [Saklama süreleri veri saklama ve imha politikasına göre belirtilmelidir.]'] },
+          {
+            heading: 'Mobil uygulama',
+            paragraphs: [
+              '“Nida Akın” mobil uygulaması (iOS ve Android) web sitesindeki danışan hesabının ve yönetim panelinin karşılığıdır; aynı sunucuyu ve aynı güvenlik kurallarını kullanır. Uygulamada kayıt olunmaz; danışan hesapları diyetisyen tarafından açılır.',
+              'Oturum anahtarı cihazın güvenli deposunda (iOS Anahtar Zinciri / Android Keystore) saklanır. İsteğe bağlı Face ID / parmak izi kilidi cihazda çalışır; biyometrik veriniz uygulamaya ya da sunucuya iletilmez.',
+              'Bildirimlere izin verirseniz cihazınızın bildirim adresi (push token) yalnızca size randevu, liste ve mesaj bildirimleri göndermek için saklanır; bildirimler Expo (Expo, Inc.) altyapısı üzerinden Apple ve Google bildirim servislerine iletilir. Çıkış yaptığınızda bu adres silinir.',
+              'İnternetsiz kullanım için danışan uygulamasında beslenme listeleriniz, tarifleriniz, randevularınız ve ölçümleriniz cihazınızda en fazla 7 gün saklanır; çıkış yaptığınızda silinir. Personel uygulamasında klinik veriler cihaza kaydedilmez.',
+              'Kamera ve fotoğraf erişimi yalnızca siz dosya ya da görsel yüklemeyi seçtiğinizde istenir. Uygulamada reklam, analiz veya izleme aracı bulunmaz; verileriniz üçüncü taraflarla pazarlama amacıyla paylaşılmaz.',
+            ],
+          },
           { heading: 'Üçüncü taraf hizmetler', paragraphs: ['İletişim sayfasında harita gösterilmesi hâlinde harita, Google tarafından sağlanır ve Google’ın gizlilik koşullarına tabidir.'] },
           { heading: 'İletişim', paragraphs: [`Gizlilikle ilgili sorularınız için: ${email}`] },
         ],
