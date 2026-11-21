@@ -4,7 +4,7 @@
 /** Denetim kayıtları — kim, ne zaman, hangi işlemi yaptı (web: AuditLogPage.tsx) */
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { Badge, Button, Card, DateField, Empty, ErrorView, IconButton, KeyValue, ListItem, Loading, Screen, SelectField, Sheet, T } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDayStr, formatDateTime } from '@/lib/format';
@@ -26,6 +26,7 @@ interface Row {
 }
 
 const PAGE_SIZE = 30;
+const MONO = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
 export function AuditLog() {
   const [filters, setFilters] = useState({ action: '', entityType: '', from: '', to: '' });
@@ -151,7 +152,7 @@ export function AuditLog() {
         {detail ? (
           <>
             <Card>
-              <KeyValue label="İşlem kodu" value={<T selectable style={{ fontFamily: 'monospace', fontSize: 12, textAlign: 'right' }}>{detail.action}</T>} />
+              <KeyValue label="İşlem kodu" value={<T selectable style={{ fontFamily: MONO, fontSize: 12, textAlign: 'right' }}>{detail.action}</T>} />
               <KeyValue
                 label="Kayıt"
                 value={
@@ -168,7 +169,7 @@ export function AuditLog() {
             <T variant="label">Ayrıntılar</T>
             {detail.metadata && Object.keys(detail.metadata).length ? (
               <View style={{ backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, padding: space.md }}>
-                <Text selectable style={{ fontFamily: 'monospace', fontSize: 12, lineHeight: 18, color: colors.text }}>
+                <Text selectable style={{ fontFamily: MONO, fontSize: 12, lineHeight: 18, color: colors.text }}>
                   {JSON.stringify(detail.metadata, null, 2)}
                 </Text>
               </View>
