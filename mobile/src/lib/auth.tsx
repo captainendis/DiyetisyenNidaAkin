@@ -9,6 +9,7 @@
  * Sunucu 401 döndürürse (oturum süresi doldu, şifre değişti, hesap kapandı) oturum kapanır ve giriş ekranına dönülür.
  */
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { queryClient } from './query';
 import { api, portalApi } from './api';
@@ -74,9 +75,16 @@ interface AuthApi {
 
 const Ctx = createContext<AuthApi | null>(null);
 
+/** Web önizlemesi (yalnızca geliştirme/QA): güvenli depo yok → localStorage */
+const store = {
+  get: (): Promise<string | null> => (Platform.OS === 'web' ? Promise.resolve(globalThis.localStorage?.getItem(STORE_KEY) ?? null) : SecureStore.getItemAsync(STORE_KEY)),
+  set: (v: string) => (Platform.OS === 'web' ? Promise.resolve(globalThis.localStorage?.setItem(STORE_KEY, v)) : SecureStore.setItemAsync(STORE_KEY, v)),
+  del: () => (Platform.OS === 'web' ? Promise.resolve(globalThis.localStorage?.removeItem(STORE_KEY)) : SecureStore.deleteItemAsync(STORE_KEY)),
+};
+
 async function readStored(): Promise<Stored | null> {
   try {
-    const raw = await SecureStore.getItemAsync(STORE_KEY);
+    const raw = await store.get();
     return raw ? (JSON.parse(raw) as Stored) : null;
   } catch {
     return null;
@@ -85,8 +93,8 @@ async function readStored(): Promise<Stored | null> {
 
 async function writeStored(s: Stored | null) {
   try {
-    if (s) await SecureStore.setItemAsync(STORE_KEY, JSON.stringify(s));
-    else await SecureStore.deleteItemAsync(STORE_KEY);
+    if (s) await store.set(JSON.stringify(s));
+    else await store.del();
   } catch {
     /* güvenli depo yoksa (web önizleme) oturum yalnızca bellekte kalır */
   }
