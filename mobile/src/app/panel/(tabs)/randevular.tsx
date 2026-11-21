@@ -3,6 +3,8 @@
 
 /**
  * Randevular — Liste | Gün | Hafta | Ay. Web: /panel/randevular (AppointmentsPage).
+ * Gün/hafta: saat ızgarası (TimeGrid) — randevuya basılı tutup sürükleyerek yeniden planlama, boş saate basılı tutarak
+ * yeni randevu. Izgara kendi içinde kaydığı için bu görünümlerde sayfa kaydırılmaz (üst kısım sabit).
  * Parametreler: view, d (görünüm tarihi), status (liste filtresi; bildirim/genel bakış bağlantıları için).
  */
 import { router, useLocalSearchParams } from 'expo-router';
@@ -16,7 +18,6 @@ import { useStaff } from '@/lib/auth';
 import { useApiQuery } from '@/lib/query';
 import { colors, fonts, radius, space } from '@/theme';
 import {
-  AgendaView,
   eachDayOf,
   MonthView,
   rangeFor,
@@ -26,6 +27,8 @@ import {
   type CalView,
 } from '@/features/appointments/CalendarViews';
 import { emptyFilters, ListView, useAppointmentList, type ListFilters } from '@/features/appointments/ListView';
+import { TimeGrid } from '@/features/appointments/TimeGrid';
+import { useMoveAppointment } from '@/features/appointments/useMoveAppointment';
 
 type View_ = 'list' | CalView;
 const VIEWS: { value: View_; label: string }[] = [
@@ -67,6 +70,7 @@ export default function AppointmentsScreen() {
   const list = useAppointmentList(filters, page);
   const unscheduled = useApiQuery(['appointments', 'unscheduled'], () => api.get<{ total: number }>('/appointments', { status: 'NEW_REQUEST', pageSize: 1 }));
 
+  const onMove = useMoveAppointment();
   const open = (id: string) => router.push(`/panel/randevular/${id}`);
   const create = (date?: string, time?: string) => {
     const qs = [date && `date=${date}`, time && `time=${time}`].filter(Boolean).join('&');
@@ -79,80 +83,118 @@ export default function AppointmentsScreen() {
     void (view === 'list' ? list.refresh() : cal.refresh());
   };
 
+  const grid = view === 'day' || view === 'week';
+
+  const top = (
+    <>
+      {unscheduled.data?.total ? (
+        <Pressable
+          onPress={() => router.push('/panel/talepler')}
+          accessibilityRole="link"
+          style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: '#F5E3DD' }, pressed && { opacity: 0.8 }]}
+        >
+          <Icon name="inbox" size={18} color={colors.roseInk} />
+          <T variant="caption" color={colors.roseInk} style={{ flex: 1 }}>
+            <T variant="caption" color={colors.roseInk} weight="bold">{unscheduled.data.total}</T> geri arama talebi saat atanmayı bekliyor — takvimde görünmezler.
+          </T>
+          <T variant="label" color={colors.roseInk}>Taleplere git</T>
+        </Pressable>
+      ) : null}
+
+      {canWrite ? (
+        <View style={{ flexDirection: 'row', gap: space.sm }}>
+          <Button title="Pilates dersi" icon="activity" size="sm" variant="secondary" style={{ flex: 1 }} onPress={() => router.push(`/panel/pilates/ders/yeni${view !== 'list' && anchor >= todayStr() ? `?date=${anchor}` : ''}`)} />
+          <Button title="Ders programı" icon="repeat" size="sm" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/panel/pilates/program')} />
+        </View>
+      ) : null}
+
+      <Segmented value={view} options={VIEWS} onChange={setView} />
+    </>
+  );
+
+  const calHead = (
+    <>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+        <IconButton name="chevron-left" label="Önceki" onPress={() => setAnchor(shiftAnchor(calView, anchor, -1))} />
+        <Pressable onPress={() => setAnchor(todayStr())} style={{ flex: 1, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel="Bugüne dön">
+          <T style={{ fontFamily: fonts.bold, fontSize: 15, color: colors.text, textTransform: 'capitalize' }} numberOfLines={1}>{rangeTitle(calView, anchor, from, to)}</T>
+        </Pressable>
+        <IconButton name="chevron-right" label="Sonraki" onPress={() => setAnchor(shiftAnchor(calView, anchor, 1))} />
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+        {anchor !== todayStr() ? <Button title="Bugün" size="sm" variant="secondary" onPress={() => setAnchor(todayStr())} /> : null}
+        <View style={{ flex: 1 }}>
+          <SwitchField label="İptal / gelmeyenler" value={showCancelled} onChange={setShowCancelled} />
+        </View>
+      </View>
+    </>
+  );
+
   return (
     <View style={{ flex: 1 }}>
-      <Screen refreshing={refreshing} onRefresh={onRefresh} contentStyle={{ paddingBottom: canWrite ? 110 : undefined }}>
-        <View style={{ gap: space.md }}>
-          {unscheduled.data?.total ? (
-            <Pressable
-              onPress={() => router.push('/panel/talepler')}
-              accessibilityRole="link"
-              style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: '#F5E3DD' }, pressed && { opacity: 0.8 }]}
-            >
-              <Icon name="inbox" size={18} color={colors.roseInk} />
-              <T variant="caption" color={colors.roseInk} style={{ flex: 1 }}>
-                <T variant="caption" color={colors.roseInk} weight="bold">{unscheduled.data.total}</T> geri arama talebi saat atanmayı bekliyor — takvimde görünmezler.
-              </T>
-              <T variant="label" color={colors.roseInk}>Taleplere git</T>
-            </Pressable>
-          ) : null}
-
-          {canWrite ? (
-            <View style={{ flexDirection: 'row', gap: space.sm }}>
-              <Button title="Pilates dersi" icon="activity" size="sm" variant="secondary" style={{ flex: 1 }} onPress={() => router.push(`/panel/pilates/ders/yeni${view !== 'list' && anchor >= todayStr() ? `?date=${anchor}` : ''}`)} />
-              <Button title="Ders programı" icon="repeat" size="sm" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/panel/pilates/program')} />
+      {grid ? (
+        // Gün / hafta: üst kısım sabit, saat ızgarası kalan alanı doldurur ve kendi içinde kayar (sürükle-bırak + otomatik kaydırma)
+        <Screen scroll={false} contentStyle={{ paddingBottom: 0, paddingHorizontal: space.sm }}>
+          <View style={{ flex: 1, gap: space.sm }}>
+            <View style={{ gap: space.sm, paddingHorizontal: space.sm }}>
+              {top}
+              {calHead}
             </View>
-          ) : null}
-
-          <Segmented value={view} options={VIEWS} onChange={setView} />
-
-          {view !== 'list' ? (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
-                <IconButton name="chevron-left" label="Önceki" onPress={() => setAnchor(shiftAnchor(calView, anchor, -1))} />
-                <Pressable onPress={() => setAnchor(todayStr())} style={{ flex: 1, alignItems: 'center' }} accessibilityRole="button" accessibilityLabel="Bugüne dön">
-                  <T style={{ fontFamily: fonts.bold, fontSize: 15, color: colors.text, textTransform: 'capitalize' }} numberOfLines={1}>{rangeTitle(calView, anchor, from, to)}</T>
-                </Pressable>
-                <IconButton name="chevron-right" label="Sonraki" onPress={() => setAnchor(shiftAnchor(calView, anchor, 1))} />
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-                {anchor !== todayStr() ? <Button title="Bugün" size="sm" variant="secondary" onPress={() => setAnchor(todayStr())} /> : null}
-                <View style={{ flex: 1 }}>
-                  <SwitchField label="İptal / gelmeyenler" value={showCancelled} onChange={setShowCancelled} />
-                </View>
-              </View>
-              {cal.error ? (
-                <ErrorView error={cal.error} onRetry={() => void cal.refetch()} />
-              ) : !cal.data ? (
-                <Loading />
-              ) : view === 'month' ? (
-                <MonthView
-                  anchor={anchor}
-                  from={from}
-                  to={to}
-                  data={cal.data}
-                  showCancelled={showCancelled}
-                  onPickDay={(d) => {
-                    setAnchor(d);
-                    setView('day');
-                  }}
-                />
-              ) : (
-                <AgendaView
-                  days={days}
-                  data={cal.data}
-                  showCancelled={showCancelled}
-                  onOpen={open}
-                  onOpenClass={(c) => router.push(`/panel/pilates/ders/${c.id}`)}
-                  onCreate={canWrite ? create : undefined}
-                />
-              )}
-            </>
-          ) : (
-            <ListView filters={filters} setFilters={setFilters} page={page} setPage={setPage} query={list} onOpen={open} canWrite={canWrite} />
-          )}
-        </View>
-      </Screen>
+            {cal.error ? (
+              <ErrorView error={cal.error} onRetry={() => void cal.refetch()} />
+            ) : !cal.data ? (
+              <Loading />
+            ) : (
+              <TimeGrid
+                days={days}
+                data={cal.data}
+                showCancelled={showCancelled}
+                canWrite={canWrite}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                onOpen={open}
+                onOpenClass={(id) => router.push(`/panel/pilates/ders/${id}`)}
+                onCreate={create}
+                onMove={onMove}
+                onPickDay={(d) => {
+                  setAnchor(d);
+                  setView('day');
+                }}
+              />
+            )}
+          </View>
+        </Screen>
+      ) : (
+        <Screen refreshing={refreshing} onRefresh={onRefresh} contentStyle={{ paddingBottom: canWrite ? 110 : undefined }}>
+          <View style={{ gap: space.md }}>
+            {top}
+            {view === 'month' ? (
+              <>
+                {calHead}
+                {cal.error ? (
+                  <ErrorView error={cal.error} onRetry={() => void cal.refetch()} />
+                ) : !cal.data ? (
+                  <Loading />
+                ) : (
+                  <MonthView
+                    anchor={anchor}
+                    from={from}
+                    to={to}
+                    data={cal.data}
+                    showCancelled={showCancelled}
+                    onPickDay={(d) => {
+                      setAnchor(d);
+                      setView('day');
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <ListView filters={filters} setFilters={setFilters} page={page} setPage={setPage} query={list} onOpen={open} canWrite={canWrite} />
+            )}
+          </View>
+        </Screen>
+      )}
       {canWrite ? <Fab label="Yeni randevu" onPress={() => create(view === 'day' && anchor >= todayStr() ? anchor : undefined)} /> : null}
     </View>
   );

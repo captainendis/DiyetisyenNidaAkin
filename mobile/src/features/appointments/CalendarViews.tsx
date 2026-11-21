@@ -2,24 +2,21 @@
 // Developed by PaperAxis · paperaxis.com
 
 /**
- * Takvim görünümleri (mobil): gün / hafta ajandası ve ay ızgarası.
- *  - Gün/hafta: güne göre gruplanmış randevular ve pilates dersleri, çalışma saatleri ya da kapalı gün nedeni.
- *    Gün görünümünde boş saatler listelenir; dokununca o saate yeni randevu açılır (web'deki boş alana tıklama).
+ * Takvim yardımcıları (mobil): tarih aralığı, veri sorgusu ve ay ızgarası.
+ *  - Gün/hafta: saat ızgarası ve sürükle-bırak ile yeniden planlama → TimeGrid.tsx
  *  - Ay: gün başına randevu sayısı; güne dokununca gün görünümü.
- * Sürükle-bırak yerine yeniden planlama randevu detayındaki "Tarihi / saati değiştir" ile yapılır.
  */
 import { DateTime } from 'luxon';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { TIME_ZONE, CLASS_SESSION_STATUS_LABEL } from '@shared/constants';
+import { TIME_ZONE } from '@shared/constants';
 import type { ClassSessionDTO } from '@shared/classes';
-import { minutesOf, timeOf, todayStr } from '@shared/time';
-import { Badge, Card, Icon, T } from '@/components/ui';
+import { todayStr } from '@shared/time';
+import { Card, T } from '@/components/ui';
 import { api } from '@/lib/api';
 import { formatDayStr } from '@/lib/format';
 import { useApiQuery } from '@/lib/query';
-import { colors, fonts, radius, space } from '@/theme';
-import { AppointmentRow } from './AppointmentRow';
-import type { AppointmentDTO, DayPlanDTO, SlotDTO } from './types';
+import { colors, fonts, space } from '@/theme';
+import type { AppointmentDTO, DayPlanDTO } from './types';
 
 export type CalView = 'day' | 'week' | 'month';
 
@@ -70,117 +67,6 @@ export function useCalendarRange(from: string, to: string, enabled: boolean) {
       return { items: appts.items.filter((a) => a.date), classes: classes.items, plans: new Map(plans.days.map((p) => [p.date, p])) };
     },
     { enabled },
-  );
-}
-
-const windowsText = (p: DayPlanDTO | undefined) =>
-  !p ? '' : !p.isWorking ? p.closedReason ?? 'Kapalı' : p.windows.map((w) => `${timeOf(w.start)}–${timeOf(w.end)}`).join(', ');
-
-type Entry = { kind: 'appt'; a: AppointmentDTO; at: string } | { kind: 'class'; c: ClassSessionDTO; at: string };
-
-function ClassRow({ c, last, onPress }: { c: ClassSessionDTO; last: boolean; onPress: () => void }) {
-  const cancelled = c.status === 'CANCELLED';
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`Pilates dersi ${c.time} ${c.groupName ?? c.title}`} style={({ pressed }) => pressed && { backgroundColor: '#F8F4EE' }}>
-      <View style={[styles.classRow, !last && styles.line, cancelled && { opacity: 0.6 }]}>
-        <View style={{ width: 64, alignItems: 'flex-end' }}>
-          <T style={styles.time}>{c.time}</T>
-          <T variant="caption">{timeOf(minutesOf(c.time) + c.durationMinutes)}</T>
-        </View>
-        <View style={[styles.bar, { backgroundColor: colors.info }]} />
-        <View style={{ flex: 1, gap: 3 }}>
-          <T variant="subheading" numberOfLines={1}>{c.groupName ?? c.title}</T>
-          <T variant="caption">Pilates · {c.seatsTaken}/{c.capacity} kişi</T>
-          <Badge label={CLASS_SESSION_STATUS_LABEL[c.status]} tone={cancelled ? 'neutral' : 'info'} />
-        </View>
-        <Icon name="chevron-right" size={18} color={colors.mist} />
-      </View>
-    </Pressable>
-  );
-}
-
-/** Boş saatler (gün görünümü) — dokununca o saate yeni randevu */
-function FreeSlots({ date, onCreate }: { date: string; onCreate: (date: string, time: string) => void }) {
-  const q = useApiQuery(['appointments', 'slots', date, null, null], () => api.get<{ slots: SlotDTO[] }>('/appointments/slots', { date }), { staleTime: 0 });
-  const free = (q.data?.slots ?? []).filter((s) => s.available);
-  if (!free.length) return null;
-  return (
-    <View style={{ gap: space.sm, marginTop: space.md }}>
-      <T variant="overline">Boş saatler · dokunarak randevu ekleyin</T>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
-        {free.map((s) => (
-          <Pressable key={s.time} onPress={() => onCreate(date, s.time)} accessibilityRole="button" accessibilityLabel={`${s.time} için yeni randevu`} style={({ pressed }) => [styles.free, pressed && { opacity: 0.7 }]}>
-            <Icon name="plus" size={13} color={colors.successInk} />
-            <T style={{ fontFamily: fonts.semibold, fontSize: 13, color: colors.successInk }}>{s.time}</T>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-export function AgendaView({
-  days,
-  data,
-  showCancelled,
-  onOpen,
-  onOpenClass,
-  onCreate,
-}: {
-  days: string[];
-  data: RangeData;
-  showCancelled: boolean;
-  onOpen: (id: string) => void;
-  onOpenClass: (c: ClassSessionDTO) => void;
-  /** Yazma izni yoksa verilmez */
-  onCreate?: (date: string, time: string) => void;
-}) {
-  const today = todayStr();
-  const single = days.length === 1;
-  const items = data.items.filter((a) => showCancelled || (a.status !== 'CANCELLED' && a.status !== 'NO_SHOW'));
-  const classes = data.classes.filter((c) => showCancelled || c.status !== 'CANCELLED');
-  const total = items.length + classes.length;
-
-  return (
-    <View style={{ gap: space.lg }}>
-      {days.map((d) => {
-        const entries: Entry[] = [
-          ...items.filter((a) => a.date === d).map((a) => ({ kind: 'appt' as const, a, at: a.time ?? '' })),
-          ...classes.filter((c) => c.date === d).map((c) => ({ kind: 'class' as const, c, at: c.time })),
-        ].sort((x, y) => x.at.localeCompare(y.at));
-        const plan = data.plans.get(d);
-        // Haftada boş ve kapalı geçmiş günleri sadeleştir
-        if (!single && !entries.length && d < today) return null;
-        return (
-          <View key={d} style={{ gap: space.sm }}>
-            {!single ? (
-              <View style={styles.dayHead}>
-                <T variant="heading" style={{ textTransform: 'capitalize' }}>{formatDayStr(d, 'd MMMM, cccc')}</T>
-                {d === today ? <Badge label="Bugün" tone="gold" /> : null}
-              </View>
-            ) : null}
-            <T variant="caption">{plan?.isWorking ? `Çalışma saatleri: ${windowsText(plan)}` : windowsText(plan) || 'Kapalı'}</T>
-            {entries.length ? (
-              <Card padded={false} style={{ overflow: 'hidden' }}>
-                {entries.map((e, i) =>
-                  e.kind === 'appt' ? (
-                    <AppointmentRow key={e.a.id} appointment={e.a} last={i === entries.length - 1} onPress={() => onOpen(e.a.id)} />
-                  ) : (
-                    <ClassRow key={e.c.id} c={e.c} last={i === entries.length - 1} onPress={() => onOpenClass(e.c)} />
-                  ),
-                )}
-              </Card>
-            ) : single || d >= today ? (
-              <Card style={{ paddingVertical: space.md }}>
-                <T variant="caption">Bu gün için randevu bulunmuyor.</T>
-              </Card>
-            ) : null}
-            {single && onCreate && d >= today ? <FreeSlots date={d} onCreate={onCreate} /> : null}
-          </View>
-        );
-      })}
-      {!single && total === 0 ? <T variant="caption" center>Bu hafta için randevu bulunmuyor.</T> : null}
-    </View>
   );
 }
 
@@ -259,12 +145,6 @@ function Legend({ color, label, dot }: { color: string; label: string; dot?: boo
 }
 
 const styles = StyleSheet.create({
-  line: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  classRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: 12, paddingHorizontal: space.lg },
-  time: { fontFamily: fonts.bold, fontSize: 16, color: colors.text, fontVariant: ['tabular-nums'] },
-  bar: { width: 3, alignSelf: 'stretch', borderRadius: 2 },
-  dayHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  free: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 40, paddingHorizontal: 12, borderRadius: radius.pill, backgroundColor: colors.successBg },
   weekRow: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   cell: { flex: 1, minHeight: 58, alignItems: 'center', paddingVertical: 6, gap: 3 },
   dayNum: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },

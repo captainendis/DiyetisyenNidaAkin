@@ -2,7 +2,7 @@
 // Developed by PaperAxis · paperaxis.com
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Alert, Animated, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, space, toneColors, type Tone } from '@/theme';
 import { errorMessage } from '@/lib/api';
@@ -68,6 +68,8 @@ export function Notice({ tone = 'info', title, text, icon }: { tone?: Tone; titl
 
 /** Onay penceresi (Promise) */
 export function confirm(opts: { title: string; message?: string; confirmText?: string; destructive?: boolean }): Promise<boolean> {
+  // Web önizlemesi (geliştirme/QA): react-native-web'de Alert yoktur → tarayıcı onayı
+  if (Platform.OS === 'web') return Promise.resolve(globalThis.confirm?.(`${opts.title}${opts.message ? `\n\n${opts.message}` : ''}`) ?? false);
   return new Promise((resolve) => {
     Alert.alert(opts.title, opts.message, [
       { text: 'Vazgeç', style: 'cancel', onPress: () => resolve(false) },
