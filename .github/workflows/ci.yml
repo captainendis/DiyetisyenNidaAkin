@@ -108,6 +108,12 @@ jobs:
       - name: Tip kontrolü
         run: npx tsc --noEmit
 
+      # A4 önizlemedeki sığdırma betiği shared/plan-template.ts'ten üretilir — güncel mi?
+      - name: Üretilen dosyalar güncel
+        run: |
+          npm run gen:fit
+          git diff --exit-code -- src/features/plans/fitScript.generated.ts
+
       # Metro paketi (Android + iOS) derlenebiliyor mu — ../shared çözümü dahil
       - name: Paket derlemesi
         env:

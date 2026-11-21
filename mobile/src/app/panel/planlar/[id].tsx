@@ -3,9 +3,9 @@
 
 /** Beslenme planı düzenleyici + önizleme + PDF (web: /panel/planlar/:id — PlanEditorPage) */
 import { router, Stack, useLocalSearchParams, usePreventRemove } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
-import { Badge, Button, Card, confirm, Empty, IconButton, ListItem, QueryView, Screen, Segmented, Sheet, TextField, useToast } from '@/components/ui';
+import { Badge, Button, Card, confirm, Empty, IconButton, ListItem, Notice, QueryView, Screen, Segmented, Sheet, T, TextField, useToast } from '@/components/ui';
 import { api, ApiError, errorMessage } from '@/lib/api';
 import { useStaff } from '@/lib/auth';
 import { queryClient, useApiQuery } from '@/lib/query';
@@ -14,6 +14,8 @@ import type { NutritionPlanData } from '@shared/plan';
 import { clone, sharePlanPdf, tidyPlan, type PlanDetail } from '@/features/plans/api';
 import { PlanEditorForm } from '@/features/plans/PlanEditorForm';
 import { PlanPreview } from '@/features/plans/PlanPreview';
+import { A4Preview, fitMessage, printRecipesFor } from '@/features/plans/A4Preview';
+import type { FitResult } from '@shared/plan-template';
 import { useRecipeLibrary } from '@/features/recipes/api';
 
 function Editor({ plan }: { plan: PlanDetail }) {
@@ -25,10 +27,12 @@ function Editor({ plan }: { plan: PlanDetail }) {
   const [name, setName] = useState(plan.name);
   const [saving, setSaving] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const [view, setView] = useState<'form' | 'preview'>(editable ? 'form' : 'preview');
+  const [view, setView] = useState<'form' | 'a4' | 'preview'>(editable ? 'form' : 'a4');
+  const [fit, setFit] = useState<FitResult | null>(null);
   const [menu, setMenu] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const library = useRecipeLibrary();
+  const printRecipes = useMemo(() => printRecipesFor(data, library.data?.items), [data, library.data]);
 
   const dirty = JSON.stringify(data) !== JSON.stringify(saved.data) || name !== saved.name;
   const set = useCallback((fn: (d: NutritionPlanData) => void) => setData((d) => { const n = clone(d); fn(n); return n; }), []);
@@ -128,10 +132,26 @@ function Editor({ plan }: { plan: PlanDetail }) {
             <ListItem icon="user" title={`${plan.client.firstName} ${plan.client.lastName}`} subtitle="Danışan profili" onPress={() => router.push(`/panel/danisanlar/${plan.client!.id}`)} last />
           </Card>
         ) : null}
-        <Segmented<'form' | 'preview'> value={view} onChange={setView} options={[{ value: 'form', label: 'Düzenle' }, { value: 'preview', label: 'Önizleme' }]} />
+        <Segmented<'form' | 'a4' | 'preview'> value={view} onChange={setView} options={[{ value: 'form', label: 'Düzenle' }, { value: 'a4', label: 'A4 önizleme' }, { value: 'preview', label: 'Telefonda' }]} />
       </View>
       {view === 'form' ? (
         <PlanEditorForm data={data} set={set} library={library.data?.items} client={plan.client} editable={editable} />
+      ) : view === 'a4' ? (
+        <View style={{ gap: space.sm }}>
+          <A4Preview data={data} recipes={printRecipes} onFit={setFit} />
+          {(() => {
+            const m = fitMessage(fit);
+            return m.tone === 'neutral' ? <T variant="caption">{m.text}</T> : <Notice tone={m.tone} text={m.text} />;
+          })()}
+          {fit && fit.pages > 1 ? (
+            fit.recipesFit ? (
+              <T variant="caption">{`Tarif önerileri ${fit.pages - 1} ek sayfaya yerleşti · toplam ${fit.pages} sayfa.`}</T>
+            ) : (
+              <Notice tone="warning" text="Bir tarif tek sayfaya sığmıyor — adımlarını veya malzeme listesini kısaltın." />
+            )
+          ) : null}
+          <T variant="caption">PDF bu önizlemeyle aynıdır; “PDF / Paylaş” ile kaydedebilir ya da yazdırabilirsiniz.</T>
+        </View>
       ) : (
         <PlanPreview data={data} library={library.data?.items} />
       )}

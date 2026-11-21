@@ -52,6 +52,7 @@ export default function AppointmentsScreen() {
   useEffect(() => {
     if (params.view && VIEWS.some((v) => v.value === params.view)) setView(params.view as View_);
     if (params.d && /^\d{4}-\d{2}-\d{2}$/.test(params.d)) setAnchor(params.d);
+    else if (params.view) setAnchor(todayStr());
     if (statusKey) {
       setView('list');
       setFilters({ ...emptyFilters(), statuses: statusKey.split(',') as AppointmentStatus[] });

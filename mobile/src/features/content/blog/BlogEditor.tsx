@@ -89,7 +89,10 @@ function Editor({ initial, categories }: { initial: Post | null; categories: Cat
   const persist = async (): Promise<Post | null> => {
     setErrors({});
     try {
+      const created = !post;
       const res = post ? await api.patch<{ post: Post }>(`/content/posts/${post.id}`, payload()) : await api.post<{ post: Post }>('/content/posts', payload());
+      // İlk kayıttan sonra ekran yazının kendi adresine geçer (geri tuşu listeye döner)
+      if (created) setTimeout(() => router.replace(`/panel/blog/${res.post.id}`), 0);
       setPost(res.post);
       const nd = pick(res.post);
       setSaved(nd);

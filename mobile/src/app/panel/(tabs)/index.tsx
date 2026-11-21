@@ -66,7 +66,7 @@ export default function DashboardScreen() {
   const series = (k: keyof NonNullable<typeof c>) => c?.[k].series.map((s) => s.value) ?? [];
 
   const quickLinks: { to: Href; label: string; icon: IconName; ok: boolean }[] = [
-    { to: '/panel/danisanlar?new=1', label: 'Yeni danışan ekle', icon: 'user-plus', ok: can('clients:write') },
+    { to: '/panel/danisanlar/yeni', label: 'Yeni danışan ekle', icon: 'user-plus', ok: can('clients:write') },
     { to: '/panel/randevular/yeni', label: 'Yeni randevu oluştur', icon: 'calendar', ok: canWrite },
     { to: '/panel/randevular?view=week', label: 'Takvimi görüntüle', icon: 'grid', ok: can('appointments:read') },
     { to: '/panel/danisanlar', label: 'Danışan listesini aç', icon: 'users', ok: can('clients:read') },

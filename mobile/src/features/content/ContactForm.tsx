@@ -1,10 +1,10 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import * as WebBrowser from 'expo-web-browser';
+import { WebView } from 'react-native-webview';
 import { View } from 'react-native';
-import { Badge, Button, Notice, T, TextField } from '@/components/ui';
-import { space } from '@/theme';
+import { Badge, Notice, T, TextField } from '@/components/ui';
+import { colors, space } from '@/theme';
 import { FormSection, nullIfEmpty as n } from './FormBits';
 import { useSettingField } from './settingsStore';
 
@@ -67,7 +67,9 @@ export function ContactForm() {
         <TextField label="Harita yerleştirme bağlantısı" autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="https://www.google.com/maps/embed?pb=…" value={d.mapEmbedUrl ?? ''} error={err('mapEmbedUrl')} onChange={(v) => set('mapEmbedUrl', n(v))} />
         <TextField label="Yol tarifi bağlantısı" autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="https://maps.app.goo.gl/…" value={d.mapLinkUrl ?? ''} error={err('mapLinkUrl')} onChange={(v) => set('mapLinkUrl', n(v))} />
         {isEmbed(d.mapEmbedUrl) ? (
-          <Button title="Haritayı önizle" icon="map" variant="secondary" size="sm" style={{ alignSelf: 'flex-start' }} onPress={() => void WebBrowser.openBrowserAsync(d.mapEmbedUrl!)} />
+          <View style={{ height: 220, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: colors.line }} accessibilityLabel="Harita önizlemesi">
+            <WebView source={{ uri: d.mapEmbedUrl! }} originWhitelist={['https://*']} setSupportMultipleWindows={false} style={{ flex: 1 }} />
+          </View>
         ) : null}
       </FormSection>
     </>
