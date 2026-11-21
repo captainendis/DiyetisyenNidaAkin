@@ -32,6 +32,7 @@ import { portalRouter } from './routes/portal';
 import { clientPortalAdminRouter } from './routes/client-portal-admin';
 import { classesRouter } from './routes/classes';
 import { staffDevicesRouter } from './routes/devices';
+import { reviewerGuard } from './auth/reviewer';
 
 /** Oturum + CSRF gerektiren personel uçları */
 const STAFF: [string, Hono<AppEnv>][] = [
@@ -66,6 +67,9 @@ function build() {
   api.use('*', loadSession);
   // '/x/*' kalıbı '/x'in kendisini de kapsar
   for (const [prefix] of STAFF) api.use(`${prefix}/*`, requireAuth);
+  // Mağaza incelemesi hesabı: salt okunur, yalnızca demo danışanlar (auth/reviewer.ts). '/clients/*' '/clients/:id/*'i de kapsar.
+  for (const [prefix] of STAFF) if (prefix !== '/clients/:id') api.use(`${prefix}/*`, reviewerGuard);
+  api.use('/auth/change-password', reviewerGuard);
 
   api.get('/health', (c) => c.json({ ok: true, revision: process.env.APP_REVISION ?? 'dev' }));
   api.route('/auth', authRouter);

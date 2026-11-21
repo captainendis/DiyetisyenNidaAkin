@@ -14,6 +14,7 @@ import { getSettings } from '../services/settings';
 import { dateStr } from '../../shared/schemas';
 import { TIME_ZONE, type AppointmentStatus } from '../../shared/constants';
 import { addDays, eachDay, endOfDayExclusive, startOfDay, toDateStr, todayStr } from '../../shared/time';
+import { appointmentScope, clientScope } from '../auth/reviewer';
 
 export const dashboardRouter = router();
 dashboardRouter.use('*', requirePermission('dashboard:read'));
@@ -33,6 +34,8 @@ function bucket(dates: (Date | null)[], days: string[]) {
 }
 
 dashboardRouter.get('/stats', async (c) => {
+  const A = appointmentScope(c);
+  const C = clientScope(c);
   const today = todayStr();
   const days7 = eachDay(addDays(today, -6), today);
   const from7 = startOfDay(days7[0]);
@@ -49,19 +52,19 @@ dashboardRouter.get('/stats', async (c) => {
     clientCount, newClients7, newClientsMonth, newClientsPrevMonth,
     monthMeetings, prevMonthMeetings, meetings7,
   ] = await Promise.all([
-    prisma.appointment.count({ where: { status: { in: ACTIVE }, startsAt: { gte: startOfDay(today), lt: to7 } } }),
-    prisma.appointment.count({ where: { status: { in: ACTIVE }, startsAt: { gte: startOfDay(lastWeekSameDay), lt: endOfDayExclusive(lastWeekSameDay) } } }),
-    prisma.appointment.findMany({ where: { status: { in: ACTIVE }, startsAt: { gte: from7, lt: to7 } }, select: { startsAt: true } }),
-    prisma.appointment.count({ where: { status: { in: ['PENDING', 'NEW_REQUEST'] } } }),
-    prisma.appointment.findMany({ where: { source: 'WEBSITE', createdAt: { gte: from7, lt: to7 } }, select: { createdAt: true } }),
-    prisma.appointment.count({ where: { source: 'WEBSITE', createdAt: { gte: startOfDay(addDays(today, -13)), lt: from7 } } }),
-    prisma.client.count({ where: { status: { in: ['ACTIVE', 'PASSIVE'] } } }),
-    prisma.client.findMany({ where: { createdAt: { gte: from7, lt: to7 } }, select: { createdAt: true } }),
-    prisma.client.count({ where: { createdAt: { gte: monthStart.toJSDate(), lt: nextMonth.toJSDate() } } }),
-    prisma.client.count({ where: { createdAt: { gte: prevMonth.toJSDate(), lt: monthStart.toJSDate() } } }),
-    prisma.appointment.count({ where: { status: { in: MEETING }, startsAt: { gte: monthStart.toJSDate(), lt: nextMonth.toJSDate() } } }),
-    prisma.appointment.count({ where: { status: { in: MEETING }, startsAt: { gte: prevMonth.toJSDate(), lt: monthStart.toJSDate() } } }),
-    prisma.appointment.findMany({ where: { status: { in: MEETING }, startsAt: { gte: from7, lt: to7 } }, select: { startsAt: true } }),
+    prisma.appointment.count({ where: { ...A, status: { in: ACTIVE }, startsAt: { gte: startOfDay(today), lt: to7 } } }),
+    prisma.appointment.count({ where: { ...A, status: { in: ACTIVE }, startsAt: { gte: startOfDay(lastWeekSameDay), lt: endOfDayExclusive(lastWeekSameDay) } } }),
+    prisma.appointment.findMany({ where: { ...A, status: { in: ACTIVE }, startsAt: { gte: from7, lt: to7 } }, select: { startsAt: true } }),
+    prisma.appointment.count({ where: { ...A, status: { in: ['PENDING', 'NEW_REQUEST'] } } }),
+    prisma.appointment.findMany({ where: { ...A, source: 'WEBSITE', createdAt: { gte: from7, lt: to7 } }, select: { createdAt: true } }),
+    prisma.appointment.count({ where: { ...A, source: 'WEBSITE', createdAt: { gte: startOfDay(addDays(today, -13)), lt: from7 } } }),
+    prisma.client.count({ where: { ...C, status: { in: ['ACTIVE', 'PASSIVE'] } } }),
+    prisma.client.findMany({ where: { ...C, createdAt: { gte: from7, lt: to7 } }, select: { createdAt: true } }),
+    prisma.client.count({ where: { ...C, createdAt: { gte: monthStart.toJSDate(), lt: nextMonth.toJSDate() } } }),
+    prisma.client.count({ where: { ...C, createdAt: { gte: prevMonth.toJSDate(), lt: monthStart.toJSDate() } } }),
+    prisma.appointment.count({ where: { ...A, status: { in: MEETING }, startsAt: { gte: monthStart.toJSDate(), lt: nextMonth.toJSDate() } } }),
+    prisma.appointment.count({ where: { ...A, status: { in: MEETING }, startsAt: { gte: prevMonth.toJSDate(), lt: monthStart.toJSDate() } } }),
+    prisma.appointment.findMany({ where: { ...A, status: { in: MEETING }, startsAt: { gte: from7, lt: to7 } }, select: { startsAt: true } }),
   ]);
 
   return c.json({
@@ -95,30 +98,32 @@ dashboardRouter.get('/stats', async (c) => {
 const agendaQuery = z.object({ date: dateStr.optional() });
 
 dashboardRouter.get('/agenda', async (c) => {
+  const A = appointmentScope(c);
   const q = parse(agendaQuery, query(c));
   const date = q.date ?? todayStr();
   const [items, pendingRequests, pendingTotal] = await Promise.all([
     prisma.appointment.findMany({
-      where: { startsAt: { gte: startOfDay(date), lt: endOfDayExclusive(date) } },
+      where: { ...A, startsAt: { gte: startOfDay(date), lt: endOfDayExclusive(date) } },
       orderBy: { startsAt: 'asc' },
       include: appointmentInclude,
     }),
     prisma.appointment.findMany({
-      where: { status: { in: ['PENDING', 'NEW_REQUEST'] } },
+      where: { ...A, status: { in: ['PENDING', 'NEW_REQUEST'] } },
       orderBy: [{ startsAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }],
       take: 6,
       include: appointmentInclude,
     }),
-    prisma.appointment.count({ where: { status: { in: ['PENDING', 'NEW_REQUEST'] } } }),
+    prisma.appointment.count({ where: { ...A, status: { in: ['PENDING', 'NEW_REQUEST'] } } }),
   ]);
   return c.json({ date, items: items.map(toDTO), pendingRequests: pendingRequests.map(toDTO), pendingTotal });
 });
 
 dashboardRouter.get('/weekly', async (c) => {
+  const A = appointmentScope(c);
   const today = todayStr();
   const days = eachDay(addDays(today, -6), today);
   const rows = await prisma.appointment.findMany({
-    where: { startsAt: { gte: startOfDay(days[0]), lt: endOfDayExclusive(today) } },
+    where: { ...A, startsAt: { gte: startOfDay(days[0]), lt: endOfDayExclusive(today) } },
     select: { startsAt: true, status: true },
   });
   const map = new Map(days.map((d) => [d, { date: d, completed: 0, cancelled: 0, open: 0 }]));

@@ -21,6 +21,7 @@ import { copyRecipeImage, deleteRecipeImage, processRecipeImage, recipeImageData
 import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, recipeCreateSchema, recipeInputSchema, type PrintRecipe, type Recipe, type RecipeInput } from '../../shared/recipe';
 import type { NutritionPlanData } from '../../shared/plan';
 import { slugify } from '../../shared/text';
+import { ownedByDemoScope } from '../auth/reviewer';
 
 export const recipesRouter = router();
 const read = requirePermission('clinical:read');
@@ -160,6 +161,7 @@ recipesRouter.get('/', read, async (c) => {
   );
   const rows = await prisma.recipe.findMany({
     where: {
+      AND: [ownedByDemoScope(c)],
       ...(q.category ? { category: q.category } : {}),
       ...(q.clientId ? { clientId: q.clientId } : {}),
     },

@@ -152,7 +152,7 @@ function UserMenu() {
 
 export function PanelLayout() {
   const [drawer, setDrawer] = useState(false);
-  const { unreadCount, demoMode } = usePanelAuth();
+  const { unreadCount, demoMode, user } = usePanelAuth();
   const loc = useLocation();
   useEffect(() => setDrawer(false), [loc.pathname]);
   // Mobil menü: Esc ile kapanır
@@ -206,6 +206,11 @@ export function PanelLayout() {
               <UserMenu />
             </div>
           </header>
+          {user?.role === 'REVIEWER' && (
+            <div className="border-b border-info/30 bg-info/10 px-4 py-2 text-center text-[0.8rem] font-medium text-info-ink sm:px-6">
+              Mağaza inceleme hesabı: yalnızca demo danışan verileri görünür ve değişiklik yapılamaz.
+            </div>
+          )}
           {demoMode && (
             <div className="border-b border-warning/30 bg-warning/15 px-4 py-2 text-center text-[0.8rem] font-medium text-warning-ink sm:px-6">
               Demo modu açık: gösterilen danışan ve randevu kayıtları örnek verilerdir.

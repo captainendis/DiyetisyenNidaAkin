@@ -17,7 +17,7 @@ export interface PanelUser {
   firstName: string;
   lastName: string;
   salutation: string | null;
-  role: 'ADMIN' | 'DIETITIAN' | 'ASSISTANT';
+  role: 'ADMIN' | 'DIETITIAN' | 'ASSISTANT' | 'REVIEWER';
   permissions: Permission[];
   csrfToken: string;
 }

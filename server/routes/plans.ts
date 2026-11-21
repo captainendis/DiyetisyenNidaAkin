@@ -16,6 +16,7 @@ import { renderPlanPrintPage } from '../services/print';
 import { emptyPlan, nutritionPlanDataSchema, planCreateSchema, planTitleFor, planUpdateSchema, type NutritionPlanData } from '../../shared/plan';
 import { resolvePlanRecipes } from './recipes';
 import { pushToClient } from '../services/push';
+import { ownedByDemoScope } from '../auth/reviewer';
 
 export const plansRouter = router();
 const read = requirePermission('clinical:read');
@@ -52,6 +53,7 @@ plansRouter.get('/', read, async (c) => {
   );
   const items = await prisma.nutritionPlan.findMany({
     where: {
+      AND: [ownedByDemoScope(c)],
       ...(q.clientId ? { clientId: q.clientId } : {}),
       ...(q.templates === '1' ? { isTemplate: true } : q.templates === '0' ? { isTemplate: false } : {}),
       ...(q.q

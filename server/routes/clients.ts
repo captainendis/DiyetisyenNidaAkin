@@ -34,6 +34,7 @@ import {
   healthConsentSchema,
   measurementSchema,
 } from '../../shared/schemas';
+import { clientScope } from '../auth/reviewer';
 
 export const clientsRouter = router();
 
@@ -98,7 +99,7 @@ async function visitStats(clientIds: string[]) {
 
 clientsRouter.get('/', canRead, async (c) => {
   const q = parse(clientListQuerySchema, query(c));
-  const where: Prisma.ClientWhereInput = {};
+  const where: Prisma.ClientWhereInput = { ...clientScope(c) };
   if (q.status) where.status = q.status;
   else where.status = { not: 'ARCHIVED' };
   if (q.q) {

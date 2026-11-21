@@ -123,7 +123,7 @@ export async function sendToTokens(tokens: string[], payload: PushPayload) {
 export function pushToUsers(userIds: string[], payload: PushPayload) {
   if (!userIds.length) return;
   background(async () => {
-    const rows = await prisma.pushDevice.findMany({ where: { userId: { in: userIds }, user: { isActive: true } }, select: { token: true } });
+    const rows = await prisma.pushDevice.findMany({ where: { userId: { in: userIds }, user: { isActive: true, role: { key: { not: 'REVIEWER' } } } }, select: { token: true } });
     await sendToTokens(rows.map((r) => r.token), payload);
   });
 }
