@@ -49,6 +49,7 @@ import type { PortalClassSession } from '../../shared/classes';
 import { CLASS_SEAT_HOLDING, DAYPARTS, PILATES_FORMAT_LABEL, parseDayparts, parseDays, pilatesPreferenceText } from '../../shared/constants';
 import { notifyStaff } from '../services/notifications';
 import { publicFormLimiter } from '../middleware/rate-limit';
+import { portalDevicesRouter } from './devices';
 
 const MAX_FAILED = 5;
 const LOCK_MINUTES = 15;
@@ -202,6 +203,9 @@ portalRouter.post('/auth/forgot-password', passwordResetLimiter, async (c) => {
 
 // ── Bundan sonraki her uç danışan oturumu gerektirir ──
 portalRouter.use('*', requireClientAuth);
+
+// Mobil anlık bildirim cihaz kaydı: POST /api/portal/devices · DELETE /api/portal/devices/:token
+portalRouter.route('/devices', portalDevicesRouter);
 
 portalRouter.post('/auth/change-password', async (c) => {
   const { currentPassword, newPassword } = parse(portalChangePasswordSchema, await body(c));

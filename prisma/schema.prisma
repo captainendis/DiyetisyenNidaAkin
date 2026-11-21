@@ -69,6 +69,7 @@ model User {
   clientMessages     ClientMessage[]
   classSessions      ClassSession[]
   classGroupNotes    ClassGroupNote[]
+  pushDevices        PushDevice[]
 
   @@map("users")
 }
@@ -644,8 +645,9 @@ model ClientAccount {
   createdAt         DateTime  @default(now()) @db.DateTime(3)
   updatedAt         DateTime  @updatedAt @db.DateTime(3)
 
-  sessions ClientSession[]
-  tokens   ClientAccountToken[]
+  sessions    ClientSession[]
+  tokens      ClientAccountToken[]
+  pushDevices PushDevice[]
 
   @@map("client_accounts")
 }
@@ -681,6 +683,32 @@ model ClientSession {
   @@index([accountId])
   @@index([expiresAt])
   @@map("client_sessions")
+}
+
+// ───────────────────────────── Anlık bildirim (mobil) ─────────────────────────────
+
+enum PushPlatform {
+  IOS
+  ANDROID
+}
+
+/// Mobil uygulamanın Expo push token'ı. Sahibi ya personel (userId) ya da danışan hesabıdır (clientAccountId) — ikisi
+/// birden değil (CHECK kısıtı). Aynı token yeniden kaydedilirse sahiplik yeni hesaba geçer (telefonda hesap değişimi).
+/// Çıkışta ve Expo "DeviceNotRegistered" bildirdiğinde silinir (server/services/push.ts).
+model PushDevice {
+  id              String         @id @default(cuid())
+  token           String         @unique
+  platform        PushPlatform
+  userId          String?
+  user            User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientAccountId String?
+  clientAccount   ClientAccount? @relation(fields: [clientAccountId], references: [id], onDelete: Cascade)
+  lastSeenAt      DateTime       @default(now()) @db.DateTime(3)
+  createdAt       DateTime       @default(now()) @db.DateTime(3)
+
+  @@index([userId])
+  @@index([clientAccountId])
+  @@map("push_devices")
 }
 
 /// Diyetisyenin danışana yazdığı mesaj/öneri. Klinik notlardan (ConsultationNote) ayrıdır; yalnızca bunlar danışana görünür.

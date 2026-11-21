@@ -36,7 +36,11 @@ export default function Forgot() {
         {done ? (
           <>
             <Notice tone={done.emailConfigured ? 'success' : 'warning'} text={done.message} />
-            {!staff ? <Notice tone="info" text="E-postadaki bağlantıyı bu telefonda açarsan uygulamada şifreni belirleyebilirsin. Ya da bağlantıyı kopyalayıp “Davet bağlantım var” ekranına yapıştır." /> : null}
+            {staff ? (
+              <Notice tone="info" text="E-postadaki bağlantıya bu telefonda dokunursanız uygulama açılır ve yeni şifrenizi burada belirleyebilirsiniz. Bağlantı başka bir cihazda tarayıcıda da çalışır." />
+            ) : (
+              <Notice tone="info" text="E-postadaki bağlantıya bu telefonda dokunursan uygulama açılır ve şifreni burada belirleyebilirsin. Ya da bağlantıyı kopyalayıp “Davet bağlantım var” ekranına yapıştır." />
+            )}
             <Button title="Girişe dön" variant="secondary" onPress={() => router.back()} />
           </>
         ) : (

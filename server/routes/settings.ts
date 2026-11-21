@@ -51,8 +51,10 @@ settingsRouter.patch('/profile', async (c) => {
 
 settingsRouter.get('/notification-prefs', async (c) => {
   const u = await prisma.user.findUniqueOrThrow({ where: { id: authUser(c).id }, select: { notificationPrefs: true } });
-  const prefs = (u.notificationPrefs ?? {}) as { inApp?: Record<string, boolean>; email?: Record<string, boolean> };
-  return c.json({ prefs: { inApp: prefs.inApp ?? {}, email: prefs.email ?? {} }, channels: await channelStatus() });
+  const prefs = (u.notificationPrefs ?? {}) as { inApp?: Record<string, boolean>; email?: Record<string, boolean>; push?: Record<string, boolean> };
+  // pushDevices: bu kullanıcıya kayıtlı mobil cihaz sayısı (mobil uygulamada bildirim izni verilmişse 1+)
+  const pushDevices = await prisma.pushDevice.count({ where: { userId: authUser(c).id } });
+  return c.json({ prefs: { inApp: prefs.inApp ?? {}, email: prefs.email ?? {}, push: prefs.push ?? {} }, channels: await channelStatus(), pushDevices });
 });
 
 settingsRouter.patch('/notification-prefs', async (c) => {

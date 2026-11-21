@@ -3,8 +3,10 @@
 
 /**
  * Danışan davet / şifre sıfırlama bağlantısı.
+ *  - E-postadaki …/hesabim/etkinlestir?token=… ve …/hesabim/sifre-sifirla?token=… bağlantıları uygulamada
+ *    doğrudan buraya açılır (Universal Links / App Links → +native-intent.tsx)
  *  - Derin bağlantı: nidaakin://baglanti?token=…
- *  - Ya da e-postadaki bağlantı (…/hesabim/etkinlestir?token=…) buraya yapıştırılır
+ *  - Ya da bağlantı "Davet bağlantım var" ekranında buraya yapıştırılır
  * Şifre belirlenince sunucu yeni bir oturum açar; uygulama doğrudan Hesabım'a geçer.
  */
 import { useLocalSearchParams } from 'expo-router';

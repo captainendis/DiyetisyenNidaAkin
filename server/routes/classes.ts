@@ -40,6 +40,7 @@ import {
 import { CLASS_SEAT_HOLDING, type ClassAttendanceStatus, type ClassSessionStatus } from '../../shared/constants';
 import type { ClassGroupNoteDTO, ClassRecurringResult, ClientClassSummary } from '../../shared/classes';
 import { decryptNote, encryptNote } from '../services/recipe-notes';
+import { pushToClient, shortWhen } from '../services/push';
 import { addDays, endOfDayExclusive, startOfDay, toDateStr, toTimeStr } from '../../shared/time';
 
 export const classesRouter = router();
@@ -329,10 +330,12 @@ const SESSION_TRANSITIONS: Record<ClassSessionStatus, ClassSessionStatus[]> = {
 classesRouter.post('/sessions/:id/status', canWrite, async (c) => {
   const id = param(c);
   const { status: to } = parse(classSessionStatusSchema, await body(c));
+  let cancelled = false;
   const row = await withAppointmentLock(async (tx) => {
     const s = await getSessionOr404(id, tx);
     const from = s.status as ClassSessionStatus;
     if (from === to) return s;
+    cancelled = to === 'CANCELLED';
     if (!SESSION_TRANSITIONS[from].includes(to)) throw conflict('INVALID_TRANSITION', 'Bu ders bu duruma alınamaz.');
     if (to === 'COMPLETED') {
       if (s.startsAt > new Date()) throw conflict('NOT_STARTED', 'Henüz başlamamış bir ders "yapıldı" olarak işaretlenemez.');
@@ -347,6 +350,13 @@ classesRouter.post('/sessions/:id/status', canWrite, async (c) => {
     return tx.classSession.update({ where: { id }, data: { status: to }, include: sessionInclude });
   });
   await audit(c, 'class_session.status_changed', 'class_session', id, { to });
+  // İleri tarihli ders iptal edildi → kayıtlı danışanların mobil uygulamasına
+  if (cancelled && row.startsAt > new Date()) {
+    for (const a of row.attendees) {
+      if (!CLASS_SEAT_HOLDING.includes(a.status as ClassAttendanceStatus)) continue;
+      pushToClient(a.clientId, { title: 'Pilates dersin iptal edildi', body: shortWhen(row.startsAt), url: '/hesabim/pilates', data: { type: 'CLASS_CANCELLED' } });
+    }
+  }
   return c.json({ session: toSessionDTO(row) });
 });
 

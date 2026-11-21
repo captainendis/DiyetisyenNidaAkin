@@ -45,7 +45,36 @@ Paket kimliği: `com.nidaakin.app` (iOS ve Android). Mağaza adı: **Nida Akın*
 - İsteğe bağlı **Face ID / parmak izi kilidi** (`src/components/AppLock.tsx`): uygulama 2 dakikadan uzun arka
   planda kalırsa içerik gizlenir.
 - Danışan davet / şifre sıfırlama bağlantısı: `nidaakin://baglanti?token=…` ya da e-postadaki bağlantı
-  "Davet bağlantım var" ekranına yapıştırılır.
+  "Davet bağlantım var" ekranına yapıştırılır. Personel şifre sıfırlama: `nidaakin://sifre-yenile?token=…`.
+
+## E-postadaki bağlantılar (Universal Links / App Links)
+
+Sunucunun e-postaladığı tek kullanımlık bağlantılar uygulama yüklü telefonda **uygulamada** açılır:
+
+| E-postadaki bağlantı | Uygulama ekranı |
+| --- | --- |
+| `https://nidaakin.com/hesabim/etkinlestir?token=…` (danışan daveti) | `(auth)/baglanti.tsx` |
+| `https://nidaakin.com/hesabim/sifre-sifirla?token=…` (danışan şifre sıfırlama) | `(auth)/baglanti.tsx` |
+| `https://nidaakin.com/panel/sifre-sifirla?token=…` (personel şifre sıfırlama) | `(auth)/sifre-yenile.tsx` |
+
+- Yol dönüşümü: `src/app/+native-intent.tsx` (`redirectSystemPath`) → `src/lib/links.tsx`. Diğer site yolları
+  uygulamaya yönlenmez (tarayıcıda açılır).
+- Bu ekranlar yalnızca oturum kapalıyken açılır. Oturum açıkken bağlantıya dokunulursa uygulama
+  "Oturumu kapatıp devam edilsin mi?" diye sorar; onaylanırsa oturum kapanır ve bağlantının ekranı açılır.
+- Uygulama tarafı: `app.json` → `ios.associatedDomains` (`applinks:nidaakin.com`) ve
+  `android.intentFilters` (`autoVerify`, https + `nidaakin.com` + üç yol öneki). Değişiklik yeni bir
+  **native derleme** gerektirir (Expo Go'da Universal Link çalışmaz).
+- Sunucu tarafı: site `/.well-known/apple-app-site-association` ve `/.well-known/assetlinks.json` dosyalarını
+  `APPLE_TEAM_ID` ve `ANDROID_CERT_SHA256` ortam değişkenlerinden üretir (boşsa 404). Değerler: Apple Developer →
+  Membership details → **Team ID**; Google Play Console → Uygulama bütünlüğü → Uygulama imzalama → **SHA-256
+  sertifika parmak izi** (Play'den yüklenmeyen derlemeler için `npx eas-cli credentials` → Android keystore SHA-256;
+  birden fazlası virgülle). Ayrıntı: kök README → "Mobil uygulama".
+- **Alan adı değişirse** (`extra.apiUrl`): `app.json`'daki `associatedDomains` (`applinks:<alan>`) ve üç
+  `intentFilters.data[].host` değerini de aynı alan adıyla güncelleyin, sunucuda `PUBLIC_SITE_URL`'in aynı alan
+  adı olduğundan emin olun ve yeni bir derleme alın. `www.` gibi ek alan adları ayrı satır olarak eklenmelidir.
+- Test: iOS'ta Notlar'a bağlantıyı yazıp dokunun; Android'de
+  `adb shell am start -a android.intent.action.VIEW -d "https://nidaakin.com/panel/sifre-sifirla?token=…"` ve
+  doğrulama durumu için `adb shell pm get-app-links com.nidaakin.app`.
 
 ## Klasör yapısı
 
@@ -56,7 +85,8 @@ mobile/
 ├── src/
 │   ├── app/                 # Expo Router — her dosya bir ekran
 │   │   ├── _layout.tsx      # Yazı tipleri, sağlayıcılar, oturuma göre korunan bölümler
-│   │   ├── (auth)/          # Karşılama, giriş, şifremi unuttum, davet bağlantısı
+│   │   ├── +native-intent.tsx # E-posta bağlantılarını (Universal/App Links) ekranlara çevirir
+│   │   ├── (auth)/          # Karşılama, giriş, şifremi unuttum, davet bağlantısı, personel şifre yenileme
 │   │   ├── hesabim/         # Danışan: (tabs) + detay ekranları
 │   │   └── panel/           # Panel: (tabs) + detay ekranları
 │   ├── components/

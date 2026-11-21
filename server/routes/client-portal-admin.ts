@@ -13,6 +13,7 @@ import { audit } from '../lib/audit';
 import { decryptString, encryptString } from '../lib/crypto';
 import { authUser, requirePermission } from '../auth/session';
 import { accountInfo, staffLinkFor } from '../services/client-accounts';
+import { pushToClient } from '../services/push';
 import {
   accountCreateSchema,
   accountUpdateSchema,
@@ -86,7 +87,10 @@ clientPortalAdminRouter.patch('/account', manage, async (c) => {
   const updated = await prisma.$transaction(async (tx) => {
     const u = await tx.clientAccount.update({ where: { id: a.id }, data: input });
     // Kapatılan hesabın açık oturumları hemen düşer
-    if (input.isActive === false) await tx.clientSession.deleteMany({ where: { accountId: a.id } });
+    if (input.isActive === false) {
+      await tx.clientSession.deleteMany({ where: { accountId: a.id } });
+      await tx.pushDevice.deleteMany({ where: { clientAccountId: a.id } });
+    }
     return u;
   });
   const action = input.isActive === false ? 'portal_account.deactivated' : input.isActive === true && !a.isActive ? 'portal_account.activated' : 'portal_account.updated';
@@ -148,6 +152,8 @@ clientPortalAdminRouter.post('/messages', clinicalWrite, async (c) => {
     include: msgInclude,
   });
   await audit(c, 'client_message.created', 'client', client.id, { messageId: m.id });
+  // Mesaj metni bildirime yazılmaz (kilit ekranında görünebilir)
+  pushToClient(client.id, { title: 'Diyetisyeninden yeni mesaj', body: 'Okumak için dokun.', url: '/hesabim/mesajlar', data: { type: 'CLIENT_MESSAGE' } });
   return c.json({ message: serialize(m) }, 201);
 });
 

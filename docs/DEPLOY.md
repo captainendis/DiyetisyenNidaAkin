@@ -63,7 +63,8 @@ ssh-keyscan -p SSH_PORTU sunucu.alanadi.com
 
 **4. Sunucuda `.env`.** Uygulama kökünde (cPanel "Application root") bir `.env` dosyası oluşturun ve
 **Setup Node.js App'teki değişkenlerin aynısını** yazın (`DATABASE_URL`, `DATA_ENCRYPTION_KEY`, `PUBLIC_SITE_URL`,
-`UPLOAD_DIR`, `TRUST_PROXY`, `SMTP_*`…). Dağıtım betiği migration ve yedek için bu dosyayı okur; site de aynı
+`UPLOAD_DIR`, `TRUST_PROXY`, `SMTP_*`, mobil uygulama bağlantıları için isteğe bağlı `APPLE_TEAM_ID` ve
+`ANDROID_CERT_SHA256`…). Dağıtım betiği migration ve yedek için bu dosyayı okur; site de aynı
 dosyayı görür. İzinleri kısıtlayın: `chmod 600 .env`. Bu dosya git'e ve CI'a **hiç girmez**.
 
 **5. GitHub ayarları** — depo → Settings → Secrets and variables → Actions:

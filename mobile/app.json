@@ -11,6 +11,7 @@
     "ios": {
       "bundleIdentifier": "com.nidaakin.app",
       "supportsTablet": true,
+      "associatedDomains": ["applinks:nidaakin.com"],
       "infoPlist": {
         "NSFaceIDUsageDescription": "Uygulama kilidini Face ID ile açmak için kullanılır.",
         "NSPhotoLibraryUsageDescription": "Danışan dosyası ve görsel yüklemek için fotoğraflarınıza erişilir.",
@@ -20,6 +21,18 @@
     },
     "android": {
       "package": "com.nidaakin.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "nidaakin.com", "pathPrefix": "/hesabim/etkinlestir" },
+            { "scheme": "https", "host": "nidaakin.com", "pathPrefix": "/hesabim/sifre-sifirla" },
+            { "scheme": "https", "host": "nidaakin.com", "pathPrefix": "/panel/sifre-sifirla" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#211710",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

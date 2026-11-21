@@ -8,12 +8,15 @@
  *    kanal yapılandırılmamışsa gönderim YAPILMAZ ve NotificationDelivery'ye SKIPPED_NOT_CONFIGURED yazılır.
  *  - WhatsApp: panelden etkinleştirilen Cloud API (bkz. whatsapp.ts). Şablonlu mesajlar olay bazında
  *    gönderilir (yeni talep -> personel, onay/hatırlatma -> danışan); bu adaptör yalnızca durum bildirir.
+ *  - Mobil anlık bildirim (push.ts): her personel olayı, kullanıcının "push" tercihi kapatılmadıysa (varsayılan açık)
+ *    kayıtlı cihazlarına gönderilir.
  */
 import { prisma, type Tx } from '../lib/db';
 import type { NotificationType } from '../../shared/constants';
 import { env } from '../lib/env';
 import { isEmailConfigured, sendMail } from './mailer';
 import { isWhatsappCloudConfigured, whatsappNotifyClient, whatsappNotifyStaffRequest } from './whatsapp';
+import { pushToClient, pushToUsers, shortWhen } from './push';
 
 interface ChannelResult {
   status: 'SENT' | 'FAILED' | 'SKIPPED_NOT_CONFIGURED';
@@ -56,6 +59,15 @@ export async function channelStatus() {
 interface Prefs {
   inApp?: Record<string, boolean>;
   email?: Record<string, boolean>;
+  /** Mobil anlık bildirim; kayıt yoksa açık */
+  push?: Record<string, boolean>;
+}
+
+/** Personel bildiriminin mobil uygulamada açacağı ekran */
+export function staffPushUrl(data: { appointmentId?: string | null; clientId?: string | null }) {
+  if (data.appointmentId) return `/panel/randevular/${data.appointmentId}`;
+  if (data.clientId) return `/panel/danisanlar/${data.clientId}`;
+  return '/panel/bildirimler';
 }
 
 export async function notifyStaff(
@@ -66,8 +78,10 @@ export async function notifyStaff(
   const db = tx ?? prisma;
   const users = await db.user.findMany({ where: { isActive: true }, select: { id: true, email: true, notificationPrefs: true } });
   const created: { id: string; userId: string; email: string; prefs: Prefs }[] = [];
+  const pushUserIds: string[] = [];
   for (const u of users) {
     const prefs = (u.notificationPrefs ?? {}) as Prefs;
+    if (prefs.push?.[type] !== false) pushUserIds.push(u.id);
     if (prefs.inApp?.[type] === false) continue;
     const n = await db.notification.create({
       data: { userId: u.id, type, title: data.title, body: data.body ?? null, appointmentId: data.appointmentId ?? null, clientId: data.clientId ?? null },
@@ -77,6 +91,7 @@ export async function notifyStaff(
   // Harici kanallar transaction dışında, arka planda
   const link = data.appointmentId ? `${env.publicSiteUrl}/panel/randevular?id=${data.appointmentId}` : `${env.publicSiteUrl}/panel/bildirimler`;
   if (type === 'APPOINTMENT_REQUESTED') void whatsappNotifyStaffRequest(data).catch(() => {});
+  pushToUsers(pushUserIds, { title: data.title, body: data.body, url: staffPushUrl(data), data: { type } });
   setImmediate(() => {
     void (async () => {
       for (const c of created) {
@@ -113,5 +128,6 @@ export async function generateUpcomingReminders() {
     });
     await prisma.appointment.update({ where: { id: a.id }, data: { reminderNotifiedAt: new Date() } });
     void whatsappNotifyClient('reminderClient', a.id);
+    pushToClient(a.clientId, { title: 'Randevun yaklaşıyor', body: shortWhen(a.startsAt), url: '/hesabim/randevular', data: { type: 'APPOINTMENT_REMINDER' } });
   }
 }

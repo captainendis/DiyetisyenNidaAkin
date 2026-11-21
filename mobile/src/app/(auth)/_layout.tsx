@@ -20,6 +20,7 @@ export default function AuthLayout() {
       <Stack.Screen name="giris" options={{ title: '' }} />
       <Stack.Screen name="sifremi-unuttum" options={{ title: 'Şifremi unuttum' }} />
       <Stack.Screen name="baglanti" options={{ title: 'Hesap bağlantısı' }} />
+      <Stack.Screen name="sifre-yenile" options={{ title: 'Şifre yenileme' }} />
     </Stack>
   );
 }

@@ -134,6 +134,7 @@ Tam liste ve açıklamalar `.env.example` içindedir.
 | `UPLOAD_DIR` | ✔ (üretim) | Yüklemeler (varsayılan `./storage`). Üretimde uygulama klasörünün **dışında mutlak bir yol** verin (derlemede silinmesin). `private/` alt klasörü şifreli danışan dosyalarıdır, asla statik servis edilmez |
 | `SMTP_*`, `MAIL_FROM` | | İsteğe bağlı. Boşsa e-posta **gönderilmez** ve sistem gönderiyormuş gibi davranmaz |
 | `DEMO_MODE` | | `true` ise panelde "Demo modu" uyarısı görünür ve demo seed çalıştırılabilir |
+| `APPLE_TEAM_ID` / `ANDROID_CERT_SHA256` | | İsteğe bağlı. E-postadaki bağlantıların mobil uygulamada açılması için (bkz. [Mobil uygulama](#mobil-uygulama)) |
 
 ## Veritabanı ve migration
 
@@ -374,6 +375,23 @@ mobilde de zorunludur. Mobil oturumlar "beni hatırla" süresiyle (`SESSION_REME
 yine yalnızca token özeti tutulur. Şifre değişikliği tüm oturumları kapatır ve yanıtta yeni token döner.
 Personel token'ı danışan uçlarını, danışan token'ı personel uçlarını açmaz (`tests/mobile-auth.integration.test.ts`).
 
+**E-postadaki bağlantılar uygulamada açılır (iOS Universal Links · Android App Links).** Sunucunun e-postaladığı
+tek kullanımlık bağlantılar — danışan daveti `/hesabim/etkinlestir?token=…`, danışan şifre sıfırlama
+`/hesabim/sifre-sifirla?token=…`, personel şifre sıfırlama `/panel/sifre-sifirla?token=…` — uygulama yüklü bir
+telefonda doğrudan uygulamada açılır; uygulama yoksa ya da masaüstünde web sayfası açılır. Sitenin geri kalanı
+her zaman tarayıcıda açılır. Site bunun için iki doğrulama dosyası sunar (`src/app/.well-known/`):
+
+| Dosya | Ortam değişkeni | Değer nereden alınır |
+| --- | --- | --- |
+| `/.well-known/apple-app-site-association` | `APPLE_TEAM_ID` | Apple Developer → Account → **Membership details → Team ID** (10 karakter) |
+| `/.well-known/assetlinks.json` | `ANDROID_CERT_SHA256` | Google Play Console → uygulama → **Test ve yayınlama → Uygulama bütünlüğü → Uygulama imzalama** → "SHA-256 sertifika parmak izi" (Play imzalama anahtarı). Yerel/EAS dahili derlemeler için `npx eas-cli credentials` → Android → keystore'un SHA-256'sı. Birden fazla değeri virgülle ayırın |
+
+Değişken boşsa ilgili dosya 404 döner ve bağlantılar yalnızca tarayıcıda açılır. Değişkeni girip uygulamayı
+yeniden başlattıktan sonra kontrol: `curl -i https://nidaakin.com/.well-known/apple-app-site-association`
+(200, `application/json`, yönlendirme yok). Apple dosyayı CDN'den önbelleğe alır; değişiklik cihazlara birkaç
+saat içinde ulaşabilir. Uygulamadaki karşılığı `mobile/app.json` (`ios.associatedDomains`,
+`android.intentFilters`) ve `mobile/src/app/+native-intent.tsx`'tir — bkz. [mobile/README.md](mobile/README.md).
+
 ## API özeti
 
 Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } }` — doğrulama hatalarında
@@ -458,7 +476,7 @@ npm start              # = node .next/standalone/server.js  (PORT, varsayılan 3
    Startup file: `app.cjs` (standalone sunucuyu başlatan küçük CommonJS dosyası).
 4. Ortam değişkenlerini aynı ekrandan girin: `NODE_ENV=production`, `DATABASE_URL`, `DATA_ENCRYPTION_KEY`,
    `PUBLIC_SITE_URL`, `TRUST_PROXY=1`, `UPLOAD_DIR=/home/KULLANICI/nidaakin-storage` (uygulama klasörünün dışında),
-   isteğe bağlı `SMTP_*`.
+   isteğe bağlı `SMTP_*`, `APPLE_TEAM_ID`, `ANDROID_CERT_SHA256`.
 5. Terminalde `npm run db:deploy`, ilk kurulumda `npm run prod:seed` ve `npm run prod:admin:create`; ardından
    **Restart**.
 

@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/ui';
 import { AppLock } from '@/components/AppLock';
+import { AppLinkGate } from '@/lib/links';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { queryClient } from '@/lib/query';
 import { colors } from '@/theme';
@@ -73,6 +74,7 @@ export default function RootLayout() {
                 <StatusBar style="dark" />
                 <AppLock>
                   <RootNavigator />
+                  <AppLinkGate />
                 </AppLock>
               </ToastProvider>
             </AuthProvider>

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-/** Giriş — ?rol=danisan (Hesabım) | ?rol=panel (yönetim) */
+/** Giriş — ?rol=danisan (Hesabım) | ?rol=panel (yönetim) · ?bildirim=sifre-yenilendi (şifre sıfırlandıktan sonra) */
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { colors, space } from '@/theme';
 
 export default function Login() {
-  const { rol } = useLocalSearchParams<{ rol?: string }>();
+  const { rol, bildirim } = useLocalSearchParams<{ rol?: string; bildirim?: string }>();
   const staff = rol === 'panel';
   const { loginClient, loginStaff } = useAuth();
   const [email, setEmail] = useState('');
@@ -40,6 +40,9 @@ export default function Login() {
   return (
     <Screen title={staff ? 'Panel girişi' : 'Hesabına giriş yap'} subtitle={staff ? 'Nida Akın ve ekibi için yönetim uygulaması.' : 'Beslenme listen, tariflerin ve randevuların burada.'}>
       <Form>
+        {bildirim === 'sifre-yenilendi' && !error ? (
+          <Notice tone="success" text="Şifreniz güncellendi. Güvenliğiniz için tüm açık oturumlar kapatıldı; yeni şifrenizle giriş yapın." />
+        ) : null}
         {error ? <Notice tone="danger" text={error} /> : null}
         <TextField
           label="E-posta"

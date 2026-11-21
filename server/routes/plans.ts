@@ -15,6 +15,7 @@ import { getSettings } from '../services/settings';
 import { renderPlanPrintPage } from '../services/print';
 import { emptyPlan, nutritionPlanDataSchema, planCreateSchema, planTitleFor, planUpdateSchema, type NutritionPlanData } from '../../shared/plan';
 import { resolvePlanRecipes } from './recipes';
+import { pushToClient } from '../services/push';
 
 export const plansRouter = router();
 const read = requirePermission('clinical:read');
@@ -105,6 +106,8 @@ plansRouter.post('/', write, async (c) => {
     select: listItem,
   });
   await audit(c, 'plan.created', 'nutrition_plan', plan.id, { fromTemplate: !!input.fromId, template: plan.isTemplate });
+  // Danışana atanan liste Hesabım'da hemen görünür → mobil bildirim (liste adı/içeriği gönderilmez)
+  if (client) pushToClient(client.id, { title: 'Yeni beslenme listen hazır', body: 'Hesabım’dan görüntüleyebilirsin.', url: `/hesabim/listeler/${plan.id}`, data: { type: 'PLAN_SHARED' } });
   return c.json({ plan }, 201);
 });
 
