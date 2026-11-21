@@ -12,6 +12,10 @@ gerekmez. Android Ubuntu'da, iOS macOS'ta derlenir.
 Derleme numarası (`versionCode` / `buildNumber`) çalıştırma numarasıdır ve her çalıştırmada artar.
 Sürüm adı `mobile/app.json → expo.version`'dan gelir (mağazaya yeni sürüm gönderirken artırın).
 
+> **Kısa yol:** ilk üç kurulumu (Android imza anahtarı, Google Play, bildirimler) adım adım yapan betik:
+> `./scripts/mobil-kurulum.sh` — kendi bilgisayarınızda çalıştırın (GitHub CLI `gh auth login` ile giriş yapılmış
+> olmalı). Anahtar ve şifre `~/.nidaakin-mobil/` klasöründe kalır, sırlar doğrudan GitHub'a gönderilir.
+
 Sırlar **Settings → Secrets and variables → Actions** altına eklenir. Eksik sırlarda derleme yine çalışır:
 Android debug imzalı çıkar (Play kabul etmez), iOS yalnızca imzasız simülatör derlemesi yapılır.
 
