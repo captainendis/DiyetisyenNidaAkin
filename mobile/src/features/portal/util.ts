@@ -2,12 +2,12 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Hesabım (danışan) ekranlarının küçük yardımcıları — web'deki src/views/portal/* ile aynı kurallar */
-import * as WebBrowser from 'expo-web-browser';
+import { router } from 'expo-router';
 import type { QueryKey } from '@tanstack/react-query';
 import { recipeImageUrl } from '@shared/recipe';
 import type { AppointmentStatus, ClassAttendanceStatus } from '@shared/constants';
 import type { Tone } from '@/theme';
-import { API_URL, SITE_URL } from '@/lib/config';
+import { API_URL } from '@/lib/config';
 
 /** Sorgu anahtarları (ilk öğe kaynak adı) */
 export const PK = {
@@ -38,9 +38,9 @@ export function recipeImage(base: string, size: 480 | 960 = 960) {
   return /^https?:/i.test(u) ? u : API_URL + u;
 }
 
-/** Web sitesindeki randevu talep sayfası (uygulama içi tarayıcıda) */
+/** Uygulama içi randevu talebi (web: /randevu, /randevu?tur=pilates) — src/app/hesabim/randevu-al.tsx */
 export function openBooking(kind?: 'pilates') {
-  void WebBrowser.openBrowserAsync(`${SITE_URL}/randevu${kind ? '?tur=pilates' : ''}`);
+  router.push(kind ? { pathname: '/hesabim/randevu-al', params: { tur: 'pilates' } } : '/hesabim/randevu-al');
 }
 
 export const APPOINTMENT_TONE: Partial<Record<AppointmentStatus, Tone>> = {

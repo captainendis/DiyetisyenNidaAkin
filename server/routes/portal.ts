@@ -129,8 +129,9 @@ async function clientPrograms(clientId: string) {
 portalRouter.get('/auth/me', async (c) => {
   const u = c.var.portalUser;
   if (!u) throw unauthorized();
-  const programs = await clientPrograms(u.clientId);
-  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, csrfToken: u.csrfToken, programs } });
+  const [programs, client] = await Promise.all([clientPrograms(u.clientId), prisma.client.findUnique({ where: { id: u.clientId }, select: { phone: true } })]);
+  // phone: randevu talebi formunu (mobil uygulama) önceden doldurmak için — danışanın kendi kaydı
+  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, phone: client?.phone ?? null, csrfToken: u.csrfToken, programs } });
 });
 
 async function findValidToken(token: string) {

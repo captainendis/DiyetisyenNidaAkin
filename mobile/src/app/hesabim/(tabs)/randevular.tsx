@@ -56,7 +56,7 @@ export default function AppointmentsTab() {
   const availability = useAvailability();
   const [pilatesOpen, setPilatesOpen] = useState(false);
 
-  // Pilates danışanı uygulama içi formdan, diğerleri web'deki randevu sayfasından talep eder
+  // Pilates danışanı hesabındaki ders talebi formundan, diğerleri randevu talebi ekranından (pilates türüyle) talep eder
   const requestPilates = () => (me.programs.pilates ? setPilatesOpen(true) : openBooking('pilates'));
 
   const now = Date.now();
@@ -80,8 +80,8 @@ export default function AppointmentsTab() {
         Taleplerin, randevuların ve önümüzdeki iki haftanın boş zamanları. Randevunu değiştirmek ya da iptal etmek için diyetisyeninle iletişime geç.
       </T>
       <View style={{ gap: space.sm, marginBottom: space.xl }}>
-        <Button title="Diyet randevusu talep et" icon="external-link" full onPress={() => openBooking()} />
-        <Button title="Pilates dersi talep et" variant="secondary" icon={me.programs.pilates ? 'send' : 'external-link'} full onPress={requestPilates} />
+        <Button title="Diyet randevusu talep et" icon="calendar" full onPress={() => openBooking()} />
+        <Button title="Pilates dersi talep et" variant="secondary" icon="send" full onPress={requestPilates} />
       </View>
 
       {open.length > 0 ? (

@@ -102,6 +102,7 @@ describe('mobil danışan oturumu', () => {
     const me = await request(app).get('/api/portal/auth/me').set('Authorization', `Bearer ${token}`);
     expect(me.status).toBe(200);
     expect(me.body.me.email).toBe(CLIENT.email);
+    expect(me.body.me.phone).toMatch(/^\+90533/);
     expect((await request(app).get('/api/portal/overview').set('Authorization', `Bearer ${token}`)).status).toBe(200);
   });
 

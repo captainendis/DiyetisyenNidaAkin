@@ -49,6 +49,8 @@ export interface ClientMe {
   firstName: string;
   lastName: string;
   email: string;
+  /** Danışan kaydındaki telefon (+90…) */
+  phone: string | null;
   csrfToken: string;
   programs: { nutrition: boolean; pilates: boolean };
 }

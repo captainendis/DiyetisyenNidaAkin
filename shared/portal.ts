@@ -78,6 +78,8 @@ export interface PortalMe {
   firstName: string;
   lastName: string;
   email: string;
+  /** Danışan kaydındaki telefon (+90…) — randevu talebi formunu önceden doldurmak için */
+  phone: string | null;
   csrfToken: string;
   /** Danışanın aldığı hizmetler: menü buna göre şekillenir (yalnızca pilatese gelen danışan beslenme menülerini görmez) */
   programs: { nutrition: boolean; pilates: boolean };

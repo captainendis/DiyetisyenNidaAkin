@@ -122,7 +122,7 @@ export default function ClientHome() {
                     ) : (
                       <View style={{ gap: space.md }}>
                         <T color={colors.cocoa}>Planlanmış bir görüşmen yok.</T>
-                        <Button title="Randevu talep et" variant="secondary" size="sm" icon="external-link" onPress={() => openBooking()} style={{ alignSelf: 'flex-start' }} />
+                        <Button title="Randevu talep et" variant="secondary" size="sm" icon="calendar" onPress={() => openBooking()} style={{ alignSelf: 'flex-start' }} />
                       </View>
                     )}
                   </Card>
