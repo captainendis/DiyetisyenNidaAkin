@@ -8,6 +8,7 @@
  *  - GOOGLE_SERVICES_JSON_PATH: Firebase (FCM) yapılandırma dosyası — Android'de anlık bildirim için gerekir.
  *  - EAS_PROJECT_ID: Expo push servisinin proje kimliği (app.json'da extra.eas.projectId yoksa).
  *  - Android sürüm imzası: plugins/withAndroidReleaseSigning.js
+ *  - Donanım özellikleri (dikey ekran, Wi-Fi) isteğe bağlı: plugins/withOptionalHardware.js
  */
 const fs = require('node:fs');
 
@@ -30,6 +31,6 @@ module.exports = ({ config }) => {
       ...config.extra,
       ...(projectId ? { eas: { ...config.extra?.eas, projectId } } : {}),
     },
-    plugins: [...(config.plugins ?? []), './plugins/withAndroidReleaseSigning'],
+    plugins: [...(config.plugins ?? []), './plugins/withAndroidReleaseSigning', './plugins/withOptionalHardware'],
   };
 };
