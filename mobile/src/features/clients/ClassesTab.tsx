@@ -24,6 +24,7 @@ function SessionList({ rows, past }: { rows: Row[]; past?: boolean }) {
           last={i === rows.length - 1}
           title={`${formatDayStr(s.date, 'd MMM, ccc')} · ${s.time}`}
           subtitle={s.title}
+          onPress={() => router.push(`/panel/pilates/ders/${s.id}`)}
           right={
             past && s.status !== 'COMPLETED' ? (
               <Badge label={CLASS_SESSION_STATUS_LABEL[s.status]} tone={SESSION_TONE[s.status]} />

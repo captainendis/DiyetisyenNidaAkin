@@ -3,7 +3,7 @@
 
 /** Beslenme planı düzenleyici + önizleme + PDF (web: /panel/planlar/:id — PlanEditorPage) */
 import { router, Stack, useLocalSearchParams, usePreventRemove } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Badge, Button, Card, confirm, Empty, IconButton, ListItem, QueryView, Screen, Segmented, Sheet, TextField, useToast } from '@/components/ui';
 import { api, ApiError, errorMessage } from '@/lib/api';
@@ -62,10 +62,6 @@ function Editor({ plan }: { plan: PlanDetail }) {
       { text: 'Kaydet', onPress: async () => { if (await save(true)) { setLeaving(true); setTimeout(repeat, 0); } } },
     ]);
   });
-
-  useEffect(() => {
-    if (leaving === true && !dirty) return;
-  }, [leaving, dirty]);
 
   const pdf = async () => {
     setPrinting(true);
@@ -165,6 +161,9 @@ export default function PlanEditorScreen() {
     );
   }
   return (
-    <QueryView query={q}>{(d) => <Editor key={d.plan.id} plan={d.plan} />}</QueryView>
+    <>
+      <Stack.Screen options={{ title: 'Beslenme planı' }} />
+      <QueryView query={q}>{(d) => <Editor key={d.plan.id} plan={d.plan} />}</QueryView>
+    </>
   );
 }

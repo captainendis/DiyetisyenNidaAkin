@@ -18,7 +18,7 @@ function ClientRecipes({ clientId }: { clientId: string }) {
   const q = useApiQuery(['recipes', 'client', clientId], () => api.get<{ items: Recipe[] }>('/recipes', { clientId }));
   const items = q.data?.items ?? [];
   return (
-    <Section title="Kişiye özel tarifler" style={{ marginBottom: space.sm }}>
+    <Section title="Kişiye özel tarifler" style={{ marginBottom: space.sm }} action={<Button title="Tümünü yönet" variant="ghost" size="sm" onPress={() => router.push('/panel/tarifler')} />}>
       <T variant="caption" style={{ marginBottom: space.sm, paddingHorizontal: 2 }}>Bu danışan için uyarlanmış tarif varyasyonları. Web sitesinde yayınlanmazlar.</T>
       {!items.length ? (
         <Card style={{ flexDirection: 'row', gap: space.md }}>
@@ -30,7 +30,7 @@ function ClientRecipes({ clientId }: { clientId: string }) {
       ) : (
         <Card padded={false}>
           {items.map((r, i) => (
-            <ListItem key={r.id} icon="book-open" last={i === items.length - 1} title={r.title} subtitle={r.variantNote || RECIPE_CATEGORY_LABEL[r.category]} />
+            <ListItem key={r.id} icon="book-open" last={i === items.length - 1} title={r.title} subtitle={r.variantNote || RECIPE_CATEGORY_LABEL[r.category]} onPress={() => router.push(`/panel/tarifler/${r.id}`)} />
           ))}
         </Card>
       )}
