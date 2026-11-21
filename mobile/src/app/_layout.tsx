@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/ui';
 import { AppLock } from '@/components/AppLock';
+import { AppUpdateCheck } from '@/components/AppUpdateCheck';
 import { PushNotifications } from '@/components/PushNotifications';
 import { AppLinkGate } from '@/lib/links';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -77,6 +78,8 @@ export default function RootLayout() {
                 <AppLock>
                   <RootNavigator />
                   <AppLinkGate />
+                  {/* Kilit açıldıktan sonra: mağazada yeni sürüm varsa uyarır */}
+                  <AppUpdateCheck />
                 </AppLock>
               </ToastProvider>
             </AuthProvider>
