@@ -76,6 +76,24 @@ Sunucunun e-postaladığı tek kullanımlık bağlantılar uygulama yüklü tele
   `adb shell am start -a android.intent.action.VIEW -d "https://nidaakin.com/panel/sifre-sifirla?token=…"` ve
   doğrulama durumu için `adb shell pm get-app-links com.nidaakin.app`.
 
+## Anlık bildirimler (push)
+
+- `src/lib/push.ts` + `src/components/PushNotifications.tsx`: girişten sonra izin bir kez sorulur, Expo push token'ı
+  oturuma göre `POST /api/devices` (Panel) ya da `POST /api/portal/devices` (Hesabım) ile kaydedilir; çıkıştan önce silinir.
+  Dokunulan bildirim `data.url` rotasını açar (soğuk açılış dahil); uygulama açıkken gelen bildirim banner olarak
+  görünür ve ilgili sorgular tazelenir. Android kanalı: `default` (yüksek önem).
+- **Gerekenler:** `npx eas-cli init` (→ `app.json › extra.eas.projectId`; yoksa kayıt sessizce atlanır),
+  Android için FCM V1 servis hesabı anahtarı `npx eas-cli credentials` ile, iOS APNs anahtarı EAS derlemesinde otomatik.
+  Simülatör/emülatör ve web'de push yoktur — gerçek cihazda geliştirme derlemesiyle deneyin.
+
+## Çevrimdışı kullanım
+
+- Bağlantı yokken üstte uyarı şeridi görünür; sorgular hata vermek yerine bekler, bağlantı gelince tazelenir.
+- Uygulama internetsiz açılırsa oturum düşmez: son doğrulanan kimlikle açılır, bağlantı gelince yeniden doğrulanır.
+- Cihazda en fazla 7 gün saklanan veriler (`src/lib/offline.ts`) bilinçli olarak dardır:
+  danışanın kendi verileri (`['portal', …]`) ve personelin gündem/randevuları (`['dashboard']`, `['appointments']`).
+  Klinik notlar, ölçümler, dosyalar ve planlar personel tarafında **diske yazılmaz**. Çıkışta önbellek silinir.
+
 ## Klasör yapısı
 
 ```

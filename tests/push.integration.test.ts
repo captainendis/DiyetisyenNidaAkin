@@ -129,6 +129,27 @@ describe('cihaz kaydı', () => {
     expect(byBody.body.removed).toBe(1);
     expect((await request(app).delete('/api/devices').set(auth(staff)).send({ token: 'nope' })).status).toBe(422);
   });
+
+  it('kayıt oturuma bağlıdır: oturum biterse (süre dolması, şifre değişikliği) cihaz kaydı da silinir', async () => {
+    // Ayrı oturumlar — ortak test oturumları bozulmasın
+    const s2 = await request(app).post('/api/auth/login').set(MOBILE).send(STAFF);
+    const p2 = await request(app).post('/api/portal/auth/login').set(MOBILE).send(CLIENT);
+    const staff2 = { token: s2.body.token as string, csrf: s2.body.csrfToken as string };
+    const client2 = { token: p2.body.token as string, csrf: p2.body.csrfToken as string };
+    expect((await request(app).post('/api/devices').set(auth(staff2)).send({ token: TOKEN_A, platform: 'IOS' })).status).toBe(200);
+    expect((await request(app).post('/api/portal/devices').set(auth(client2)).send({ token: TOKEN_B, platform: 'ANDROID' })).status).toBe(200);
+    const a = await prisma.pushDevice.findUniqueOrThrow({ where: { token: TOKEN_A } });
+    const b = await prisma.pushDevice.findUniqueOrThrow({ where: { token: TOKEN_B } });
+    expect(a.sessionId).toBeTruthy();
+    expect(b.clientSessionId).toBeTruthy();
+    // Oturum temizliği (süresi dolan oturumlar) ile aynı etki: oturum satırı silinir
+    await prisma.session.delete({ where: { id: a.sessionId! } });
+    await prisma.clientSession.delete({ where: { id: b.clientSessionId! } });
+    expect(await prisma.pushDevice.count({ where: { token: { in: [TOKEN_A, TOKEN_B] } } })).toBe(0);
+    // Ortak oturumlar etkilenmedi
+    expect((await request(app).get('/api/auth/me').set(auth(staff))).status).toBe(200);
+    expect((await request(app).get('/api/portal/auth/me').set(auth(client))).status).toBe(200);
+  });
 });
 
 describe('gönderim', () => {

@@ -6,7 +6,7 @@
  *  - Personel:  POST /api/devices · DELETE /api/devices/:token (ya da gövdede { token })      — requireAuth + CSRF
  *  - Danışan:   POST /api/portal/devices · DELETE /api/portal/devices/:token (ya da gövdede) — requireClientAuth + CSRF
  * Aynı token başka hesaba kayıtlıysa sahiplik bu hesaba geçer (telefonda hesap değiştirme). Uygulama çıkıştan
- * ÖNCE DELETE çağırır; Expo "DeviceNotRegistered" bildirirse token sunucuda silinir (services/push.ts).
+ * ÖNCE DELETE çağırır; kayıt oturuma bağlıdır — oturum süresi dolunca ya da şifre değişince de silinir. Expo "DeviceNotRegistered" bildirirse token sunucuda silinir (services/push.ts).
  */
 import { z } from 'zod';
 import { body, parse, router, type Ctx } from '../lib/http';
@@ -37,5 +37,5 @@ function devicesRouter(owner: (c: Ctx) => PushOwner) {
   return r;
 }
 
-export const staffDevicesRouter = devicesRouter((c) => ({ userId: authUser(c).id }));
-export const portalDevicesRouter = devicesRouter((c) => ({ clientAccountId: portalUser(c).accountId }));
+export const staffDevicesRouter = devicesRouter((c) => ({ userId: authUser(c).id, sessionId: authUser(c).sessionId }));
+export const portalDevicesRouter = devicesRouter((c) => ({ clientAccountId: portalUser(c).accountId, clientSessionId: portalUser(c).sessionId }));

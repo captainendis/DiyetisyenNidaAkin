@@ -375,6 +375,19 @@ mobilde de zorunludur. Mobil oturumlar "beni hatırla" süresiyle (`SESSION_REME
 yine yalnızca token özeti tutulur. Şifre değişikliği tüm oturumları kapatır ve yanıtta yeni token döner.
 Personel token'ı danışan uçlarını, danışan token'ı personel uçlarını açmaz (`tests/mobile-auth.integration.test.ts`).
 
+**Anlık bildirim (push):** mobil uygulama girişten sonra bildirim izni ister ve Expo push token'ını kaydeder
+(personel `POST /api/devices`, danışan `POST /api/portal/devices`; çıkışta `DELETE …/devices/:token`). Aynı telefon
+başka hesapla girerse token yeni hesaba taşınır. Sunucu (`server/services/push.ts`) Expo Push Service'e arka planda
+gönderir, hata isteği bozmaz; Expo `DeviceNotRegistered` dönerse token silinir.
+- **Personel:** her panel bildirimi (yeni talep, onay, iptal, yaklaşan randevu, yeni danışan) — Ayarlar → Bildirim
+  tercihleri'ndeki **Mobil** sütunuyla olay bazında kapatılabilir (varsayılan açık).
+- **Danışan:** randevu onaylandı / saati değişti / iptal edildi, yeni beslenme listesi, diyetisyenden yeni mesaj,
+  yaklaşan randevu hatırlatması, pilates dersi iptali. Metinde sağlık bilgisi ya da mesaj içeriği yer almaz.
+- Bildirime dokununca `data.url` ekranı açılır (ör. `/panel/randevular/<id>`, `/hesabim/mesajlar`).
+- Kurulum: `cd mobile && npx eas-cli init` (app.json'a `extra.eas.projectId` yazar; yoksa uygulama kaydı atlar),
+  Android için FCM anahtarı `npx eas-cli credentials` ile yüklenir, iOS APNs anahtarını EAS derlemede yönetir.
+  `EXPO_ACCESS_TOKEN` yalnızca Expo hesabında "Enhanced push security" açıksa gerekir (`.env.example`).
+
 **E-postadaki bağlantılar uygulamada açılır (iOS Universal Links · Android App Links).** Sunucunun e-postaladığı
 tek kullanımlık bağlantılar — danışan daveti `/hesabim/etkinlestir?token=…`, danışan şifre sıfırlama
 `/hesabim/sifre-sifirla?token=…`, personel şifre sıfırlama `/panel/sifre-sifirla?token=…` — uygulama yüklü bir
@@ -436,6 +449,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 | Tarifler (herkese açık) | `GET /api/public/recipes` (`?category`, `?limit`) · `GET /api/public/recipes/home` · `GET /api/public/recipes/:slug` |
 | Pilates (grup dersleri) | `GET/POST /api/classes/groups` · `GET/PATCH/DELETE /groups/:id` · `PUT /groups/:id/members` · `POST /groups/:id/recurring` · `GET/POST /api/classes/sessions` (`?from&to&groupId&clientId&includeCancelled`) · `GET/PATCH/DELETE /sessions/:id` · `POST /sessions/:id/status` · `POST /sessions/:id/attendees` · `PATCH/DELETE /sessions/:id/attendees/:clientId` · `GET /clients/:clientId` |
 | Denetim kaydı | `GET /api/audit-logs` · `GET /facets` |
+| Mobil cihazlar | `POST /api/devices` `{ token, platform }` · `DELETE /api/devices/:token` (ya da gövdede `token`) — danışan: `/api/portal/devices` |
 <!-- api:end -->
 
 ## Test

@@ -88,6 +88,8 @@ model Session {
   userAgent  String? @db.Text
   createdAt  DateTime @default(now()) @db.DateTime(3)
 
+  pushDevices PushDevice[]
+
   @@index([userId])
   @@index([expiresAt])
   @@map("sessions")
@@ -680,6 +682,8 @@ model ClientSession {
   userAgent  String? @db.Text
   createdAt  DateTime      @default(now()) @db.DateTime(3)
 
+  pushDevices PushDevice[]
+
   @@index([accountId])
   @@index([expiresAt])
   @@map("client_sessions")
@@ -703,11 +707,18 @@ model PushDevice {
   user            User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
   clientAccountId String?
   clientAccount   ClientAccount? @relation(fields: [clientAccountId], references: [id], onDelete: Cascade)
+  /// Kaydı yapan oturum: oturum biterse (çıkış, süre dolması, şifre değişikliği) cihaz kaydı da silinir
+  sessionId       String?
+  session         Session?       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  clientSessionId String?
+  clientSession   ClientSession? @relation(fields: [clientSessionId], references: [id], onDelete: Cascade)
   lastSeenAt      DateTime       @default(now()) @db.DateTime(3)
   createdAt       DateTime       @default(now()) @db.DateTime(3)
 
   @@index([userId])
   @@index([clientAccountId])
+  @@index([sessionId])
+  @@index([clientSessionId])
   @@map("push_devices")
 }
 

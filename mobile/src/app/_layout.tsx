@@ -19,6 +19,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/ui';
 import { AppLock } from '@/components/AppLock';
+import { PushNotifications } from '@/components/PushNotifications';
 import { AppLinkGate } from '@/lib/links';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { queryClient } from '@/lib/query';
@@ -70,6 +71,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider value={navTheme}>
             <AuthProvider>
+              <PushNotifications />
               <ToastProvider>
                 <StatusBar style="dark" />
                 <AppLock>

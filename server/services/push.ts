@@ -50,7 +50,7 @@ const expoSender: PushSender = async (messages) => {
     'Accept-Encoding': 'gzip, deflate',
     'Content-Type': 'application/json',
   };
-  if (process.env.EXPO_ACCESS_TOKEN) headers.Authorization = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+  if (env.EXPO_ACCESS_TOKEN) headers.Authorization = `Bearer ${env.EXPO_ACCESS_TOKEN}`;
   const res = await fetch(EXPO_PUSH_URL, { method: 'POST', headers, body: JSON.stringify(messages), signal: AbortSignal.timeout(15_000) });
   const json = (await res.json().catch(() => null)) as { data?: ExpoTicket[]; errors?: { code?: string; message?: string }[] } | null;
   if (!res.ok || !json?.data) {
@@ -142,12 +142,16 @@ export function pushToClient(clientId: string | null | undefined, payload: PushP
 
 // ───────────────────────── Cihaz kaydı ─────────────────────────
 
-export type PushOwner = { userId: string } | { clientAccountId: string };
+/** Sahip + kaydı yapan oturum (oturum silinince kayıt da silinir — şema: onDelete Cascade) */
+export type PushOwner = { userId: string; sessionId?: string } | { clientAccountId: string; clientSessionId?: string };
 const ownerWhere = (o: PushOwner) => ('userId' in o ? { userId: o.userId } : { clientAccountId: o.clientAccountId });
 
 /** Token'ı kaydeder; başka hesaba kayıtlıysa sahiplik bu hesaba geçer (tam olarak bir sahip). */
 export async function registerDevice(owner: PushOwner, token: string, platform: PushPlatform) {
-  const ownerData = 'userId' in owner ? { userId: owner.userId, clientAccountId: null } : { userId: null, clientAccountId: owner.clientAccountId };
+  const ownerData =
+    'userId' in owner
+      ? { userId: owner.userId, clientAccountId: null, sessionId: owner.sessionId ?? null, clientSessionId: null }
+      : { userId: null, clientAccountId: owner.clientAccountId, sessionId: null, clientSessionId: owner.clientSessionId ?? null };
   const now = new Date();
   await prisma.pushDevice.upsert({
     where: { token },
