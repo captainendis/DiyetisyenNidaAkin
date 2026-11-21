@@ -80,11 +80,11 @@ export async function resolveDuration(db: Tx | typeof prisma, opts: { serviceId?
   return 45;
 }
 
-/** Telefon veya e-postaya göre mevcut danışanı bulur */
+/** Telefon veya e-postaya göre mevcut danışanı bulur. Demo kayıtlar asla eşleşmez: gerçek bir talep demo danışana bağlanırsa inceleme hesabına görünür. */
 export async function findClientByContact(db: Tx | typeof prisma, phone: string, email: string | null) {
   const or: Prisma.ClientWhereInput[] = [{ phone }];
   if (email) or.push({ email: { equals: email } });
-  return db.client.findFirst({ where: { OR: or }, orderBy: { createdAt: 'asc' }, select: { id: true } });
+  return db.client.findFirst({ where: { isDemo: false, OR: or }, orderBy: { createdAt: 'asc' }, select: { id: true } });
 }
 
 function splitName(full: string) {

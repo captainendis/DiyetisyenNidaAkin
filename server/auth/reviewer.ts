@@ -6,7 +6,8 @@
  * gerçek danışanların hiçbir verisine erişmemelidir. İki katman:
  *
  *  1. reviewerGuard (bu dosya, tüm personel uçlarında requireAuth'tan sonra):
- *     - Yalnızca okuma: GET/HEAD dışındaki her istek reddedilir (cihaz kaydı hariç).
+ *     - Yalnızca okuma: GET/HEAD dışındaki her istek reddedilir (cihaz kaydı dahil: kayıt, başkasının cihaz kaydını
+ *       devralabilir; incelemeci zaten bildirim almaz).
  *     - Yalnızca izin listesindeki yollar: listede olmayan her uç 403 (yeni bir uç eklendiğinde kapalı başlar).
  *     - Tekil kayıtlar (/clients/:id/…, /appointments/:id, /plans/:id, /recipes/:id) yalnızca demo danışana
  *       aitse açılır; değilse 404 (kaydın varlığı da sızdırılmaz).
@@ -42,9 +43,6 @@ const READ_ALLOW: RegExp[] = [
   new RegExp(`^/content/posts/${ID}$`),
   /^\/settings\/(profile|notification-prefs|channels|whatsapp-templates|sessions)$/,
 ];
-/** Okuma dışında izin verilen tek işlem: kendi telefonunun bildirim kaydı */
-const WRITE_ALLOW: RegExp[] = [/^\/devices(\/[^/]+)?$/];
-
 const READ_ONLY = 'İnceleme hesabı salt okunurdur; değişiklik yapılamaz.';
 
 /** /api ön ekini atar */
@@ -62,9 +60,9 @@ async function assertDemoRecord(path: string) {
     const row = await prisma.appointment.findUnique({ where: { id }, select: { client: { select: { isDemo: true } } } });
     if (!row?.client?.isDemo) throw hidden;
   } else if (root === 'plans') {
-    const row = await prisma.nutritionPlan.findUnique({ where: { id }, select: { clientId: true, client: { select: { isDemo: true } } } });
-    // Danışana bağlı olmayan şablonlar kişisel veri içermez
-    if (!row || (row.clientId && !row.client?.isDemo)) throw hidden;
+    const row = await prisma.nutritionPlan.findUnique({ where: { id }, select: { client: { select: { isDemo: true } } } });
+    // Yalnızca demo danışanın planları: şablonlar gerçek bir danışanın planından türetilmiş olabilir (başlık, içerik)
+    if (!row?.client?.isDemo) throw hidden;
   } else if (root === 'recipes') {
     const row = await prisma.recipe.findUnique({ where: { id }, select: { clientId: true, client: { select: { isDemo: true } } } });
     // Kütüphane tarifleri (danışansız) açıktır; kişiye özel varyasyon yalnızca demo danışanınki
@@ -76,10 +74,7 @@ export const reviewerGuard = createMiddleware<AppEnv>(async (c, next) => {
   if (!isReviewer(c)) return next();
   const path = rel(c);
   const method = c.req.method;
-  if (method !== 'GET' && method !== 'HEAD') {
-    if (WRITE_ALLOW.some((r) => r.test(path))) return next();
-    throw forbidden(READ_ONLY);
-  }
+  if (method !== 'GET' && method !== 'HEAD') throw forbidden(READ_ONLY);
   if (!READ_ALLOW.some((r) => r.test(path))) throw forbidden('Bu bölüm inceleme hesabına kapalıdır.');
   await assertDemoRecord(path);
   return next();
@@ -88,5 +83,7 @@ export const reviewerGuard = createMiddleware<AppEnv>(async (c, next) => {
 /** Liste/sayım sorguları için: incelemecide yalnızca demo danışan kayıtları */
 export const clientScope = (c: Ctx): Prisma.ClientWhereInput => (isReviewer(c) ? { isDemo: true } : {});
 export const appointmentScope = (c: Ctx): Prisma.AppointmentWhereInput => (isReviewer(c) ? { client: { isDemo: true } } : {});
-/** Plan ve tarif: danışansız (şablon / kütüphane) ya da demo danışanınki */
+/** Planlar: yalnızca demo danışanınki (şablonlar dahil değil) */
+export const planScope = (c: Ctx): Prisma.NutritionPlanWhereInput => (isReviewer(c) ? { client: { isDemo: true } } : {});
+/** Tarifler: kütüphane (danışansız) ya da demo danışanın varyasyonu */
 export const ownedByDemoScope = (c: Ctx) => (isReviewer(c) ? { OR: [{ clientId: null }, { client: { isDemo: true } }] } : {});
