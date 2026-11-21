@@ -12,7 +12,7 @@ export function StatCard({ label, value, definition, comparison, series, seriesL
     <View style={styles.card}>
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 4 }}>
         <T variant="label" style={{ flex: 1 }} numberOfLines={2}>{label}</T>
-        <Pressable onPress={() => Alert.alert(label, definition)} hitSlop={12} accessibilityRole="button" accessibilityLabel={`${label}: tanım`}>
+        <Pressable onPress={() => Alert.alert(label, definition)} hitSlop={15} accessibilityRole="button" accessibilityLabel={`${label}: tanım`}>
           <Icon name="info" size={15} color={colors.muted} />
         </Pressable>
       </View>

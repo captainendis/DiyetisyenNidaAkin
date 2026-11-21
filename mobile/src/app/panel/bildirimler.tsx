@@ -186,7 +186,7 @@ export default function NotificationsScreen() {
                         onPress={() => open(n)}
                         style={{ flex: 1, gap: 2 }}
                         accessibilityRole="button"
-                        accessibilityLabel={`${n.title}${unread ? ' (okunmamış)' : ''}${linked ? ' — ilgili kaydı aç' : ''}`}
+                        accessibilityLabel={`${n.title}${unread ? ' (okunmamış)' : ''}${linked ? ', ilgili kaydı aç' : ''}`}
                       >
                         <T style={{ fontFamily: unread ? fonts.bold : fonts.medium, fontSize: 14, color: colors.text }}>{n.title}</T>
                         {n.body ? <T variant="caption">{n.body}</T> : null}

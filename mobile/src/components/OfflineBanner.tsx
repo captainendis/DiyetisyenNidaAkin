@@ -22,7 +22,7 @@ export function OfflineBanner() {
     >
       <Icon name="wifi-off" size={14} color={colors.rose} />
       <T variant="caption" color={colors.cream} style={{ flex: 1 }}>
-        Çevrimdışısın — son kaydedilen bilgiler gösteriliyor. Değişiklikler bağlantı gelince yapılabilir.
+        Çevrimdışısın. Son kaydedilen bilgiler gösteriliyor. Değişiklikler bağlantı gelince yapılabilir.
       </T>
     </View>
   );

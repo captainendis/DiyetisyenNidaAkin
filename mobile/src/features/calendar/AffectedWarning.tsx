@@ -23,9 +23,9 @@ export function AffectedWarning({ items, onDismiss }: { items: AffectedAppointme
         </View>
       </View>
       {items.slice(0, 10).map((a) => (
-        <Pressable key={a.appointmentId} onPress={() => router.push(`/panel/randevular/${a.appointmentId}`)} accessibilityRole="link" style={{ minHeight: 36, justifyContent: 'center', paddingLeft: 30 }}>
+        <Pressable key={a.appointmentId} onPress={() => router.push(`/panel/randevular/${a.appointmentId}`)} accessibilityRole="link" style={{ minHeight: 44, justifyContent: 'center', paddingLeft: 30 }}>
           <T variant="label" color={colors.cocoa} style={{ textDecorationLine: 'underline' }}>
-            {formatDayStr(a.date, 'd MMMM cccc')} · {a.time} — {a.contactName}
+            {formatDayStr(a.date, 'd MMMM cccc')} · {a.time} · {a.contactName}
           </T>
         </Pressable>
       ))}

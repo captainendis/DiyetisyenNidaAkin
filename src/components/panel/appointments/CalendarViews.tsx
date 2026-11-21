@@ -355,7 +355,7 @@ export function MonthView({
                 onClick={() => onPickDay(d)}
                 className={cn(
                   'flex h-7 w-7 items-center justify-center rounded-full text-[0.82rem] font-bold tabular hover:bg-panel-bg',
-                  d === today ? 'bg-cocoa text-ivory hover:bg-cocoa' : inMonth ? 'text-espresso' : 'text-panel-muted/60',
+                  d === today ? 'bg-cocoa text-ivory hover:bg-cocoa' : inMonth ? 'text-espresso' : 'text-panel-muted',
                 )}
                 aria-label={`${dt.toFormat('d MMMM')} gün görünümü (${list.length} kayıt)`}
               >

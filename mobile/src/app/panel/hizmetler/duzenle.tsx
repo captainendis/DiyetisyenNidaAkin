@@ -37,7 +37,7 @@ export default function ServiceFormScreen() {
       <QueryView query={q}>
         {({ items }) => {
           const service = id ? items.find((s) => s.id === id) : null;
-          if (id && !service) return <Empty icon="alert-circle" title="Hizmet bulunamadı" />;
+          if (id && !service) return <Empty icon="alert-circle" title="Hizmet bulunamadı" text="Silinmiş olabilir. Hizmetler listesine dönüp yeniden seçin." />;
           return <ServiceForm service={service ?? null} index={service ? items.indexOf(service) : items.length} />;
         }}
       </QueryView>
@@ -109,7 +109,7 @@ function ServiceForm({ service, index }: { service: Service | null; index: numbe
       };
       if (service) await api.patch<{ item: Service }>(`/services/${service.id}`, body);
       else await api.post<{ item: Service }>('/services', body);
-      toast(`${service ? 'Hizmet güncellendi' : 'Hizmet eklendi'} · ${f.isPublished ? 'Web sitesinde görünür.' : 'Yayında değil — yalnızca panelde görünür.'}`);
+      toast(`${service ? 'Hizmet güncellendi' : 'Hizmet eklendi'} · ${f.isPublished ? 'Web sitesinde görünür.' : 'Yayında değil, yalnızca panelde görünür.'}`);
       await queryClient.invalidateQueries({ queryKey: serviceKeys.list });
       router.back();
     } catch (e) {
@@ -176,7 +176,7 @@ function ServiceForm({ service, index }: { service: Service | null; index: numbe
           onChange={(v) => set('duration', v.replace(/\D/g, ''))}
         />
         <TextField
-          label="Ücret (₺) — isteğe bağlı"
+          label="Ücret (₺, isteğe bağlı)"
           keyboardType="decimal-pad"
           placeholder="Boş bırakılabilir"
           value={f.price}

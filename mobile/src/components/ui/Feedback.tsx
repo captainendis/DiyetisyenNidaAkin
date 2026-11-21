@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Alert, Animated, Platform, StyleSheet, View } from 'react-native';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { AccessibilityInfo, ActivityIndicator, Alert, Animated, Platform, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, space, toneColors, type Tone } from '@/theme';
 import { errorMessage } from '@/lib/api';
@@ -88,6 +88,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [msg, setMsg] = useState<{ text: string; kind: ToastKind } | null>(null);
   const anim = useRef(new Animated.Value(0)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Sistemde "Hareketi azalt" açıksa bildirim kaymadan, yalnızca soluklaşarak görünür
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((v) => alive && setReduceMotion(v))
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => {
+      alive = false;
+      sub.remove();
+    };
+  }, []);
 
   const show = useCallback(
     (text: string, kind: ToastKind = 'success') => {
@@ -110,7 +123,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           accessibilityLiveRegion="polite"
           style={[
             styles.toast,
-            { bottom: insets.bottom + 72, opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] },
+            { bottom: insets.bottom + 72, opacity: anim, transform: reduceMotion ? [] : [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] },
           ]}
         >
           <Icon name={msg.kind === 'error' ? 'alert-circle' : msg.kind === 'info' ? 'info' : 'check'} size={17} color={msg.kind === 'error' ? colors.rose : colors.cream} />

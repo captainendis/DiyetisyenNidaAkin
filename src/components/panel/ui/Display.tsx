@@ -72,7 +72,7 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function SkeletonRows({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="space-y-3 p-5" aria-busy="true" aria-label="Yükleniyor">
+    <div className="space-y-3 p-5" role="status" aria-busy="true" aria-label="Yükleniyor">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex items-center gap-4">
           <Skeleton className="h-9 w-9 rounded-full" />
@@ -204,6 +204,11 @@ export function ResponsiveTable<T>({
               <tr
                 key={rowKey(r)}
                 onClick={onRowClick ? () => onRowClick(r) : undefined}
+                // Klavyeyle de açılabilsin: satır odaklanır, Enter/Boşluk satırı açar (içteki bağlantı ve düğmeler kendi işini yapar)
+                tabIndex={onRowClick ? 0 : undefined}
+                onKeyDown={onRowClick ? (e) => {
+                  if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onRowClick(r); }
+                } : undefined}
                 className={cn('border-b border-panel-line/70 last:border-0', onRowClick && 'cursor-pointer transition-colors hover:bg-panel-bg/60')}
               >
                 {columns.map((c) => (

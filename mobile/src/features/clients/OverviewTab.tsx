@@ -14,7 +14,7 @@ import { type Client, type ClientStats } from './types';
 
 function Link({ text, onPress }: { text: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="link" hitSlop={6}>
+    <Pressable onPress={onPress} accessibilityRole="link" hitSlop={12}>
       <T style={{ textAlign: 'right', textDecorationLine: 'underline' }} color={colors.goldInk}>{text}</T>
     </Pressable>
   );

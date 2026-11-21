@@ -91,11 +91,11 @@ export default function AppointmentsScreen() {
         <Pressable
           onPress={() => router.push('/panel/talepler')}
           accessibilityRole="link"
-          style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: '#F5E3DD' }, pressed && { opacity: 0.8 }]}
+          style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: '#F7E7E2' }, pressed && { opacity: 0.8 }]}
         >
           <Icon name="inbox" size={18} color={colors.roseInk} />
           <T variant="caption" color={colors.roseInk} style={{ flex: 1 }}>
-            <T variant="caption" color={colors.roseInk} weight="bold">{unscheduled.data.total}</T> geri arama talebi saat atanmayı bekliyor — takvimde görünmezler.
+            <T variant="caption" color={colors.roseInk} weight="bold">{unscheduled.data.total}</T> geri arama talebi saat atanmayı bekliyor; takvimde görünmezler.
           </T>
           <T variant="label" color={colors.roseInk}>Taleplere git</T>
         </Pressable>

@@ -79,7 +79,7 @@ export function SessionEditSheet({
             </FieldRow>
           </>
         ) : (
-          <Notice tone="neutral" text={`${formatDayStr(s.date, 'd MMMM yyyy, cccc')} · ${timeRange(s.time, s.durationMinutes)} — yalnızca planlı derslerin zamanı değiştirilebilir.`} />
+          <Notice tone="neutral" text={`${formatDayStr(s.date, 'd MMMM yyyy, cccc')} · ${timeRange(s.time, s.durationMinutes)}. Yalnızca planlı derslerin zamanı değiştirilebilir.`} />
         )}
         <TextField
           label="Kontenjan"

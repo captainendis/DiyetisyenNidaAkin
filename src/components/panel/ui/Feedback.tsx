@@ -70,7 +70,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
                   <p className="text-sm font-semibold">{t.title}</p>
                   {t.description && <p className="mt-0.5 text-[0.8rem] text-mist">{t.description}</p>}
                 </div>
-                <button type="button" onClick={() => dismiss(t.id)} aria-label="Kapat" className="rounded p-0.5 text-mist hover:text-ivory">
+                <button type="button" onClick={() => dismiss(t.id)} aria-label="Kapat" className="cursor-pointer rounded p-0.5 text-mist hover:text-ivory">
                   <X className="h-4 w-4" />
                 </button>
               </div>

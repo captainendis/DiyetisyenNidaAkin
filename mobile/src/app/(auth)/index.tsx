@@ -3,7 +3,7 @@
 
 /** Karşılama: danışan mı, Nida Akın ve ekibi mi? */
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Logo } from '@/components/Logo';
 import { Icon, T, type IconName } from '@/components/ui';
@@ -27,7 +27,8 @@ function Choice({ icon, title, text, onPress }: { icon: IconName; title: string;
 export default function Welcome() {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.root, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}>
+    // Küçük ekranda veya büyük yazı boyutunda seçenekler ekran dışına taşmasın: içerik kayabilir, düzen aynı kalır
+    <ScrollView style={styles.root} contentContainerStyle={[styles.content, { paddingTop: insets.top + space.xxl, paddingBottom: insets.bottom + space.xl }]}>
       <Logo size="lg" />
       <View style={{ gap: space.md, marginTop: 'auto' }}>
         <T style={{ fontFamily: fonts.display, fontSize: 40, lineHeight: 44, color: colors.cream }}>
@@ -41,12 +42,13 @@ export default function Welcome() {
           <T color={colors.cream} style={{ textDecorationLine: 'underline', fontFamily: fonts.medium }}>Davet bağlantım var</T>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.espresso, paddingHorizontal: space.xl },
+  root: { flex: 1, backgroundColor: colors.espresso },
+  content: { flexGrow: 1, paddingHorizontal: space.xl },
   choice: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.cocoa, borderWidth: 1, borderColor: 'rgba(244,235,221,0.08)' },
   choiceIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.rose, alignItems: 'center', justifyContent: 'center' },
 });

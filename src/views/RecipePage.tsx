@@ -37,7 +37,7 @@ export default function RecipePage() {
   }, [slug]);
 
   if (missing) return <NotFoundPage />;
-  if (!data) return <div className="min-h-dvh bg-espresso" aria-busy="true" />;
+  if (!data) return <div className="min-h-dvh bg-espresso" aria-busy="true"><p role="status" className="sr-only">Tarif yükleniyor</p></div>;
   const { recipe: r, related } = data;
   const crumbs = [{ name: 'Tarifler', path: '/tarifler' }, { name: r.title, path: `/tarifler/${r.slug}` }];
   const description = r.summary || `${r.title} tarifi: ${r.ingredients.slice(0, 4).join(', ')}.`;

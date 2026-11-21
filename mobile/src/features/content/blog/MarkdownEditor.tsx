@@ -65,7 +65,7 @@ export function MarkdownEditor({ value, onChange, error }: { value: string; onCh
               textAlignVertical="top"
               accessibilityLabel="Yazı içeriği"
               placeholder={'Yazınızı buraya yazın.\n\n## Ara başlık\nParagraflar arasında bir boş satır bırakın.\n\n- Madde listesi'}
-              placeholderTextColor={colors.mist}
+              placeholderTextColor={colors.muted}
               style={styles.input}
             />
           </>

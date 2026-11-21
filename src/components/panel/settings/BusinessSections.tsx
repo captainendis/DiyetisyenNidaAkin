@@ -114,7 +114,7 @@ export function PrivacySection() {
           </p>
         </Notice>
       </div>
-      <FormSection title="Hukuki inceleme" description="İnceleme tamamlanana kadar web sitesindeki yasal sayfalarda “taslak” uyarısı gösterilir.">
+      <FormSection title="Hukuki inceleme" description="Panel kontrol listesinde takip edilir. Yasal metinleri gerçek kullanımdan önce bir hukuk uzmanına inceletin.">
         <Switch
           checked={d.legalReviewCompleted}
           onChange={(v) => f.set('legalReviewCompleted', v)}

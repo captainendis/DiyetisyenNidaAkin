@@ -63,7 +63,7 @@ const TOP_PAD = 10;
 
 /** Takvim blok renkleri (web: STATUS_BLOCK) */
 const BLOCK: Record<AppointmentStatus, { bg: string; border: string; fg: string; strike?: boolean }> = {
-  NEW_REQUEST: { bg: '#F5E3DD', border: colors.roseDeep, fg: colors.roseInk },
+  NEW_REQUEST: { bg: '#F7E7E2', border: colors.roseDeep, fg: colors.roseInk },
   PENDING: { bg: colors.warningBg, border: colors.warning, fg: colors.warningInk },
   CONFIRMED: { bg: colors.successBg, border: colors.success, fg: colors.successInk },
   COMPLETED: { bg: '#EAE5E0', border: colors.cocoa, fg: colors.cocoa },
@@ -259,7 +259,7 @@ export function TimeGrid({
           ) : (
             <HeaderTap
               key={d}
-              label={`${dt.toFormat('d MMMM cccc')}${closed ? `, ${p?.closedReason ?? 'kapalı'}` : ''} — gün görünümünü aç`}
+              label={`${dt.toFormat('d MMMM cccc')}${closed ? `, ${p?.closedReason ?? 'kapalı'}` : ''}, gün görünümünü aç`}
               onPress={() => onPickDay?.(d)}
             >
               {body}
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
   slot: { position: 'absolute', paddingHorizontal: 1.5 },
   block: { flex: 1, borderRadius: 6, borderLeftWidth: 3, paddingHorizontal: 4, paddingVertical: 3, overflow: 'hidden' },
   blockTitle: { fontFamily: fonts.bold, fontSize: 11, lineHeight: 13 },
-  blockSub: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 12, opacity: 0.85, fontVariant: ['tabular-nums'] },
+  blockSub: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 12, fontVariant: ['tabular-nums'] },
   strike: { textDecorationLine: 'line-through' },
   ghost: { borderRadius: 6, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.cocoa, backgroundColor: 'rgba(48,34,25,0.05)' },
   dragLabel: { position: 'absolute', width: 132, paddingHorizontal: 8, paddingVertical: 5, borderRadius: radius.sm, backgroundColor: colors.espresso, zIndex: 60 },

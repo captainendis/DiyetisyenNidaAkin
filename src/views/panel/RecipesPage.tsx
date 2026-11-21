@@ -132,7 +132,7 @@ function Body() {
                 ? scope === 'kisiye-ozel'
                   ? 'Bir tarifi açıp “Varyasyon oluştur” ile danışana özel bir versiyon hazırlayabilirsiniz.'
                   : 'Kategoriyi, sekmeyi veya aramayı değiştirin.'
-                : 'Danışanlarınıza önerdiğiniz tarifleri fotoğrafıyla ekleyin; planlara tek tıkla ek sayfa olarak koyun.'
+                : 'Danışanlarınıza önerdiğiniz tarifleri fotoğrafıyla ekleyin; planlara ek sayfa olarak koyun.'
             }
             action={editable && !all.length && <Button icon={<Plus className="h-4 w-4" />} onClick={openNew}>İlk tarifi ekle</Button>}
           />

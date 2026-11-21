@@ -137,7 +137,7 @@ function RecipesSection({ data, set, library, onLibraryChange, client }: { data:
                       <span className="ml-1.5 font-medium text-panel-muted">· {[r.variantNote || RECIPE_CATEGORY_LABEL[r.category], ...recipeMeta(r).slice(0, 2)].join(' · ')}</span>
                     </p>
                   ) : (
-                    <p className="text-[0.82rem] font-semibold text-danger-ink">{library ? 'Bu tarif silinmiş — PDF’te gösterilmez.' : 'Yükleniyor…'}</p>
+                    <p className="text-[0.82rem] font-semibold text-danger-ink">{library ? 'Bu tarif silinmiş; PDF’te gösterilmez.' : 'Yükleniyor…'}</p>
                   )}
                   <input
                     aria-label="Tarif etiketi"

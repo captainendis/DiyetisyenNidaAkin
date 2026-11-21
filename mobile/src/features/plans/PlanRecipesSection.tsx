@@ -93,7 +93,7 @@ export function PlanRecipesSection({
                       <T variant="caption" numberOfLines={2}>{[r.variantNote || RECIPE_CATEGORY_LABEL[r.category], ...recipeMeta(r).slice(0, 2)].join(' · ')}</T>
                     </>
                   ) : (
-                    <T variant="label" color={colors.dangerInk}>{library ? 'Bu tarif silinmiş — PDF’te gösterilmez.' : 'Yükleniyor…'}</T>
+                    <T variant="label" color={colors.dangerInk}>{library ? 'Bu tarif silinmiş; PDF’te gösterilmez.' : 'Yükleniyor…'}</T>
                   )}
                 </Pressable>
               </View>

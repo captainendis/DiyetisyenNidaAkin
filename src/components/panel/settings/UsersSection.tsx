@@ -18,9 +18,9 @@ interface U { id: string; email: string; firstName: string; lastName: string; is
 interface LinkResult { link: string; expiresAt: string; emailed: boolean }
 
 const ROLE_OPTIONS = [
-  { value: 'ASSISTANT', label: 'Asistan — randevular ve danışan iletişim bilgileri' },
-  { value: 'DIETITIAN', label: 'Diyetisyen — klinik kayıtlar dahil her şey (kullanıcı yönetimi hariç)' },
-  { value: 'ADMIN', label: 'Yönetici — her şey, kullanıcı ve danışan hesabı yönetimi dahil' },
+  { value: 'ASSISTANT', label: 'Asistan: randevular ve danışan iletişim bilgileri' },
+  { value: 'DIETITIAN', label: 'Diyetisyen: klinik kayıtlar dahil her şey (kullanıcı yönetimi hariç)' },
+  { value: 'ADMIN', label: 'Yönetici: her şey, kullanıcı ve danışan hesabı yönetimi dahil' },
 ];
 
 function LinkBox({ name, result, onClose }: { name: string; result: LinkResult; onClose: () => void }) {

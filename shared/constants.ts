@@ -166,7 +166,7 @@ export const DEFAULT_BLOG_CATEGORIES = [
 ] as const;
 
 /** KVKK metin sürümü — metin değiştiğinde artırın; rıza kayıtları sürümle ilişkilendirilir */
-export const KVKK_NOTICE_VERSION = '2026-10-taslak';
+export const KVKK_NOTICE_VERSION = '2026-11';
 
 // ───────────────────────── Grup dersleri (Pilates) ─────────────────────────
 

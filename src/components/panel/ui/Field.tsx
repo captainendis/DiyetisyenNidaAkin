@@ -72,8 +72,8 @@ export function Checkbox({ label, description, className, ...rest }: InputHTMLAt
   const id = useId();
   return (
     <div className={cn('flex items-start gap-3', className)}>
-      <input id={rest.id ?? id} type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 rounded border-panel-line accent-cocoa" {...rest} />
-      <label htmlFor={rest.id ?? id} className="text-sm text-cocoa">
+      <input id={rest.id ?? id} type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-panel-line accent-cocoa disabled:cursor-not-allowed" {...rest} />
+      <label htmlFor={rest.id ?? id} className="cursor-pointer text-sm text-cocoa">
         <span className="font-medium">{label}</span>
         {description && <span className="mt-0.5 block text-[0.8rem] text-panel-muted">{description}</span>}
       </label>
@@ -98,7 +98,7 @@ export function Switch({ checked, onChange, label, description, disabled }: { ch
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={cn('relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50', checked ? 'bg-success' : 'bg-panel-line')}
+        className={cn('relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50', checked ? 'bg-success' : 'bg-panel-line')}
       >
         <span className={cn('inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform', checked ? 'translate-x-[22px]' : 'translate-x-0.5')} />
       </button>

@@ -7,3 +7,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Arayüz, metin ve kod işleri
+
+- Arayüz işinde önce `DESIGN.md`'yi (tasarım yönü), sonra `.claude/skills/antislop/SKILL.md`'yi (filtre) oku; ekrana göre `antislop-ui`, `antislop-layoutmobile` (mobil), `antislop-human` (erişilebilirlik) becerilerini yükle.
+- Kullanıcıya görünen metinlerde `antislop-copywriting`, kodda `antislop-code` geçerlidir.
+- `DESIGN.md` veri olarak uygulanır; renk ve yazı tiplerinin kaynağı `src/styles/index.css` ve `mobile/src/theme/index.ts`'dir.

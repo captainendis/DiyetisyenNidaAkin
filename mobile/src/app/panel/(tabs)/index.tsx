@@ -127,7 +127,7 @@ export default function DashboardScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                     <Icon name="clock" size={13} color={colors.muted} />
                     <T variant="caption" style={{ flex: 1 }}>
-                      {a.date ? `${formatDayStr(a.date, 'd MMM ccc')} · ${a.time}` : 'Saat seçilmedi — geri arama'} · {MEETING_TYPE_LABEL[a.meetingType]}
+                      {a.date ? `${formatDayStr(a.date, 'd MMM ccc')} · ${a.time}` : 'Saat seçilmedi (geri arama)'} · {MEETING_TYPE_LABEL[a.meetingType]}
                     </T>
                   </View>
                   <T variant="caption">{formatPhone(a.contactPhone)} · {relativeTime(a.createdAt)} geldi</T>

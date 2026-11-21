@@ -33,7 +33,7 @@ export default function GroupFormScreen() {
         <QueryView query={groups}>
           {({ items }) => {
             const g = items.find((x) => x.id === id);
-            return g ? <GroupForm group={g} /> : <Empty icon="alert-circle" title="Grup bulunamadı" />;
+            return g ? <GroupForm group={g} /> : <Empty icon="alert-circle" title="Grup bulunamadı" text="Silinmiş olabilir. Pilates gruplarına dönüp yeniden seçin." />;
           }}
         </QueryView>
       ) : (

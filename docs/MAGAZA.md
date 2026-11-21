@@ -12,7 +12,8 @@ yanıtlarını ve adımları içerir. Metinler Türkçedir; mağaza dili **Türk
 
 | Alan | Değer |
 | --- | --- |
-| Uygulama adı | Nida Akın |
+| Mağaza adı (Google Play + App Store, en fazla 30 karakter) | Diyetisyen Nida Akın: Beslenme |
+| Ana ekrandaki ad (`mobile/app.json → expo.name`) | Nida Akın |
 | Paket kimliği (iOS + Android) | `com.nidaakin.app` |
 | Sürüm | `mobile/app.json → expo.version` (1.0.0); derleme numarası EAS'ta otomatik artar |
 | Kategori | Sağlık ve Fitness (Health & Fitness) |
@@ -30,7 +31,7 @@ Beslenme listen ve randevun
 
 **Kısa açıklama (Google Play, en fazla 80 karakter)**
 ```
-Beslenme listen, tariflerin, randevuların ve ilerlemen — diyetisyeninle tek yerde.
+Diyet listen, tariflerin ve randevuların diyetisyeninle tek yerde. Kolay takip.
 ```
 
 **Tanıtım metni (App Store, en fazla 170 karakter, sürüm beklemeden değiştirilebilir)**
@@ -40,14 +41,14 @@ Görüşmede verilen beslenme listen artık telefonunda: PDF aramadan öğünler
 
 **Açıklama (her iki mağaza, en fazla 4000 karakter)**
 ```
-Nida Akın, Diyetisyen Nida Akın’ın danışanları ve ekibi için hazırlanmış resmî uygulamadır.
+Diyetisyen Nida Akın’ın danışanları için resmî beslenme ve diyet takip uygulaması: kişiye özel beslenme listen, sağlıklı tarifler, diyetisyen randevusu ve kilo takibi tek yerde.
 
 DANIŞANLAR İÇİN
-• Beslenme listen: Görüşmede hazırlanan liste öğün öğün telefonunda. Her öğünde seçeneklerini gör, istersen PDF olarak paylaş.
-• Tarifler: Listene eklenen ve sana özel uyarlanan tarifler; malzemeler, hazırlanışı ve ipuçlarıyla.
-• Randevular: Yaklaşan ve geçmiş randevuların, talep durumun ve boş saatler. Yeni randevu talebini uygulamadan gönder.
+• Beslenme listesi: Görüşmede hazırlanan diyet listen öğün öğün telefonunda. Her öğünde seçeneklerini gör, istersen PDF olarak paylaş.
+• Sağlıklı tarifler: Listene eklenen ve sana özel uyarlanan tarifler; malzemeler, hazırlanışı ve ipuçlarıyla.
+• Diyetisyen randevusu: Yaklaşan ve geçmiş randevuların, talep durumun ve boş saatler. Yeni randevu talebini uygulamadan gönder.
 • Pilates: Ders programın, grubun ve katılım geçmişin.
-• İlerleme: Kilo ve mezura ölçümlerinin grafiği, vücut kompozisyonundaki değişim.
+• Kilo ve ölçü takibi: Kilo ve mezura ölçümlerinin grafiği, vücut kompozisyonundaki değişim.
 • Mesajlar ve dosyalar: Diyetisyeninin görüşme sonrası notları ve seninle paylaşılan belgeler.
 • İnternetsiz: Son açtığın listeler ve tarifler bağlantı yokken de görünür.
 • Bildirimler: Randevun onaylandığında, yeni listen ya da mesajın olduğunda haber verir.

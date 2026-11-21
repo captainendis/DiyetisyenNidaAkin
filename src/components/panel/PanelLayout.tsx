@@ -155,6 +155,13 @@ export function PanelLayout() {
   const { unreadCount, demoMode } = usePanelAuth();
   const loc = useLocation();
   useEffect(() => setDrawer(false), [loc.pathname]);
+  // Mobil menü: Esc ile kapanır
+  useEffect(() => {
+    if (!drawer) return;
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && setDrawer(false);
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, [drawer]);
   const today = DateTime.now().setZone(TIME_ZONE).toFormat('d MMMM yyyy, cccc');
 
   useEffect(() => {
@@ -166,7 +173,7 @@ export function PanelLayout() {
 
   return (
     <FeedbackProvider>
-      <div className="panel-root min-h-dvh bg-panel-bg font-sans text-espresso">
+      <div className="panel-root min-h-dvh bg-panel-bg font-sans text-espresso [&_button:not(:disabled)]:cursor-pointer [&_select:not(:disabled)]:cursor-pointer">
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 lg:block">
           <Sidebar />
         </aside>
@@ -191,7 +198,7 @@ export function PanelLayout() {
               <Link to="/panel/bildirimler" aria-label={`Bildirimler${unreadCount ? ` (${unreadCount} okunmamış)` : ''}`} className="relative rounded-lg p-2 text-cocoa hover:bg-cocoa/[0.06]">
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <span className="tabular absolute top-1 right-1 min-w-4 rounded-full bg-danger px-1 text-center text-[0.62rem] leading-4 font-bold text-white">
+                  <span className="tabular absolute top-1 right-1 min-w-4 rounded-full bg-danger-ink px-1 text-center text-[0.62rem] leading-4 font-bold text-white">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
@@ -200,8 +207,8 @@ export function PanelLayout() {
             </div>
           </header>
           {demoMode && (
-            <div className="border-b border-warning/30 bg-warning/15 px-4 py-2 text-center text-[0.8rem] font-medium text-[#7d5720] sm:px-6">
-              Demo modu açık — gösterilen danışan ve randevu kayıtları örnek verilerdir.
+            <div className="border-b border-warning/30 bg-warning/15 px-4 py-2 text-center text-[0.8rem] font-medium text-warning-ink sm:px-6">
+              Demo modu açık: gösterilen danışan ve randevu kayıtları örnek verilerdir.
             </div>
           )}
           <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">

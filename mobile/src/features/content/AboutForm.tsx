@@ -51,7 +51,7 @@ export function AboutForm() {
           create={() => ({ label: '', value: '' })}
           addLabel="Bilgi ekle"
           itemLabel={(i) => `Kayıt ${i + 1}`}
-          empty={<Notice text="Doğrulanmış eğitim/sertifika bilgilerini ekleyin. Örnek yapı: “Lisans” — “Üniversite adı, bölüm, yıl”." />}
+          empty={<Notice text="Doğrulanmış eğitim/sertifika bilgilerini ekleyin. Örnek yapı: “Lisans” ve altında “Üniversite adı, bölüm, yıl”." />}
           render={(c, i, upd) => (
             <>
               <TextField label="Başlık" placeholder="Lisans, Sertifika…" value={c.label} maxLength={80} error={err(`credentials.${i}.label`)} onChange={(v) => upd({ ...c, label: v })} />

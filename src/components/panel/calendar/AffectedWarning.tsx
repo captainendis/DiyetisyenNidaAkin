@@ -22,7 +22,7 @@ export function AffectedWarning({ items, onDismiss }: { items: AffectedAppointme
             {items.slice(0, 10).map((a) => (
               <li key={a.appointmentId} className="text-sm">
                 <Link to={`/panel/randevular?id=${a.appointmentId}`} className="font-semibold text-cocoa underline decoration-warning underline-offset-2 hover:decoration-cocoa">
-                  {formatDayStr(a.date, 'd MMMM cccc')} · {a.time} — {a.contactName}
+                  {formatDayStr(a.date, 'd MMMM cccc')} · {a.time} · {a.contactName}
                 </Link>
               </li>
             ))}

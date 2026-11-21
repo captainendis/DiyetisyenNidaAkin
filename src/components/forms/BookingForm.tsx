@@ -34,7 +34,7 @@ interface SubmitRes { ok: true; status: 'PENDING' | 'NEW_REQUEST'; reference: st
 
 
 const fieldCls =
-  'w-full rounded-none border-0 border-b border-espresso/20 bg-transparent px-0 py-3 text-[1rem] text-espresso placeholder:text-taupe transition-colors focus:border-espresso focus:outline-none focus:ring-0 aria-[invalid=true]:border-danger';
+  'w-full rounded-none border-0 border-b border-espresso/20 bg-transparent px-0 py-3 text-[1rem] text-espresso placeholder:text-taupe transition-colors focus:border-espresso focus:shadow-[0_1px_0_0_var(--color-espresso)] focus:outline-none focus:ring-0 aria-[invalid=true]:border-danger';
 
 function FieldShell({ label, error, htmlFor, children, hint }: { label: string; error?: string; htmlFor: string; children: ReactNode; hint?: string }) {
   return (
@@ -63,18 +63,18 @@ function MonthCalendar({
       <div className="mb-4 flex items-center justify-between">
         <p className="font-display text-[1.45rem] font-medium text-espresso capitalize">{start.setLocale('tr').toFormat('LLLL yyyy')}</p>
         <div className="flex gap-1">
-          <button type="button" onClick={() => onMonth(start.minus({ months: 1 }))} disabled={!canPrev} aria-label="Önceki ay" className="rounded-full p-2 text-espresso hover:bg-espresso/5 disabled:opacity-25">
-            <ChevronLeft className="h-4 w-4" />
+          <button type="button" onClick={() => onMonth(start.minus({ months: 1 }))} disabled={!canPrev} aria-label="Önceki ay" className="flex h-11 w-11 items-center justify-center rounded-full text-espresso hover:bg-espresso/5 disabled:opacity-25">
+            <ChevronLeft className="h-4 w-4" aria-hidden />
           </button>
-          <button type="button" onClick={() => onMonth(start.plus({ months: 1 }))} disabled={!canNext} aria-label="Sonraki ay" className="rounded-full p-2 text-espresso hover:bg-espresso/5 disabled:opacity-25">
-            <ChevronRight className="h-4 w-4" />
+          <button type="button" onClick={() => onMonth(start.plus({ months: 1 }))} disabled={!canNext} aria-label="Sonraki ay" className="flex h-11 w-11 items-center justify-center rounded-full text-espresso hover:bg-espresso/5 disabled:opacity-25">
+            <ChevronRight className="h-4 w-4" aria-hidden />
           </button>
         </div>
       </div>
       <div className="grid grid-cols-7 text-center text-[0.68rem] font-semibold tracking-[0.12em] text-taupe uppercase">
         {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((d) => <span key={d} className="pb-2">{d}</span>)}
       </div>
-      <div className={cn('grid grid-cols-7 gap-1 transition-opacity', loading && 'opacity-40')} role="grid">
+      <div className={cn('grid grid-cols-7 gap-1 transition-opacity', loading && 'opacity-40')} aria-busy={loading}>
         {cells.map((c, i) => {
           if (!c) return <span key={i} />;
           const iso = c.toISODate()!;
@@ -295,20 +295,19 @@ export function BookingForm({
     <div className="text-espresso">
       {step < 4 && variant === 'page' && <div className="mb-10"><StepIndicator step={step} /></div>}
       {notice && (
-        <div className="mb-6 border-l-2 border-danger bg-danger/[0.06] px-4 py-3 text-[0.9rem] text-[#8a4545]" role="alert">{notice}</div>
+        <div className="mb-6 border-l-2 border-danger bg-danger/[0.06] px-4 py-3 text-[0.9rem] text-danger-ink" role="alert">{notice}</div>
       )}
       <AnimatePresence mode="wait" initial={false}>
         {step === 1 && (
           <motion.div key="s1" {...slide}>
             <h3 className="font-display text-[1.9rem] leading-tight font-medium sm:text-[2.2rem]">Size nasıl yardımcı olabilirim?</h3>
 
-            <div className="mt-6 inline-flex border border-espresso/15 p-1 text-[0.92rem]" role="radiogroup" aria-label="Talep konusu">
+            <div className="mt-6 inline-flex border border-espresso/15 p-1 text-[0.92rem]" role="group" aria-label="Talep konusu">
               {(['CONSULTATION', 'PILATES'] as const).map((k) => (
                 <button
                   key={k}
                   type="button"
-                  role="radio"
-                  aria-checked={kind === k}
+                  aria-pressed={kind === k}
                   onClick={() => {
                     setKind(k);
                     setMode(k === 'PILATES' ? 'callback' : 'slot');
@@ -457,13 +456,12 @@ export function BookingForm({
           <motion.div key="s2" {...slide}>
             <h3 className="font-display text-[1.9rem] leading-tight font-medium sm:text-[2.2rem]">Size uygun zamanı seçin</h3>
             {cfg.allowRequestWithoutTime && (
-              <div className="mt-5 inline-flex border border-espresso/15 p-1 text-[0.85rem]" role="tablist">
+              <div className="mt-5 inline-flex border border-espresso/15 p-1 text-[0.85rem]" role="group" aria-label="Zaman seçimi">
                 {(['slot', 'callback'] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
-                    role="tab"
-                    aria-selected={mode === m}
+                    aria-pressed={mode === m}
                     onClick={() => {
                       setMode(m);
                       setErrors({});

@@ -34,7 +34,7 @@ export default function BlogPostPage() {
   }, [slug]);
 
   if (missing) return <NotFoundPage />;
-  if (!data) return <div className="min-h-dvh bg-espresso" aria-busy="true" />;
+  if (!data) return <div className="min-h-dvh bg-espresso" aria-busy="true"><p role="status" className="sr-only">Yazı yükleniyor</p></div>;
   const { post, related } = data;
   const crumbs = [
     { name: 'Beslenme Rehberi', path: '/beslenme-rehberi' },

@@ -37,7 +37,7 @@ export function SlotPicker({
       <div className="flex flex-col gap-1.5">
         <label className="text-[0.8rem] font-semibold text-cocoa" htmlFor="free-time">Saat</label>
         <input id="free-time" type="time" step={300} value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-40 rounded-lg border border-panel-line bg-white px-3 text-sm tabular focus:border-cocoa focus:outline-none" />
-        <p className="text-[0.78rem] text-panel-muted">Çalışma saatleri dışı özel randevu — çakışma kontrolü yine yapılır.</p>
+        <p className="text-[0.78rem] text-panel-muted">Çalışma saatleri dışı özel randevu; çakışma kontrolü yine yapılır.</p>
       </div>
     );
   }

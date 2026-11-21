@@ -1,8 +1,6 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { useRef } from 'react';
-import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { useSite } from '@/data/SiteContext';
 import { useBooking } from '@/components/forms/BookingProvider';
 import { CtaButton, TextLink } from '@/components/forms/Button';
@@ -15,17 +13,12 @@ export function Hero() {
   const { site } = useSite();
   const hero = site.settings.hero;
   const booking = useBooking();
-  const reduce = useReducedMotion();
-  const ref = useRef<HTMLElement>(null);
   const images = useSiteImages();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
-  const imgY = useTransform(scrollYProgress, [0, 1], ['0%', reduce ? '0%' : '12%']);
-  const textY = useTransform(scrollYProgress, [0, 1], ['0%', reduce ? '0%' : '-10%']);
 
   return (
-    <section ref={ref} className="grain relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-espresso" aria-label="Giriş">
-      {/* Mekân fotoğrafı — masaüstünde sağ ~%58, mobilde tam arka plan */}
-      <motion.div style={{ y: imgY }} className="absolute inset-x-0 top-0 -z-10 h-[64svh] lg:inset-y-0 lg:right-0 lg:left-auto lg:h-auto lg:w-[min(max(54vw,calc(100svh*0.83)),calc(100svh*0.98))]">
+    <section className="grain relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-espresso" aria-label="Giriş">
+      {/* Mekân fotoğrafı: masaüstünde sağ ~%58, mobilde tam arka plan. Parallaks yok (DESIGN.md · Hareket) */}
+      <div className="absolute inset-x-0 top-0 -z-10 h-[64svh] lg:inset-y-0 lg:right-0 lg:left-auto lg:h-auto lg:w-[min(max(54vw,calc(100svh*0.83)),calc(100svh*0.98))]">
         <Picture
           {...images.hero}
           sizes="(min-width: 1024px) 60vw, 100vw"
@@ -38,12 +31,12 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-t from-espresso from-25% via-espresso/45 to-espresso/0 lg:from-espresso/70 lg:from-0% lg:via-transparent lg:via-30% lg:to-espresso/80" aria-hidden />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-espresso/90 to-transparent" aria-hidden />
         <div className="absolute inset-0 lg:shadow-[inset_0_0_180px_60px_rgba(33,23,16,0.75)]" aria-hidden />
-      </motion.div>
+      </div>
 
       {/* Çok hafif botanik çizgi: logo ile akraba elma konturu, sağ kenardan taşar */}
       <AppleOutline className="pointer-events-none absolute top-[22%] -right-[9vw] -z-[5] hidden w-[30vw] max-w-[440px] text-rose/25 lg:block" />
 
-      <motion.div style={{ y: textY }} className="container-edge relative z-[2] flex flex-1 flex-col justify-end pt-32 pb-10 sm:pb-14 lg:justify-center lg:pt-40 lg:pb-40">
+      <div className="container-edge relative z-[2] flex flex-1 flex-col justify-end pt-32 pb-10 sm:pb-14 lg:justify-center lg:pt-40 lg:pb-40">
         <div className="max-w-[640px]">
           {hero.eyebrow && (
             <FadeIn delay={0.1}>
@@ -76,7 +69,7 @@ export function Hero() {
             ))}
           </ul>
         </FadeIn>
-      </motion.div>
+      </div>
 
     </section>
   );

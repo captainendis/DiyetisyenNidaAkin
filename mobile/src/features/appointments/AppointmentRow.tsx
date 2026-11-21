@@ -42,17 +42,18 @@ export function AppointmentRow({
   action?: ReactNode;
 }) {
   const end = a.time && a.durationMinutes ? timeOf(minutesOf(a.time) + a.durationMinutes) : null;
+  // İptal / gelmedi: satır geri planda kalır ama metin AA kontrastını korur (opaklık yerine muted ton)
   const muted = a.status === 'CANCELLED' || a.status === 'NO_SHOW';
   const name = displayName({ client: a.client ?? null, contactName: a.contactName });
   const type = a.meetingType ? appointmentTypeLabel({ kind: a.kind ?? 'CONSULTATION', pilatesFormat: a.pilatesFormat ?? null, meetingType: a.meetingType }) : null;
   const sub = subtitle ?? [type, a.service?.title].filter(Boolean).join(' · ');
   const body = (
-    <View style={[styles.row, !last && styles.line, muted && { opacity: 0.6 }]}>
+    <View style={[styles.row, !last && styles.line]}>
       <View style={styles.when}>
         {a.date ? (
           <>
             {showDate ? <T variant="caption" style={{ textTransform: 'capitalize' }}>{formatDayStr(a.date, 'd MMM ccc')}</T> : null}
-            <T style={styles.time}>{a.time ?? '—'}</T>
+            <T style={[styles.time, muted && { color: colors.muted }]}>{a.time ?? '—'}</T>
             {!showDate && end ? <T variant="caption">{end}</T> : null}
           </>
         ) : (
@@ -62,7 +63,7 @@ export function AppointmentRow({
       <View style={[styles.bar, { backgroundColor: highlight ? colors.roseDeep : colors.line }]} />
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <T variant="subheading" numberOfLines={1} style={{ flexShrink: 1 }}>{name}</T>
+          <T variant="subheading" numberOfLines={1} color={muted ? colors.muted : undefined} style={{ flexShrink: 1 }}>{name}</T>
           {highlight ? <Badge label="Sıradaki" tone="rose" /> : null}
         </View>
         {sub ? <T variant="caption" numberOfLines={1}>{sub}</T> : null}

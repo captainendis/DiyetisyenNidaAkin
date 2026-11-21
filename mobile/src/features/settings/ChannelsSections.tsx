@@ -61,7 +61,7 @@ function SmtpForm({ saved, envFallback, reload }: { saved: SmtpSettingsView; env
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) {
         setErrors(e.fields);
-        toast('Kaydedilemedi — işaretli alanları kontrol edin.', 'error');
+        toast('Kaydedilemedi. İşaretli alanları kontrol edin.', 'error');
       } else toast(`Kaydedilemedi: ${errorMessage(e)}`, 'error');
     } finally {
       setSaving(false);

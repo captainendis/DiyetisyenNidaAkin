@@ -27,7 +27,7 @@ export function ImageField({ value, onChange, label = 'Görsel', hint }: { value
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.9, allowsEditing: true, aspect: [16, 9] });
     if (res.canceled || !res.assets[0]) return;
     const a = res.assets[0];
-    if (a.fileSize && a.fileSize > MAX) return toast('Dosya çok büyük — en fazla 5 MB yükleyebilirsiniz.', 'error');
+    if (a.fileSize && a.fileSize > MAX) return toast('Dosya çok büyük. En fazla 5 MB yükleyebilirsiniz.', 'error');
     setBusy(true);
     try {
       const out = await api.upload<{ url: string }>('/content/media', { uri: a.uri, name: a.fileName ?? 'gorsel.jpg', type: a.mimeType ?? 'image/jpeg' });

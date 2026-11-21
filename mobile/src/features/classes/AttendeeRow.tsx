@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   marks: { flexDirection: 'row', gap: space.sm },
   mark: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     flexDirection: 'row',
     gap: 4,
     alignItems: 'center',

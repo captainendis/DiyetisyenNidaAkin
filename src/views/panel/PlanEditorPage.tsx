@@ -111,7 +111,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
               disabled={!editable}
               aria-label="Plan adı"
               maxLength={80}
-              className="min-w-0 rounded-md bg-transparent font-display text-[2rem] [font-variant-numeric:lining-nums] leading-tight font-medium text-espresso hover:bg-white/60 focus:bg-white focus:outline-none sm:text-[2.3rem]"
+              className="min-w-0 rounded-md bg-transparent font-display text-[2rem] [font-variant-numeric:lining-nums] leading-tight font-medium text-espresso hover:bg-white/60 focus:bg-white sm:text-[2.3rem]"
             />
             {plan.isTemplate && <Badge tone="accent">Şablon</Badge>}
             {dirty && <Badge tone="warning">Kaydedilmedi</Badge>}
@@ -144,9 +144,9 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
             {!fit
               ? 'Önizleme hazırlanıyor…'
               : !fit.fits
-                ? 'İçerik tek sayfaya sığmıyor — bazı satırları kısaltın ya da bir seçenek/öğün çıkarın.'
+                ? 'İçerik tek sayfaya sığmıyor. Bazı satırları kısaltın ya da bir seçenek/öğün çıkarın.'
                 : fit.scale < 0.85
-                  ? `Tek sayfaya sığdı ama yazı %${Math.round(fit.scale * 100)} boyuta küçüldü — telefonda okunur, baskıda küçük kalabilir. Satırları kısaltmayı düşünün.`
+                  ? `Tek sayfaya sığdı ama yazı %${Math.round(fit.scale * 100)} boyuta küçüldü: telefonda okunur, baskıda küçük kalabilir. Satırları kısaltmayı düşünün.`
                   : fit.scale < 1
                   ? `Tek sayfaya sığdı · yazı boyutu %${Math.round(fit.scale * 100)} olarak ayarlandı.`
                   : 'Tek sayfaya sığıyor · tam boyut.'}
@@ -155,7 +155,7 @@ function Editor({ plan, onSaved }: { plan: PlanDetail; onSaved: (p: PlanDetail) 
             <p className={cn('mt-1 text-[0.8rem]', fit.recipesFit ? 'text-panel-muted' : 'font-semibold text-warning-ink')}>
               {fit.recipesFit
                 ? `Tarif önerileri ${fit.pages - 1} ek sayfaya yerleşti · toplam ${fit.pages} sayfa.`
-                : 'Bir tarif tek sayfaya sığmıyor — adımlarını veya malzeme listesini kısaltın.'}
+                : 'Bir tarif tek sayfaya sığmıyor. Adımlarını veya malzeme listesini kısaltın.'}
             </p>
           )}
           <p className="mt-1 text-[0.75rem] text-panel-muted">Yazdırma sayfası bu önizlemeyle aynıdır. PDF için yazdırma penceresinde “PDF olarak kaydet”i seçin.</p>

@@ -201,7 +201,7 @@ function Editor({ initial, categories }: { initial: Post | null; categories: { i
             />
             <Input
               label="Adres (URL)"
-              hint={<span>Sitede: <span className="font-mono">{publicPath}</span>{status === 'PUBLISHED' && ' — yayındaki yazının adresini değiştirmek mevcut bağlantıları bozar.'}</span>}
+              hint={<span>Sitede: <span className="font-mono">{publicPath}</span>{status === 'PUBLISHED' && '. Yayındaki yazının adresini değiştirmek mevcut bağlantıları bozar.'}</span>}
               value={d.slug}
               error={errors.slug}
               onChange={(e) => {

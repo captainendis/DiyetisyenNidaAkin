@@ -196,7 +196,7 @@ export default function NotificationsPage() {
                             <span className={cn('mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full', unread ? 'bg-cocoa text-rose' : 'bg-panel-bg text-cocoa/75')}>
                               <Icon className="h-4 w-4" />
                             </span>
-                            <button type="button" onClick={() => void open(n)} className="min-w-0 flex-1 text-left" aria-label={`${n.title}${unread ? ' (okunmamış)' : ''}${linked ? ' — ilgili kaydı aç' : ''}`}>
+                            <button type="button" onClick={() => void open(n)} className="min-w-0 flex-1 text-left" aria-label={`${n.title}${unread ? ' (okunmamış)' : ''}${linked ? '. İlgili kaydı aç' : ''}`}>
                               <p className={cn('text-sm', unread ? 'font-bold text-espresso' : 'font-medium text-cocoa')}>{n.title}</p>
                               {n.body && <p className="mt-0.5 text-[0.82rem] text-panel-muted">{n.body}</p>}
                               <p className="tabular mt-1 text-[0.72rem] text-panel-muted">

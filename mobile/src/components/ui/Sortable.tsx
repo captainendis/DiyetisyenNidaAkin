@@ -209,14 +209,14 @@ function SortableRow({
         hitSlop={8}
         accessible
         accessibilityRole="adjustable"
-        accessibilityLabel={`${label} — sıralamak için basılı tutup sürükleyin`}
+        accessibilityLabel={`${label}, sıralamak için basılı tutup sürükleyin`}
         accessibilityActions={[
           { name: 'up', label: 'Yukarı taşı' },
           { name: 'down', label: 'Aşağı taşı' },
         ]}
         onAccessibilityAction={onA11y}
       >
-        <Icon name="menu" size={18} color={colors.mist} />
+        <Icon name="menu" size={18} color={colors.muted} />
       </View>
     </GestureDetector>
   ) : null;

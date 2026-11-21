@@ -20,7 +20,7 @@ export function SocialLinks({ social, className }: { social: Social; className?:
     <ul className={cn('flex items-center gap-1', className)}>
       {items.map(({ key, label, Icon }) => (
         <li key={key}>
-          <a href={social[key]!} target="_blank" rel="noopener noreferrer" aria-label={label} className="flex h-10 w-10 items-center justify-center rounded-full text-cream/70 transition-colors hover:bg-cream/5 hover:text-rose">
+          <a href={social[key]!} target="_blank" rel="noopener noreferrer" aria-label={label} className="flex h-11 w-11 items-center justify-center rounded-full text-cream/70 transition-colors hover:bg-cream/5 hover:text-rose">
             <Icon className="h-5 w-5" />
           </a>
         </li>

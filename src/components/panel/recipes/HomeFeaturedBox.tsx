@@ -49,7 +49,7 @@ export function HomeFeaturedBox({ library, editable, onChanged }: { library: Rec
           <p className="mt-0.5 text-[0.8rem] text-panel-muted">
             {featured.length
               ? '“Mutfaktan” bölümünde bu sırayla görünür.'
-              : 'Henüz seçim yok — ana sayfada şu an son yayınlanan tarifler görünüyor. Seçtiğiniz anda yalnızca sizin seçtikleriniz görünür.'}
+              : 'Henüz seçim yok; ana sayfada şu an son yayınlanan tarifler görünüyor. Seçtiğiniz anda yalnızca sizin seçtikleriniz görünür.'}
           </p>
         </div>
         <a href="/#recipes-title" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[0.8rem] font-semibold text-cocoa hover:underline">

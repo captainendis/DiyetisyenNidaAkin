@@ -111,7 +111,7 @@ export default function BlogListPage() {
                         type="button"
                         onClick={() => setParams(n === 1 ? {} : { sayfa: String(n) })}
                         aria-current={n === page ? 'page' : undefined}
-                        className={cn('h-10 w-10 rounded-full text-[0.9rem] tabular-nums', n === page ? 'bg-espresso text-cream' : 'text-taupe hover:bg-sand')}
+                        className={cn('h-11 w-11 rounded-full text-[0.9rem] tabular-nums', n === page ? 'bg-espresso text-cream' : 'text-taupe hover:bg-sand')}
                       >
                         {n}
                       </button>

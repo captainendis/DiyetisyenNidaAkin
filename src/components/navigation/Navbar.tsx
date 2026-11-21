@@ -76,7 +76,7 @@ export function Navbar() {
         )}
       >
         <div className={cn('container-edge flex items-center justify-between gap-6 transition-[height] duration-500', scrolled ? 'h-[72px]' : 'h-[88px] xl:h-[104px]')}>
-          <Link to="/" aria-label="Nida Akın Diyetisyen — Ana sayfa" className="relative z-[61] shrink-0">
+          <Link to="/" aria-label="Nida Akın Diyetisyen, ana sayfa" className="relative z-[61] shrink-0">
             <Logo compact={scrolled} />
           </Link>
           <nav aria-label="Ana menü" className="hidden xl:block">

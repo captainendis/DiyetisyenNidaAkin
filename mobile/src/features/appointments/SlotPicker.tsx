@@ -33,7 +33,7 @@ export function SlotPicker({
   );
 
   if (freeTime) {
-    return <TimeField label="Saat" value={value} onChange={onChange} error={error} help="Çalışma saatleri dışı özel randevu — çakışma kontrolü yine yapılır." />;
+    return <TimeField label="Saat" value={value} onChange={onChange} error={error} help="Çalışma saatleri dışı özel randevu; çakışma kontrolü yine yapılır." />;
   }
   let content;
   if (!date) content = <T muted>Önce bir gün seçin.</T>;

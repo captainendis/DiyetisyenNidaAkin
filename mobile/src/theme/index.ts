@@ -50,7 +50,8 @@ export const toneColors: Record<Tone, { bg: string; fg: string }> = {
   danger: { bg: colors.dangerBg, fg: colors.dangerInk },
   info: { bg: colors.infoBg, fg: colors.infoInk },
   gold: { bg: '#F1E7D6', fg: colors.goldInk },
-  rose: { bg: '#F5E3DD', fg: colors.roseInk },
+  // #F5E3DD üzerinde roseInk 4,46:1 kalıyordu (AA altı); bir ton açık zeminle 4,61:1
+  rose: { bg: '#F7E7E2', fg: colors.roseInk },
 };
 
 /** Yazı tipleri — kök _layout.tsx'te yüklenir */

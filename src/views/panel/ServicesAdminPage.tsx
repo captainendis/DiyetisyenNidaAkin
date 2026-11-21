@@ -140,7 +140,7 @@ export default function ServicesAdminPage() {
                 )}
               >
                 <GripVertical className="hidden h-5 w-5 shrink-0 cursor-grab text-panel-muted sm:block" aria-hidden />
-                <span className="hidden w-6 shrink-0 sm:inline font-display text-[1.05rem] text-gold [font-variant-numeric:lining-nums_tabular-nums]">{String(i + 1).padStart(2, '0')}</span>
+                <span className="hidden w-6 shrink-0 sm:inline font-display text-[1.05rem] text-gold-ink [font-variant-numeric:lining-nums_tabular-nums]">{String(i + 1).padStart(2, '0')}</span>
                 <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-lg', s.isPublished ? 'bg-espresso text-rose' : 'bg-panel-line/60 text-cocoa/75')}>
                   <ServiceIcon name={s.icon} className="h-7 w-7" />
                 </span>
