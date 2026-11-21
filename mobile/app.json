@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "Nida Akın",
+    "slug": "nida-akin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "nidaakin",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F5F1EA",
+    "ios": {
+      "bundleIdentifier": "com.nidaakin.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Uygulama kilidini Face ID ile açmak için kullanılır.",
+        "NSPhotoLibraryUsageDescription": "Danışan dosyası ve görsel yüklemek için fotoğraflarınıza erişilir.",
+        "NSCameraUsageDescription": "Danışan dosyası ve görsel çekmek için kamera kullanılır.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.nidaakin.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#211710",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["USE_BIOMETRIC", "USE_FINGERPRINT"]
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#211710",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      "expo-secure-store",
+      "expo-sharing",
+      "@react-native-community/datetimepicker",
+      ["expo-local-authentication", { "faceIDPermission": "Uygulama kilidini Face ID ile açmak için kullanılır." }],
+      ["expo-image-picker", { "photosPermission": "Danışan dosyası ve görsel yüklemek için fotoğraflarınıza erişilir.", "cameraPermission": "Danışan dosyası ve görsel çekmek için kamera kullanılır." }],
+      ["expo-notifications", { "color": "#211710" }],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": false,
+      "reactCompiler": true
+    },
+    "extra": {
+      "apiUrl": "https://nidaakin.com"
+    }
+  }
+}
