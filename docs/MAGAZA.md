@@ -132,16 +132,8 @@ göstermeyin:
 
 ## 7. Derleme ve gönderme
 
-```bash
-cd mobile
-npx eas-cli login
-npx eas-cli init                      # app.json'a extra.eas.projectId yazar (bildirimler için gerekli)
-npx eas-cli credentials               # Android: FCM V1 hizmet hesabı anahtarı yükleyin (bildirimler)
-npx eas-cli build --platform android --profile production
-npx eas-cli submit --platform android # Play Console'da önce uygulamayı oluşturun, ilk yükleme dahili test kanalına
-npx eas-cli build --platform ios --profile production      # Apple Developer hesabı onaylandıktan sonra
-npx eas-cli submit --platform ios
-```
+Derleme ve mağazalara yükleme GitHub Actions'ta yapılır (`.github/workflows/mobile.yml`): Android AAB → Google
+Play (dahili test), iOS IPA → TestFlight. Gerekli sırlar ve ilk kurulum adımları: [MOBIL-DERLEME.md](MOBIL-DERLEME.md).
 
 Android'de ilk yükleme sonrası **Play Console → Uygulama bütünlüğü → Uygulama imzalama** sayfasındaki
 SHA-256 parmak izini sunucu ortam değişkenine (`ANDROID_CERT_SHA256`) yazın; e-postadaki bağlantılar

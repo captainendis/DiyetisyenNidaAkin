@@ -24,16 +24,14 @@ EXPO_PUBLIC_API_URL=http://192.168.1.20:3000 npx expo start
 - Üretim API adresi `app.json → expo.extra.apiUrl` (varsayılan `https://nidaakin.com`).
 - Tip denetimi: `npx tsc --noEmit`
 
-## Mağaza derlemesi (EAS)
+## Mağaza derlemesi (GitHub Actions)
 
-```bash
-npx eas-cli login
-npx eas-cli build --platform all --profile production
-npx eas-cli submit --platform ios      # App Store Connect
-npx eas-cli submit --platform android  # Google Play
-```
+Derleme GitHub'ın runner'larında yapılır: `.github/workflows/mobile.yml` — Android APK/AAB (+ Google Play'e
+yükleme), iOS IPA (+ TestFlight). Sırlar ve ilk kurulum: [docs/MOBIL-DERLEME.md](../docs/MOBIL-DERLEME.md).
+Mağaza metinleri ve formlar: [docs/MAGAZA.md](../docs/MAGAZA.md).
 
-Paket kimliği: `com.nidaakin.app` (iOS ve Android). Mağaza adı: **Nida Akın**.
+Paket kimliği: `com.nidaakin.app` (iOS ve Android). Mağaza adı: **Nida Akın**. İsterseniz EAS bulut derlemesi
+de kullanılabilir (`eas.json` hazır), ancak gerekli değildir.
 
 ## Oturum ve güvenlik
 
