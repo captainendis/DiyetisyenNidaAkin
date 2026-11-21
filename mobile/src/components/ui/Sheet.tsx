@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { colors, radius, space } from '@/theme';
 import { IconButton } from './Button';
+import { ScrollHostProvider, useScrollHostSetup } from './ScrollContext';
 import { T } from './Text';
 
 /**
@@ -33,6 +34,8 @@ export function Sheet({
   full?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  // İçerideki sürükle-sırala (Sortable) kenara gelince bu görünümü kaydırabilsin
+  const { host, scrollProps } = useScrollHostSetup();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose} statusBarTranslucent>
       {/* Modal ayrı bir kök görünümdür: içindeki hareketler (Android) kendi kökünü ister */}
@@ -48,13 +51,16 @@ export function Sheet({
               </View>
               <IconButton name="x" label="Kapat" onPress={onClose} />
             </View>
-            <ScrollView
-              style={full ? { flex: 1 } : { maxHeight: 560 }}
-              contentContainerStyle={{ padding: space.lg, paddingTop: space.sm, gap: space.md, paddingBottom: footer ? space.lg : insets.bottom + space.xl }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {children}
-            </ScrollView>
+            <ScrollHostProvider value={host}>
+              <ScrollView
+                {...scrollProps}
+                style={full ? { flex: 1 } : { maxHeight: 560 }}
+                contentContainerStyle={{ padding: space.lg, paddingTop: space.sm, gap: space.md, paddingBottom: footer ? space.lg : insets.bottom + space.xl }}
+                keyboardShouldPersistTaps="handled"
+              >
+                {children}
+              </ScrollView>
+            </ScrollHostProvider>
             {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.md) }]}>{footer}</View> : null}
           </View>
         </KeyboardAvoidingView>

@@ -3,12 +3,17 @@
 
 /** Hesabım (danışan). Sekmeler + üstüne açılan detay ekranları (liste, tarif …). */
 import { Stack } from 'expo-router';
+import { View } from 'react-native';
 import { stackScreenOptions } from '@/components/nav';
+import { OfflineBanner } from '@/components/OfflineBanner';
 
 export default function ClientLayout() {
   return (
-    <Stack screenOptions={stackScreenOptions}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Hesabım' }} />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <OfflineBanner />
+      <Stack screenOptions={stackScreenOptions}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Hesabım' }} />
+      </Stack>
+    </View>
   );
 }

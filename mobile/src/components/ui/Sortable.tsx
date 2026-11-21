@@ -15,24 +15,55 @@
  * satırlar yer açar, bırakınca `onReorder(from, to)` çağrılır. Satırların yüksekliği farklı olabilir.
  * Ekran okuyucu kullanıcıları için tutamaç "Yukarı taşı / Aşağı taşı" erişilebilirlik eylemleri sunar
  * (sürükleme yapamayanlar için tek alternatif budur; görsel ok düğmesi yoktur).
+ *
+ * `Screen` / `Sheet` içinde kullanılınca (ScrollContext) satır görünür alanın üst/alt kenarına sürüklendiğinde
+ * çevreleyen liste kendiliğinden kayar (kenara yaklaştıkça hızlanır); satır parmağın altında kalır ve bırakılacak
+ * sıra kaydırılan mesafeyi de hesaba katar. Yaklaşım takvim sürüklemesiyle aynıdır (TimeGrid).
  */
 import * as Haptics from 'expo-haptics';
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
+import Animated, {
+  measure,
+  scrollTo,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useFrameCallback,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { colors, shadow } from '@/theme';
 import { Icon } from './Icon';
+import { useScrollHost, type ScrollHost } from './ScrollContext';
 
 const LONG_PRESS_MS = 180;
 const SHIFT_MS = 160;
+/** Otomatik kaydırma: kenar bölgesi (pt) ve kare başına en yüksek hız (TimeGrid ile aynı) */
+const EDGE = 56;
+const MAX_SPEED = 12;
 
 interface Shared {
   active: SharedValue<number>;
+  /** Satırın ilk yerine göre kayması = parmak kayması + sürükleme sırasında kaydırılan mesafe */
   dragY: SharedValue<number>;
   heights: SharedValue<number[]>;
   gap: number;
+  /** Parmağın sürükleme başından beri dikey kayması */
+  fingerY: SharedValue<number>;
+  /** Kaydırma konumu: sürükleme başında / otomatik kaydırmayla güncel */
+  startScroll: SharedValue<number>;
+  dragScroll: SharedValue<number>;
+  /** Kare başına otomatik kaydırma (−: yukarı, +: aşağı) */
+  autoSpeed: SharedValue<number>;
+  /** Kaydırma görünümünün ekrandaki konumu ve yüksekliği (sürükleme başında ölçülür) */
+  pageY: SharedValue<number>;
+  viewH: SharedValue<number>;
+  host: ScrollHost | null;
+  startAuto: () => void;
+  stopAuto: () => void;
 }
 
 /** Sürüklenen satırın bırakılacağı hedef sıra (orta noktaları geçince yer değiştirir) */
@@ -78,33 +109,56 @@ function SortableRow({
   onDrop: (from: number, to: number) => void;
   children: (handle: ReactNode) => ReactNode;
 }) {
-  const { active, dragY, heights, gap } = shared;
+  const { active, dragY, heights, gap, fingerY, startScroll, dragScroll, autoSpeed, pageY, viewH, host, startAuto, stopAuto } = shared;
+  const scrollRef = host?.ref;
+  const scrollOffset = host?.offset;
 
-  const lift = () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  const tick = () => void Haptics.selectionAsync().catch(() => {});
-  const lastTarget = useSharedValue(index);
+  const lift = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    startAuto();
+  };
 
   const pan = usePanGesture({
     enabled,
     activateAfterLongPress: LONG_PRESS_MS,
     onActivate: () => {
       'worklet';
+      let s0 = 0;
+      pageY.value = 0;
+      viewH.value = 0;
+      if (scrollRef && scrollOffset) {
+        const m = measure(scrollRef);
+        if (m) {
+          pageY.value = m.pageY;
+          viewH.value = m.height;
+        }
+        s0 = scrollOffset.value;
+      }
+      startScroll.value = s0;
+      dragScroll.value = s0;
+      fingerY.value = 0;
+      autoSpeed.value = 0;
       active.value = index;
       dragY.value = 0;
-      lastTarget.value = index;
       scheduleOnRN(lift);
     },
     onUpdate: (e) => {
       'worklet';
-      dragY.value = e.translationY;
-      const t = targetIndex(index, e.translationY, heights.value, gap);
-      if (t !== lastTarget.value) {
-        lastTarget.value = t;
-        scheduleOnRN(tick);
+      fingerY.value = e.translationY;
+      dragY.value = e.translationY + dragScroll.value - startScroll.value;
+      // Görünür alanın kenarına yaklaşınca otomatik kaydırma hızı
+      let s = 0;
+      if (viewH.value > EDGE * 2) {
+        const local = e.absoluteY - pageY.value;
+        if (local < EDGE) s = -MAX_SPEED * Math.min(1, (EDGE - local) / EDGE);
+        else if (local > viewH.value - EDGE) s = MAX_SPEED * Math.min(1, (local - (viewH.value - EDGE)) / EDGE);
       }
+      autoSpeed.value = s;
     },
     onDeactivate: () => {
       'worklet';
+      autoSpeed.value = 0;
+      scheduleOnRN(stopAuto);
       const to = targetIndex(index, dragY.value, heights.value, gap);
       // Hedef konuma kısa bir oturma animasyonu, ardından sıralama ana iş parçacığında uygulanır
       let land = 0;
@@ -119,7 +173,10 @@ function SortableRow({
     },
     onFinalize: (e) => {
       'worklet';
-      if (e.canceled && active.value === index) {
+      if (active.value !== index) return;
+      autoSpeed.value = 0;
+      scheduleOnRN(stopAuto);
+      if (e.canceled) {
         active.value = -1;
         dragY.value = withTiming(0, { duration: 120 });
       }
@@ -203,7 +260,60 @@ export function Sortable<T>({
   const active = useSharedValue(-1);
   const dragY = useSharedValue(0);
   const heights = useSharedValue<number[]>([]);
-  const [shared] = useState<Shared>(() => ({ active, dragY, heights, gap }));
+  const fingerY = useSharedValue(0);
+  const startScroll = useSharedValue(0);
+  const dragScroll = useSharedValue(0);
+  const autoSpeed = useSharedValue(0);
+  const pageY = useSharedValue(0);
+  const viewH = useSharedValue(0);
+  const host = useScrollHost();
+  const scrollRef = host?.ref;
+  const maxScroll = host?.max;
+
+  // Kenara yaklaşınca otomatik kaydırma (yalnızca sürükleme sırasında çalışır). Satır içerikle birlikte kaydığı
+  // için kaydırılan mesafe dragY'ye eklenir: satır parmağın altında kalır, hedef sıra da buna göre hesaplanır.
+  const autoScroll = useFrameCallback(() => {
+    'worklet';
+    const s = autoSpeed.value;
+    if (s === 0 || !scrollRef || !maxScroll || active.value < 0) return;
+    // iOS'ta otomatik içerik boşluğu nedeniyle başlangıç konumu negatif olabilir; onun altına inilmez
+    const min = Math.min(0, startScroll.value);
+    const next = Math.max(min, Math.min(Math.max(maxScroll.value, startScroll.value), dragScroll.value + s));
+    if (next !== dragScroll.value) {
+      dragScroll.value = next;
+      scrollTo(scrollRef, 0, next, false);
+      dragY.value = fingerY.value + next - startScroll.value;
+    }
+  }, false);
+  const startAuto = useCallback(() => {
+    if (host) autoScroll.setActive(true);
+  }, [host, autoScroll]);
+  const stopAuto = useCallback(() => autoScroll.setActive(false), [autoScroll]);
+
+  const [shared] = useState<Shared>(() => ({
+    active,
+    dragY,
+    heights,
+    gap,
+    fingerY,
+    startScroll,
+    dragScroll,
+    autoSpeed,
+    pageY,
+    viewH,
+    host,
+    startAuto,
+    stopAuto,
+  }));
+
+  // Hedef sıra değiştikçe kısa titreşim (parmak hareketi ya da otomatik kaydırmayla)
+  const tick = () => void Haptics.selectionAsync().catch(() => {});
+  useAnimatedReaction(
+    () => (active.value < 0 ? -1 : targetIndex(active.value, dragY.value, heights.value, gap)),
+    (cur, prev) => {
+      if (cur >= 0 && prev != null && prev >= 0 && cur !== prev) scheduleOnRN(tick);
+    },
+  );
   return (
     <View style={{ gap }}>
       {items.map((item, i) => (

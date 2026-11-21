@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native-gesture-handler';
 import { colors, radius, shadow, space } from '@/theme';
 import { Icon, type IconName } from './Icon';
+import { ScrollHostProvider, useScrollHostSetup } from './ScrollContext';
 import { T } from './Text';
 
 /**
@@ -46,6 +47,8 @@ export function Screen({
   contentStyle?: StyleProp<ViewStyle>;
 }) {
   const insets = useSafeAreaInsets();
+  // İçerideki sürükle-sırala (Sortable) kenara gelince bu görünümü kaydırabilsin
+  const { host, scrollProps } = useScrollHostSetup();
   const head = title ? (
     <View style={{ marginBottom: space.lg, gap: 4 }}>
       <T variant="display">{title}</T>
@@ -57,16 +60,19 @@ export function Screen({
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <View style={[styles.flex, { backgroundColor: colors.bg }]}>
         {scroll ? (
-          <ScrollView
-            style={styles.flex}
-            contentContainerStyle={[pad, { paddingBottom: (footer ? space.lg : insets.bottom + space.xxl) }, contentStyle]}
-            keyboardShouldPersistTaps="handled"
-            contentInsetAdjustmentBehavior="automatic"
-            refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.gold} colors={[colors.gold]} /> : undefined}
-          >
-            {head}
-            {children}
-          </ScrollView>
+          <ScrollHostProvider value={host}>
+            <ScrollView
+              {...scrollProps}
+              style={styles.flex}
+              contentContainerStyle={[pad, { paddingBottom: (footer ? space.lg : insets.bottom + space.xxl) }, contentStyle]}
+              keyboardShouldPersistTaps="handled"
+              contentInsetAdjustmentBehavior="automatic"
+              refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.gold} colors={[colors.gold]} /> : undefined}
+            >
+              {head}
+              {children}
+            </ScrollView>
+          </ScrollHostProvider>
         ) : (
           <View style={[styles.flex, pad, contentStyle]}>
             {head}
