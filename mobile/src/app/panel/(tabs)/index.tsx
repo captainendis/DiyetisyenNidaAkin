@@ -10,7 +10,7 @@ import { DateTime } from 'luxon';
 import { Pressable, View } from 'react-native';
 import { MEETING_TYPE_LABEL, TIME_ZONE } from '@shared/constants';
 import { minutesOf, timeOf } from '@shared/time';
-import { Badge, Button, Card, confirm, Empty, ErrorView, Icon, Loading, Screen, Section, T, useToast, type IconName } from '@/components/ui';
+import { Badge, Button, Card, confirm, Empty, ErrorView, Icon, Loading, Notice, Screen, Section, T, useToast, type IconName } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 import { useStaff } from '@/lib/auth';
 import { formatDayStr, formatPhone, relativeTime } from '@/lib/format';
@@ -74,6 +74,7 @@ export default function DashboardScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh} title={`Merhaba, ${hello}`} subtitle={`${now.toFormat('d MMMM yyyy, cccc')} · Bugünkü danışan ve randevu durumunuz.`}>
+      {user.role === 'REVIEWER' ? <Notice tone="info" text="Mağaza inceleme hesabı: yalnızca demo danışan verileri görünür ve değişiklik yapılamaz." /> : null}
       {can('content:write') ? <SetupChecklist /> : null}
 
       <Section
@@ -127,7 +128,7 @@ export default function DashboardScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                     <Icon name="clock" size={13} color={colors.muted} />
                     <T variant="caption" style={{ flex: 1 }}>
-                      {a.date ? `${formatDayStr(a.date, 'd MMM ccc')} · ${a.time}` : 'Saat seçilmedi — geri arama'} · {MEETING_TYPE_LABEL[a.meetingType]}
+                      {a.date ? `${formatDayStr(a.date, 'd MMM ccc')} · ${a.time}` : 'Saat seçilmedi (geri arama)'} · {MEETING_TYPE_LABEL[a.meetingType]}
                     </T>
                   </View>
                   <T variant="caption">{formatPhone(a.contactPhone)} · {relativeTime(a.createdAt)} geldi</T>

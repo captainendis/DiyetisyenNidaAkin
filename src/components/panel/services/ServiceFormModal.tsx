@@ -80,7 +80,7 @@ export function ServiceFormModal({ open, service, index, onClose, onSaved }: { o
         showPrice: f.showPrice,
       };
       const res = service ? await api.patch<{ item: Service }>(`/services/${service.id}`, body) : await api.post<{ item: Service }>('/services', body);
-      fb.success(service ? 'Hizmet güncellendi' : 'Hizmet eklendi', f.isPublished ? 'Web sitesinde görünür.' : 'Yayında değil — yalnızca panelde görünür.');
+      fb.success(service ? 'Hizmet güncellendi' : 'Hizmet eklendi', f.isPublished ? 'Web sitesinde görünür.' : 'Yayında değil; yalnızca panelde görünür.');
       onSaved(res.item);
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) setErrors(e.fields);
@@ -145,7 +145,7 @@ export function ServiceFormModal({ open, service, index, onClose, onSaved }: { o
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Input label="Görüşme süresi (dk)" inputMode="numeric" placeholder="Ör. 45" hint="Boşsa çalışma takvimindeki varsayılan süre kullanılır." value={f.duration} error={errors.durationMinutes} onChange={(e) => set('duration', e.target.value.replace(/\D/g, ''))} />
-            <Input label="Ücret (₺) — isteğe bağlı" inputMode="decimal" placeholder="Boş bırakılabilir" value={f.price} error={errors.priceCents} onChange={(e) => set('price', e.target.value.replace(/[^\d.,]/g, ''))} />
+            <Input label="Ücret (₺, isteğe bağlı)" inputMode="decimal" placeholder="Boş bırakılabilir" value={f.price} error={errors.priceCents} onChange={(e) => set('price', e.target.value.replace(/[^\d.,]/g, ''))} />
           </div>
           <div className="space-y-3 rounded-lg border border-panel-line p-4">
             <Switch checked={f.showPrice} onChange={(v) => set('showPrice', v)} label="Ücreti web sitesinde göster" description="Kapalıysa ücret yalnızca panelde saklanır." />

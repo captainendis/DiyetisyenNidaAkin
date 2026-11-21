@@ -21,6 +21,7 @@ import { copyRecipeImage, deleteRecipeImage, processRecipeImage, recipeImageData
 import { MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, recipeCreateSchema, recipeInputSchema, type PrintRecipe, type Recipe, type RecipeInput } from '../../shared/recipe';
 import type { NutritionPlanData } from '../../shared/plan';
 import { slugify } from '../../shared/text';
+import { ownedByDemoScope } from '../auth/reviewer';
 
 export const recipesRouter = router();
 const read = requirePermission('clinical:read');
@@ -66,10 +67,16 @@ export function toRecipe(r: Row): Recipe {
 }
 
 /** Plandaki tarif referanslarını PDF için çözer (sırayı korur; silinmiş tarifleri atlar, görseli gömer) */
-export async function resolvePlanRecipes(plan: NutritionPlanData): Promise<PrintRecipe[]> {
+export async function resolvePlanRecipes(plan: NutritionPlanData, opts: { demoOnly?: boolean } = {}): Promise<PrintRecipe[]> {
   const items = plan.recipes?.items ?? [];
   if (!items.length) return [];
-  const rows = await prisma.recipe.findMany({ where: { id: { in: items.map((i) => i.recipeId) } } });
+  const rows = await prisma.recipe.findMany({
+    where: {
+      id: { in: items.map((i) => i.recipeId) },
+      // İnceleme hesabı: yalnızca kütüphane tarifleri ve demo danışanın varyasyonları
+      ...(opts.demoOnly ? { OR: [{ clientId: null }, { client: { isDemo: true } }] } : {}),
+    },
+  });
   const byId = new Map(rows.map((r) => [r.id, r]));
   const out: PrintRecipe[] = [];
   for (const it of items) {
@@ -160,6 +167,7 @@ recipesRouter.get('/', read, async (c) => {
   );
   const rows = await prisma.recipe.findMany({
     where: {
+      AND: [ownedByDemoScope(c)],
       ...(q.category ? { category: q.category } : {}),
       ...(q.clientId ? { clientId: q.clientId } : {}),
     },

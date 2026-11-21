@@ -6,6 +6,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } fr
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Hareket yöneticisiyle uyumlu kaydırma: içindeki sürükleme (Sortable) başlayınca kaydırma durur
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
+import { useReducedMotion } from 'react-native-reanimated';
 import { colors, radius, space } from '@/theme';
 import { IconButton } from './Button';
 import { ScrollHostProvider, useScrollHostSetup } from './ScrollContext';
@@ -36,11 +37,14 @@ export function Sheet({
   const insets = useSafeAreaInsets();
   // İçerideki sürükle-sırala (Sortable) kenara gelince bu görünümü kaydırabilsin
   const { host, scrollProps } = useScrollHostSetup();
+  // Sistemde "Hareketi azalt" açıksa sayfa kaymak yerine soluklaşarak açılır
+  const reduceMotion = useReducedMotion();
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible} animationType={reduceMotion ? 'fade' : 'slide'} transparent onRequestClose={onClose} statusBarTranslucent>
       {/* Modal ayrı bir kök görünümdür: içindeki hareketler (Android) kendi kökünü ister */}
       <GestureHandlerRootView style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Kapat" />
+        {/* Boş alana dokununca kapanır; ekran okuyucu için başlıktaki "Kapat" düğmesi yeterli, ikinci bir "Kapat" okunmaz */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} importantForAccessibility="no" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.wrap, full && { height: '92%' }]}>
           <View style={[styles.sheet, full && { flex: 1 }]}>
             <View style={styles.grabber} />

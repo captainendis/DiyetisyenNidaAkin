@@ -37,7 +37,7 @@ export function AppLock({ children }: { children: ReactNode }) {
   const bgAt = useRef<number | null>(null);
 
   const unlock = useCallback(async () => {
-    const r = await LocalAuthentication.authenticateAsync({ promptMessage: 'Nida Akın — kilidi aç', cancelLabel: 'Vazgeç', fallbackLabel: 'Cihaz şifresi' });
+    const r = await LocalAuthentication.authenticateAsync({ promptMessage: 'Nida Akın: kilidi aç', cancelLabel: 'Vazgeç', fallbackLabel: 'Cihaz şifresi' });
     if (r.success) setLocked(false);
   }, []);
 

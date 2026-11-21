@@ -84,7 +84,7 @@ function Editor({ plan }: { plan: PlanDetail }) {
     try {
       await api.post('/plans', { isTemplate: true, name: `${name} (şablon)`.slice(0, 80), data: { ...tidyPlan(data), title: 'Beslenme planı' } });
       await queryClient.invalidateQueries({ queryKey: ['plans'] });
-      toast('Şablon olarak kaydedildi — Şablonlar sekmesinde bulabilirsiniz.');
+      toast('Şablon olarak kaydedildi. Şablonlar sekmesinde bulabilirsiniz.');
     } catch (e) {
       toast(`Şablon kaydedilemedi: ${errorMessage(e)}`, 'error');
     }
@@ -147,7 +147,7 @@ function Editor({ plan }: { plan: PlanDetail }) {
             fit.recipesFit ? (
               <T variant="caption">{`Tarif önerileri ${fit.pages - 1} ek sayfaya yerleşti · toplam ${fit.pages} sayfa.`}</T>
             ) : (
-              <Notice tone="warning" text="Bir tarif tek sayfaya sığmıyor — adımlarını veya malzeme listesini kısaltın." />
+              <Notice tone="warning" text="Bir tarif tek sayfaya sığmıyor. Adımlarını veya malzeme listesini kısaltın." />
             )
           ) : null}
           <T variant="caption">PDF bu önizlemeyle aynıdır; “PDF / Paylaş” ile kaydedebilir ya da yazdırabilirsiniz.</T>

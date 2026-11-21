@@ -144,7 +144,7 @@ export function WeeklySchedule({ onWarnings, onSaved }: { onWarnings: (w: Affect
         <div className="mx-5 mt-4 flex items-start gap-3 rounded-lg border border-rose/50 bg-rose/15 p-4 text-[0.85rem] text-[#6f4336]">
           <CalendarCog className="mt-0.5 h-5 w-5 shrink-0" />
           <p>
-            <strong>Çalışma saatleri henüz tanımlanmadı</strong> — web sitesindeki randevu formu yalnızca “beni arayın” talebi alır. Çalıştığınız günleri açıp saatlerinizi girin.
+            <strong>Çalışma saatleri henüz tanımlanmadı.</strong> Web sitesindeki randevu formu yalnızca “beni arayın” talebi alır. Çalıştığınız günleri açıp saatlerinizi girin.
           </p>
         </div>
       )}

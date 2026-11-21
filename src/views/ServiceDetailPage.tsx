@@ -21,7 +21,7 @@ export default function ServiceDetailPage() {
   const { site, ready } = useSite();
   const booking = useBooking();
   const service = site.services.find((s) => s.slug === slug);
-  if (!service) return ready ? <NotFoundPage /> : <div className="min-h-dvh bg-espresso" />;
+  if (!service) return ready ? <NotFoundPage /> : <div className="min-h-dvh bg-espresso" aria-busy="true"><p role="status" className="sr-only">Hizmet yükleniyor</p></div>;
   const crumbs = [{ name: 'Hizmetler', path: '/hizmetler' }, { name: service.title, path: `/hizmetler/${service.slug}` }];
   const others = site.services.filter((s) => s.id !== service.id);
   return (

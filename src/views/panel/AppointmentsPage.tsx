@@ -188,7 +188,7 @@ function Inner() {
         >
           <Inbox className="h-4 w-4 shrink-0" />
           <span>
-            <strong className="tabular">{unscheduled.data.total}</strong> geri arama talebi saat atanmayı bekliyor — takvimde görünmezler.
+            <strong className="tabular">{unscheduled.data.total}</strong> geri arama talebi saat atanmayı bekliyor; takvimde görünmezler.
           </span>
           <span className="ml-auto font-semibold whitespace-nowrap underline underline-offset-4">Taleplere git</span>
         </Link>

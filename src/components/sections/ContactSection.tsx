@@ -36,7 +36,7 @@ export function MapBlock({ className = '' }: { className?: string }) {
     return (
       <div className={`relative overflow-hidden bg-sand ${className}`}>
         <iframe
-          title={`Harita — ${c.venueName ?? 'Nida Akın Diyetisyen'} konumu`}
+          title={`${c.venueName ?? 'Nida Akın Diyetisyen'} konumu, harita`}
           src={c.mapEmbedUrl}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
@@ -84,7 +84,7 @@ export function ContactSection({ heading = true }: { heading?: boolean }) {
           <div className="relative lg:sticky lg:top-28">
             <Picture {...images.venue} sizes="(min-width: 1024px) 30vw, 90vw" className="block" imgClassName="aspect-[4/5] h-auto w-full object-cover" />
             <p className="mt-4 text-[0.8rem] leading-relaxed text-taupe">
-              {c.venueName ? <>{c.venueName}{place ? ` — ${place.split(',')[0]}` : ''}</> : 'Sıcak ışıklı, sakin bir mekânda — kendinize ayırdığınız zaman için.'}
+              {c.venueName ? <>{c.venueName}{place ? `, ${place.split(',')[0]}` : ''}</> : 'Görüşmelerin yapıldığı stüdyo'}
             </p>
           </div>
         </Reveal>

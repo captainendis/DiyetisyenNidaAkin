@@ -90,7 +90,7 @@ export function ClientPicker({
     <View style={{ gap: space.sm }}>
       <TextField value={q} onChange={setQ} icon="search" placeholder="Ad, soyad veya telefon ile arayın" autoCorrect={false} error={errors.client} accessibilityLabel="Danışan ara" />
       {search.isFetching ? <ActivityIndicator color={colors.gold} style={{ alignSelf: 'flex-start' }} /> : null}
-      {search.error ? <T variant="caption">Danışan araması şu anda kullanılamıyor — “Yeni kişi” ile devam edebilirsiniz.</T> : null}
+      {search.error ? <T variant="caption">Danışan araması şu anda kullanılamıyor. “Yeni kişi” ile devam edebilirsiniz.</T> : null}
       {results.length ? (
         <Card padded={false} style={{ overflow: 'hidden' }}>
           {results.map((c, i) => (

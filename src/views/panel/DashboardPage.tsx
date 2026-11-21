@@ -162,7 +162,7 @@ export default function DashboardPage() {
                       <p className="font-semibold text-espresso hover:underline">{displayName(a)}</p>
                       <p className="mt-0.5 flex items-center gap-1.5 text-[0.78rem] text-panel-muted">
                         <Clock className="h-3.5 w-3.5" />
-                        {a.date ? <span className="tabular">{formatDayStr(a.date, 'd MMM ccc')} · {a.time}</span> : 'Saat seçilmedi — geri arama'}
+                        {a.date ? <span className="tabular">{formatDayStr(a.date, 'd MMM ccc')} · {a.time}</span> : 'Saat seçilmedi (geri arama)'}
                         <span aria-hidden>·</span> {MEETING_TYPE_LABEL[a.meetingType]}
                       </p>
                       <p className="mt-0.5 text-[0.74rem] text-panel-muted">{formatPhone(a.contactPhone)} · {relativeTime(a.createdAt)} geldi</p>

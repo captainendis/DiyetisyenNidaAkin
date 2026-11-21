@@ -15,8 +15,8 @@ export function HeroForm() {
     <>
       <FormSection title="Karşılama alanı (Hero)" description="Ziyaretçinin siteye girdiğinde ilk gördüğü başlık ve açıklama. Kısa ve net tutun.">
         <TextField label="Üst satır" help="İsteğe bağlı; boş bırakılırsa gösterilmez. Açıklamadaki bilgiyi tekrarlamayın." value={d.eyebrow} maxLength={80} error={err('eyebrow')} onChange={(v) => set('eyebrow', v)} />
-        <TextField label="Başlık — 1. satır" value={d.titleLine1} maxLength={40} error={err('titleLine1')} onChange={(v) => set('titleLine1', v)} />
-        <TextField label="Başlık — 2. satır" help="Pudra renginde vurgulanır" value={d.titleLine2} maxLength={40} error={err('titleLine2')} onChange={(v) => set('titleLine2', v)} />
+        <TextField label="Başlık, 1. satır" value={d.titleLine1} maxLength={40} error={err('titleLine1')} onChange={(v) => set('titleLine1', v)} />
+        <TextField label="Başlık, 2. satır" help="Pudra renginde vurgulanır" value={d.titleLine2} maxLength={40} error={err('titleLine2')} onChange={(v) => set('titleLine2', v)} />
         <TextField label="Açıklama" rows={3} value={d.description} maxLength={240} error={err('description')} help={charCount(d.description, 240)} onChange={(v) => set('description', v)} />
         <TextField label="Ana buton" help="Randevu formunu açar" value={d.primaryCta} maxLength={30} error={err('primaryCta')} onChange={(v) => set('primaryCta', v)} />
         <TextField label="İkincil bağlantı" help="Hakkımda bölümüne götürür" value={d.secondaryCta} maxLength={30} error={err('secondaryCta')} onChange={(v) => set('secondaryCta', v)} />
@@ -81,7 +81,7 @@ export function ProcessForm() {
         onChange={(steps) => set('steps', steps)}
         create={() => ({ title: '', body: '' })}
         addLabel="Adım ekle"
-        itemLabel={(i) => `${String(i + 1).padStart(2, '0')} — Adım`}
+        itemLabel={(i) => `Adım ${String(i + 1).padStart(2, '0')}`}
         render={(s, i, upd) => (
           <>
             <TextField label="Başlık" value={s.title} maxLength={40} error={err(`steps.${i}.title`)} onChange={(v) => upd({ ...s, title: v })} />

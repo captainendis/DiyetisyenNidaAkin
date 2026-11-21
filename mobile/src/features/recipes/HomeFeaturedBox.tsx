@@ -59,7 +59,7 @@ export function HomeFeaturedBox({ library, editable }: { library: Recipe[]; edit
       <T variant="caption">
         {featured.length
           ? '“Mutfaktan” bölümünde bu sırayla görünür.'
-          : 'Henüz seçim yok — ana sayfada şu an son yayınlanan tarifler görünüyor. Seçtiğiniz anda yalnızca sizin seçtikleriniz görünür.'}
+          : 'Henüz seçim yok. Ana sayfada şu an son yayınlanan tarifler görünüyor. Seçtiğiniz anda yalnızca sizin seçtikleriniz görünür.'}
       </T>
       <View style={{ gap: space.sm }}>
         {shown.map((r, i) => (

@@ -6,11 +6,12 @@
  * Sunucu şifre değişince diğer oturumları kapatır ve yeni token döndürür → bu cihazda oturum yenilenir.
  */
 import { Stack } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Button, Card, KeyValue, Notice, Screen, Section, T, TextField } from '@/components/ui';
+import { Button, Card, KeyValue, Notice, Screen, Section, SwitchField, T, TextField } from '@/components/ui';
 import { ApiError, errorMessage, portalApi } from '@/lib/api';
 import { useAuth, useClient } from '@/lib/auth';
+import { getPushConsent, onPushConsentChange, pushSupported, setPushConsent, type PushConsent } from '@/lib/push';
 import { space } from '@/theme';
 
 export default function AccountScreen() {
@@ -22,6 +23,12 @@ export default function AccountScreen() {
   const [fields, setFields] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, setPending] = useState(false);
+  const [pushConsent, setPushConsentState] = useState<PushConsent>(null);
+
+  useEffect(() => {
+    void getPushConsent().then(setPushConsentState);
+    return onPushConsentChange(setPushConsentState);
+  }, []);
 
   const submit = async () => {
     setMsg(null);
@@ -55,6 +62,19 @@ export default function AccountScreen() {
         </Card>
         <T variant="caption" style={{ marginTop: space.sm }}>E-posta adresini değiştirmek için diyetisyeninle iletişime geç.</T>
       </Section>
+
+      {pushSupported ? (
+        <Section title="Bildirimler">
+          <Card>
+            <SwitchField
+              label="Bildirim almak istiyorum"
+              value={pushConsent === 'granted'}
+              onChange={(v) => void setPushConsent(v ? 'granted' : 'declined')}
+              help="Bildirimler Expo, Inc. (ABD) ile Google veya Apple üzerinden iletilir; metinlerde sağlık bilgisi yer almaz. Kapatırsan bu telefonun kaydı silinir ve aktarım durur."
+            />
+          </Card>
+        </Section>
+      ) : null}
 
       <Section title="Şifreni değiştir">
         <Card>

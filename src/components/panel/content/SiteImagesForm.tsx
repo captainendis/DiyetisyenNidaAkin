@@ -37,7 +37,7 @@ const SLOTS: { key: Slot; title: string; description: string; aspect: string; fa
   },
   {
     key: 'portrait',
-    title: 'Portre — Nida Akın',
+    title: 'Portre (Nida Akın)',
     description: 'Hakkımda bölümlerinde görünür. Yüklenene kadar sitede monogramlı bir yer tutucu gösterilir. Dikey (4:5) ve iyi ışıklı bir fotoğraf önerilir.',
     aspect: 'aspect-[4/5]',
     fallback: null,

@@ -134,7 +134,7 @@ export function ConsentPanel({ client, onChanged }: { client: Client; onChanged:
               ? `Alındı · ${formatDateTime(client.healthConsentAt)}${client.healthConsentNote ? ` · ${client.healthConsentNote}` : ''}`
               : client.healthConsentWithdrawnAt
                 ? `Geri çekildi · ${formatDateTime(client.healthConsentWithdrawnAt)}`
-                : 'Alınmadı — ölçüm ve dosya kaydı kapalı'}
+                : 'Alınmadı, ölçüm ve dosya kaydı kapalı'}
           </T>
           {can('clinical:write') ? (
             client.healthConsentAt ? (

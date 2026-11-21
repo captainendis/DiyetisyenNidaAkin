@@ -19,6 +19,34 @@ import { api, portalApi } from './api';
 export type PushKind = 'staff' | 'client';
 
 const ASKED_KEY = 'na.push.asked.v1';
+/** Bildirimler için yurt dışına aktarım açık rızası (KVKK md. 9; Açık Rıza Metni §3). Rıza yoksa cihaz hiç kaydedilmez. */
+const CONSENT_KEY = 'na.push.consent.v1';
+
+export type PushConsent = 'granted' | 'declined' | null;
+const consentListeners = new Set<(c: PushConsent) => void>();
+
+export async function getPushConsent(): Promise<PushConsent> {
+  try {
+    const v = await SecureStore.getItemAsync(CONSENT_KEY);
+    return v === 'granted' || v === 'declined' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setPushConsent(v: 'granted' | 'declined'): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(CONSENT_KEY, v);
+  } catch {
+    /* kaydedilemezse bir sonraki açılışta yeniden sorulur */
+  }
+  consentListeners.forEach((l) => l(v));
+}
+
+export function onPushConsentChange(l: (c: PushConsent) => void): () => void {
+  consentListeners.add(l);
+  return () => consentListeners.delete(l);
+}
 /** Android bildirim kanalı (sunucu channelId: 'default' gönderir) */
 export const ANDROID_CHANNEL_ID = 'default';
 
@@ -100,6 +128,7 @@ let registered: { kind: PushKind; token: string } | null = null;
 /** Token'ı oturumun sahibine kaydeder (her açılışta lastSeen tazelenir). Hata fırlatmaz. */
 export async function registerPush(kind: PushKind): Promise<boolean> {
   try {
+    if ((await getPushConsent()) !== 'granted') return false;
     const token = await getExpoPushToken();
     if (!token) return false;
     await client(kind).post('/devices', { token, platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID' });

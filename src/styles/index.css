@@ -111,6 +111,13 @@
       outline-color: var(--color-espresso);
     }
   }
+  /* Tailwind preflight düğmelerde imleci varsayılana çeker: tıklanabilen her öğe el imleci gösterir (R-39) */
+  :where(a[href], button, summary, select, label[for], input[type='checkbox'], input[type='radio'], [role='button'], [role='tab'], [role='switch']):not(:disabled, [aria-disabled='true']) {
+    cursor: pointer;
+  }
+  :where(button, select, input):disabled, [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
   /* Telefon numaraları: eski stil rakamlar yerine düz (lining) rakamlar — okunabilirlik için */
   a[href^="tel:"] {
     font-variant-numeric: lining-nums tabular-nums;

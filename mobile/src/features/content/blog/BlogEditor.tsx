@@ -103,7 +103,7 @@ function Editor({ initial, categories }: { initial: Post | null; categories: Cat
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) {
         setErrors(e.fields);
-        toast('Kaydedilemedi — işaretli alanları kontrol edin.', 'error');
+        toast('Kaydedilemedi. İşaretli alanları kontrol edin.', 'error');
       } else toast(`Kaydedilemedi: ${errorMessage(e)}`, 'error');
       return null;
     }
@@ -202,7 +202,7 @@ function Editor({ initial, categories }: { initial: Post | null; categories: Cat
             label="Adres (URL)"
             autoCapitalize="none"
             autoCorrect={false}
-            help={`Sitede: ${publicPath}${published ? ' — yayındaki yazının adresini değiştirmek mevcut bağlantıları bozar.' : ''}`}
+            help={`Sitede: ${publicPath}${published ? '. Yayındaki yazının adresini değiştirmek mevcut bağlantıları bozar.' : ''}`}
             value={d.slug}
             error={errors.slug}
             onChange={(v) => {

@@ -136,7 +136,7 @@ export default function AuditLogPage() {
               {detail.entityId && <span className="ml-1 font-mono text-[0.75rem] break-all text-panel-muted">({detail.entityId})</span>}
             </dd>
             <dt className="text-panel-muted">Kullanıcı</dt>
-            <dd className="mb-2 sm:mb-0">{detail.user ? `${detail.user.firstName} ${detail.user.lastName} — ${detail.user.email}` : 'Sistem / anonim'}</dd>
+            <dd className="mb-2 sm:mb-0">{detail.user ? `${detail.user.firstName} ${detail.user.lastName} (${detail.user.email})` : 'Sistem / anonim'}</dd>
             <dt className="text-panel-muted">IP adresi</dt>
             <dd className="tabular mb-2 sm:mb-0">{detail.ip ?? '—'}</dd>
             <dt className="text-panel-muted">Tarayıcı</dt>

@@ -13,7 +13,7 @@ const variants: Record<Variant, string> = {
   accent: 'bg-rose text-espresso hover:bg-rose-deep disabled:opacity-50',
   secondary: 'bg-white text-cocoa ring-1 ring-inset ring-panel-line hover:bg-panel-bg disabled:text-cocoa/40',
   ghost: 'text-cocoa hover:bg-cocoa/[0.06] disabled:text-cocoa/40',
-  danger: 'bg-danger text-white hover:bg-[#b05f5f] disabled:opacity-50',
+  danger: 'bg-danger-ink text-white hover:bg-[#8c3632] disabled:opacity-50',
 };
 const sizes: Record<Size, string> = {
   sm: 'h-8 px-3 text-[0.8rem] gap-1.5',
@@ -37,7 +37,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-lg font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed',
+        'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg font-semibold whitespace-nowrap transition-colors duration-150 disabled:cursor-not-allowed',
         variants[variant],
         sizes[size],
         className,
@@ -56,7 +56,7 @@ export function IconButton({ label, className, children, ...rest }: ButtonHTMLAt
       type="button"
       aria-label={label}
       title={label}
-      className={cn('inline-flex h-9 w-9 items-center justify-center rounded-lg text-cocoa/70 transition-colors hover:bg-cocoa/[0.06] hover:text-cocoa disabled:opacity-40', className)}
+      className={cn('inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-cocoa/70 transition-colors hover:bg-cocoa/[0.06] hover:text-cocoa disabled:cursor-not-allowed disabled:opacity-40', className)}
       {...rest}
     >
       {children}

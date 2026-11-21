@@ -110,7 +110,7 @@ export function PrivacyForm() {
           text="Aydınlatma metni, açık rıza metni, veri işleme envanteri ve saklama süreleri gerçek kullanımdan önce bir hukuk uzmanı tarafından incelenmeli ve onaylanmalıdır. Sağlık verileri özel nitelikli kişisel veri kapsamında değerlendirilebilir."
         />
       </View>
-      <FormSection title="Hukuki inceleme" description="İnceleme tamamlanana kadar web sitesindeki yasal sayfalarda “taslak” uyarısı gösterilir.">
+      <FormSection title="Hukuki inceleme" description="Panel kontrol listesinde takip edilir. Yasal metinleri gerçek kullanımdan önce bir hukuk uzmanına inceletin.">
         <SwitchField
           label="Yasal metinler hukuk uzmanı tarafından incelendi"
           help="Yalnızca inceleme gerçekten tamamlandıysa işaretleyin."

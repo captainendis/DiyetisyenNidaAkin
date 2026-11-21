@@ -221,7 +221,7 @@ export default function AppointmentDetailModal({
                 {a.client ? (
                   <Link to={`/panel/danisanlar/${a.client.id}`} className="font-semibold underline decoration-panel-line underline-offset-4 hover:decoration-cocoa">{name}</Link>
                 ) : (
-                  <span>{a.contactName} <span className="text-panel-muted">— danışan kaydı onayla oluşturulur</span></span>
+                  <span>{a.contactName} <span className="text-panel-muted">(danışan kaydı onayla oluşturulur)</span></span>
                 )}
               </Row>
               <Row icon={<Phone className="h-4 w-4" />} label="Telefon">

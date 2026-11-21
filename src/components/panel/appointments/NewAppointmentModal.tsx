@@ -206,7 +206,7 @@ export default function NewAppointmentModal({
                 />
               </div>
               {errors.client && <p className="mt-1.5 text-[0.78rem] text-danger-ink">{errors.client}</p>}
-              {searchState === 'error' && <p className="mt-2 text-[0.8rem] text-panel-muted">Danışan araması şu anda kullanılamıyor — “Yeni kişi” ile devam edebilirsiniz.</p>}
+              {searchState === 'error' && <p className="mt-2 text-[0.8rem] text-panel-muted">Danışan araması şu anda kullanılamıyor. “Yeni kişi” ile devam edebilirsiniz.</p>}
               {results.length > 0 && (
                 <ul className="mt-2 max-h-52 divide-y divide-panel-line overflow-y-auto rounded-lg border border-panel-line">
                   {results.map((c) => (

@@ -172,7 +172,7 @@ function EditorBody({
         if (e instanceof ApiError && e.status === 422 && Object.keys(e.fields).length) {
           const fields = e.fields;
           setErrors((x) => ({ ...x, [k]: fields }));
-          toast('Kaydedilemedi — işaretli alanları kontrol edin.', 'error');
+          toast('Kaydedilemedi. İşaretli alanları kontrol edin.', 'error');
         } else toast(`Kaydedilemedi: ${errorMessage(e)}`, 'error');
       }
     }

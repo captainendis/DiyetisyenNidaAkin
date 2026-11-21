@@ -16,6 +16,7 @@ import { renderPlanPrintPage } from '../services/print';
 import { emptyPlan, nutritionPlanDataSchema, planCreateSchema, planTitleFor, planUpdateSchema, type NutritionPlanData } from '../../shared/plan';
 import { resolvePlanRecipes } from './recipes';
 import { pushToClient } from '../services/push';
+import { isReviewer, planScope } from '../auth/reviewer';
 
 export const plansRouter = router();
 const read = requirePermission('clinical:read');
@@ -52,6 +53,7 @@ plansRouter.get('/', read, async (c) => {
   );
   const items = await prisma.nutritionPlan.findMany({
     where: {
+      AND: [planScope(c)],
       ...(q.clientId ? { clientId: q.clientId } : {}),
       ...(q.templates === '1' ? { isTemplate: true } : q.templates === '0' ? { isTemplate: false } : {}),
       ...(q.q
@@ -134,7 +136,7 @@ plansRouter.delete('/:id', write, async (c) => {
 plansRouter.get('/:id/print', read, async (c) => {
   const plan = await load(param(c));
   const data = decodePlan(plan.dataEnc);
-  const page = renderPlanPrintPage(data, data.title, await resolvePlanRecipes(data), { autoPrint: c.req.query('autoprint') === '1' });
+  const page = renderPlanPrintPage(data, data.title, await resolvePlanRecipes(data, { demoOnly: isReviewer(c) }), { autoPrint: c.req.query('autoprint') === '1' });
   await audit(c, 'plan.print_opened', 'nutrition_plan', plan.id, { recipes: data.recipes.items.length });
   return c.html(page.html, 200, { 'Content-Security-Policy': page.csp, 'Cache-Control': 'no-store' });
 });

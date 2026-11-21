@@ -21,7 +21,7 @@ export function SnippetPreview({ title, description, path }: { title: string; de
         {path !== '/' ? ` › ${path.replace(/^\//, '').split('/').join(' › ')}` : ''}
       </T>
       <T style={{ fontSize: 17, lineHeight: 22, color: '#1a0dab' }} numberOfLines={1}>{t || 'Başlık'}</T>
-      <T style={{ fontSize: 13, lineHeight: 19, color: '#4d5156' }} numberOfLines={2}>{desc || 'Açıklama girilmedi — arama motoru sayfadan bir metin seçecektir.'}</T>
+      <T style={{ fontSize: 13, lineHeight: 19, color: '#4d5156' }} numberOfLines={2}>{desc || 'Açıklama girilmedi; arama motoru sayfadan bir metin seçecektir.'}</T>
     </View>
   );
 }

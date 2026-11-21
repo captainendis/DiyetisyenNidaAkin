@@ -15,7 +15,7 @@ import { emailSchema, passwordPolicy } from '../shared/schemas';
 import { ask } from './prompt';
 
 async function main() {
-  const roleKey = (process.env.ADMIN_ROLE ?? 'ADMIN') as 'ADMIN' | 'DIETITIAN' | 'ASSISTANT';
+  const roleKey = (process.env.ADMIN_ROLE ?? 'ADMIN') as 'ADMIN' | 'DIETITIAN' | 'ASSISTANT' | 'REVIEWER';
   const role = await prisma.role.findUnique({ where: { key: roleKey } });
   if (!role) throw new Error('Roller bulunamadı. Önce `npm run db:seed` çalıştırın.');
 

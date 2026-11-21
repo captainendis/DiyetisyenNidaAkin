@@ -248,7 +248,7 @@ function GroupDetail({ g, onEdit, onChanged }: { g: ClassGroupDTO; onEdit: () =>
         {canWrite && (
           <div className="flex items-center gap-2">
             <Button size="sm" variant="secondary" icon={<Pencil className="h-3.5 w-3.5" />} onClick={onEdit}>Düzenle</Button>
-            <div className="relative">
+            <div className="relative" onKeyDown={(e) => { if (e.key === 'Escape' && menu) { e.stopPropagation(); setMenu(false); } }}>
               <button type="button" onClick={() => setMenu((m) => !m)} aria-label="Grup işlemleri" aria-expanded={menu} className="rounded-lg p-1.5 text-panel-muted hover:bg-panel-bg hover:text-espresso">
                 <MoreHorizontal className="h-5 w-5" />
               </button>

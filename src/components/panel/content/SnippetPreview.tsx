@@ -14,7 +14,7 @@ export function SnippetPreview({ title, description, path }: { title: string; de
         {path !== '/' && <span> › {path.replace(/^\//, '').split('/').join(' › ')}</span>}
       </p>
       <p className="mt-0.5 truncate text-[1.12rem] leading-snug text-[#1a0dab]">{t || 'Başlık'}</p>
-      <p className="mt-1 line-clamp-2 text-[0.82rem] leading-relaxed text-[#4d5156]">{desc || 'Açıklama girilmedi — arama motoru sayfadan bir metin seçecektir.'}</p>
+      <p className="mt-1 line-clamp-2 text-[0.82rem] leading-relaxed text-[#4d5156]">{desc || 'Açıklama girilmedi; arama motoru sayfadan bir metin seçecektir.'}</p>
     </div>
   );
 }

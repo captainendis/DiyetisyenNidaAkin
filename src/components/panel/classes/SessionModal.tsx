@@ -21,7 +21,7 @@ const MARKS: ClassAttendanceStatus[] = ['ATTENDED', 'NO_SHOW', 'EXCUSED'];
 const MARK_ON: Record<ClassAttendanceStatus, string> = {
   BOOKED: 'bg-white text-cocoa ring-cocoa',
   ATTENDED: 'bg-success text-white ring-success',
-  NO_SHOW: 'bg-danger text-white ring-danger',
+  NO_SHOW: 'bg-danger-ink text-white ring-danger-ink',
   EXCUSED: 'bg-warning text-espresso ring-warning',
 };
 

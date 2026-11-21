@@ -14,8 +14,10 @@
  *      · Klinik notlar, ölçümler ve dosyalar (diskteki şifreli dosyalar dahil) kalıcı olarak silinir
  *      · Randevu kayıtları istatistik için tutulur; kimlik/iletişim bilgisi ve mesajlar silinir
  *      · Danışana bağlı bildirimler silinir, danışan kaydı silinir
+ *  - Danışan kaydına bağlanmamış (danışmanlığa dönüşmemiş) randevu talepleri, son güncellemeden 12 ay sonra
+ *    anonimleştirilir: ad, telefon, e-posta, mesaj ve iç not silinir (kayıt istatistik için kalır).
  *  - 12 aydan eski ve okunmuş panel bildirimleri silinir.
- *  - Süresi dolmuş oturum ve şifre sıfırlama kayıtları temizlenir.
+ *  - Süresi dolmuş oturum ve şifre sıfırlama kayıtları (personel ve danışan) temizlenir.
  *
  * Önerilen kullanım: günlük cron (ör. 03:30) — README → "Veri saklama".
  */
@@ -23,6 +25,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { DateTime } from 'luxon';
 import { prisma } from '../server/lib/db';
+import type { AppointmentStatus } from '../server/generated/prisma/client';
 import { PRIVATE_UPLOADS } from '../server/lib/storage';
 import { getSetting } from '../server/services/settings';
 import { deleteClientRecipeImages } from '../server/routes/recipes';
@@ -63,6 +66,17 @@ async function main() {
   );
   console.log(`Anonimleştirilecek danışan: ${due.length} (not: ${totals.notes}, ölçüm: ${totals.measurements}, dosya: ${totals.files}, randevu: ${totals.appointments})`);
 
+  // Danışmanlığa dönüşmemiş talepler: danışan kaydı yok, artık beklemede değil, 12 aydır dokunulmamış
+  const requestCutoff = DateTime.now().minus({ months: 12 }).toJSDate();
+  const orphanWhere = {
+    clientId: null,
+    contactName: { not: ANON_NAME },
+    status: { notIn: ['NEW_REQUEST', 'PENDING'] as AppointmentStatus[] },
+    updatedAt: { lt: requestCutoff },
+  };
+  const orphanRequests = await prisma.appointment.count({ where: orphanWhere });
+  console.log(`Anonimleştirilecek eski randevu talebi (danışan kaydı olmayan, 12 aydan eski): ${orphanRequests}`);
+
   const notifCutoff = DateTime.now().minus({ months: 12 }).toJSDate();
   const oldNotifications = await prisma.notification.count({ where: { readAt: { not: null }, createdAt: { lt: notifCutoff } } });
   console.log(`Silinecek eski (okunmuş, 12 aydan eski) bildirim: ${oldNotifications}`);
@@ -96,12 +110,26 @@ async function main() {
     for (const f of c.files) await fs.unlink(path.join(PRIVATE_UPLOADS, path.basename(f.storedName))).catch(() => {});
   }
 
+  const orphanIds = (await prisma.appointment.findMany({ where: orphanWhere, select: { id: true } })).map((a) => a.id);
+  if (orphanIds.length) {
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { appointmentId: { in: orphanIds } } }),
+      prisma.appointmentStatusHistory.updateMany({ where: { appointmentId: { in: orphanIds } }, data: { note: null } }),
+      prisma.appointment.updateMany({
+        where: { id: { in: orphanIds } },
+        data: { contactName: ANON_NAME, contactPhone: '-', contactEmail: null, clientMessage: null, internalNote: null },
+      }),
+    ]);
+  }
+
   const n = await prisma.notification.deleteMany({ where: { readAt: { not: null }, createdAt: { lt: notifCutoff } } });
   if (purgeAudit) await prisma.auditLog.deleteMany({ where: { createdAt: { lt: auditCutoff } } });
   await prisma.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
   await prisma.passwordResetToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+  await prisma.clientSession.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+  await prisma.clientAccountToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
   await prisma.auditLog.create({
-    data: { action: 'retention.run', entityType: 'system', metadata: { clients: due.length, notifications: n.count, auditPurged: purgeAudit ? oldAudit : 0 } },
+    data: { action: 'retention.run', entityType: 'system', metadata: { clients: due.length, requests: orphanIds.length, notifications: n.count, auditPurged: purgeAudit ? oldAudit : 0 } },
   });
   console.log('✓ Saklama politikası uygulandı.');
 }

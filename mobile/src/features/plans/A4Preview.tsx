@@ -110,9 +110,9 @@ export function A4Preview({ data, recipes, onFit }: { data: NutritionPlanData; r
 /** Sığdırma sonucunun açıklaması — web'deki (PlanEditorPage) metinlerle aynı */
 export function fitMessage(fit: FitResult | null): { text: string; tone: 'neutral' | 'warning' | 'danger' } {
   if (!fit) return { text: 'Önizleme hazırlanıyor…', tone: 'neutral' };
-  if (!fit.fits) return { text: 'İçerik tek sayfaya sığmıyor — bazı satırları kısaltın ya da bir seçenek/öğün çıkarın.', tone: 'danger' };
+  if (!fit.fits) return { text: 'İçerik tek sayfaya sığmıyor. Bazı satırları kısaltın ya da bir seçenek/öğün çıkarın.', tone: 'danger' };
   if (fit.scale < 0.85)
-    return { text: `Tek sayfaya sığdı ama yazı %${Math.round(fit.scale * 100)} boyuta küçüldü — telefonda okunur, baskıda küçük kalabilir. Satırları kısaltmayı düşünün.`, tone: 'warning' };
+    return { text: `Tek sayfaya sığdı ama yazı %${Math.round(fit.scale * 100)} boyuta küçüldü. Telefonda okunur, baskıda küçük kalabilir. Satırları kısaltmayı düşünün.`, tone: 'warning' };
   if (fit.scale < 1) return { text: `Tek sayfaya sığdı · yazı boyutu %${Math.round(fit.scale * 100)} olarak ayarlandı.`, tone: 'neutral' };
   return { text: 'Tek sayfaya sığıyor · tam boyut.', tone: 'neutral' };
 }

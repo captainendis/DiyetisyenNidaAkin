@@ -76,7 +76,7 @@ export async function notifyStaff(
   tx?: Tx,
 ) {
   const db = tx ?? prisma;
-  const users = await db.user.findMany({ where: { isActive: true }, select: { id: true, email: true, notificationPrefs: true } });
+  const users = await db.user.findMany({ where: { isActive: true, role: { key: { not: 'REVIEWER' } } }, select: { id: true, email: true, notificationPrefs: true } });
   const created: { id: string; userId: string; email: string; prefs: Prefs }[] = [];
   const pushUserIds: string[] = [];
   for (const u of users) {

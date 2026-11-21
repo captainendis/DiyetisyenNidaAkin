@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { BodyPortal } from '@/components/BodyPortal';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/format';
@@ -24,6 +24,8 @@ export function Modal({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const descId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -63,13 +65,14 @@ export function Modal({
 
   return (
     <BodyPortal>
-    <div className="panel-root fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6">
+    <div className="panel-root fixed inset-0 z-[80] flex [&_button:not(:disabled)]:cursor-pointer items-end justify-center sm:items-center sm:p-6">
       <div className="absolute inset-0 bg-espresso/45 animate-fade-in" onClick={closeOnBackdrop ? onClose : undefined} aria-hidden />
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
-        aria-label={typeof title === 'string' ? title : undefined}
+        aria-labelledby={titleId}
+        aria-describedby={description ? descId : undefined}
         tabIndex={-1}
         className={cn(
           'relative flex max-h-[92dvh] w-full flex-col rounded-t-2xl bg-white text-espresso shadow-[0_30px_80px_-20px_rgba(33,23,16,0.45)] animate-fade-in sm:rounded-2xl',
@@ -78,10 +81,10 @@ export function Modal({
       >
         <div className="flex items-start justify-between gap-4 border-b border-panel-line px-5 py-4 sm:px-6">
           <div className="min-w-0">
-            <h2 className="text-[1.05rem] font-bold text-espresso">{title}</h2>
-            {description && <p className="mt-0.5 text-sm text-panel-muted">{description}</p>}
+            <h2 id={titleId} className="text-[1.05rem] font-bold text-espresso">{title}</h2>
+            {description && <p id={descId} className="mt-0.5 text-sm text-panel-muted">{description}</p>}
           </div>
-          <button data-close type="button" onClick={onClose} aria-label="Kapat" className="-mr-1.5 rounded-lg p-1.5 text-panel-muted hover:bg-panel-bg hover:text-espresso">
+          <button data-close type="button" onClick={onClose} aria-label="Kapat" className="-mr-1.5 cursor-pointer rounded-lg p-1.5 text-panel-muted hover:bg-panel-bg hover:text-espresso">
             <X className="h-5 w-5" />
           </button>
         </div>

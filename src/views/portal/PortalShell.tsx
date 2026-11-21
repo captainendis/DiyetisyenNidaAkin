@@ -43,7 +43,7 @@ function Layout() {
   }, [pathname]);
 
   return (
-    <div className="min-h-dvh bg-ivory text-espresso">
+    <div className="min-h-dvh bg-ivory text-espresso [&_button:not(:disabled)]:cursor-pointer [&_select:not(:disabled)]:cursor-pointer">
       <meta name="robots" content="noindex, nofollow" />
       <a href="#hesap-icerik" className="sr-only z-[100] bg-rose px-4 py-2 text-espresso focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus-visible:outline-ivory">İçeriğe geç</a>
       <header className="bg-espresso text-cream">

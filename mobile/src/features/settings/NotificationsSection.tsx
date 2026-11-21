@@ -102,9 +102,9 @@ function PrefsForm({ data, reload }: { data: Res; reload: () => void }) {
           {NOTIFICATION_TYPES.map((t, i) => (
             <View key={t} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md, paddingVertical: 10, borderBottomWidth: i < NOTIFICATION_TYPES.length - 1 ? 1 : 0, borderBottomColor: colors.line }}>
               <T style={{ flex: 1 }}>{NOTIFICATION_TYPE_LABEL[t]}</T>
-              {sw(`${NOTIFICATION_TYPE_LABEL[t]} — panel`, prefs.inApp[t] !== false, (v) => setPrefs({ ...prefs, inApp: { ...prefs.inApp, [t]: v } }))}
-              {sw(`${NOTIFICATION_TYPE_LABEL[t]} — e-posta`, emailOn && prefs.email[t] === true, (v) => setPrefs({ ...prefs, email: { ...prefs.email, [t]: v } }), !emailOn)}
-              {sw(`${NOTIFICATION_TYPE_LABEL[t]} — mobil`, prefs.push[t] !== false, (v) => setPrefs({ ...prefs, push: { ...prefs.push, [t]: v } }))}
+              {sw(`${NOTIFICATION_TYPE_LABEL[t]} (panel)`, prefs.inApp[t] !== false, (v) => setPrefs({ ...prefs, inApp: { ...prefs.inApp, [t]: v } }))}
+              {sw(`${NOTIFICATION_TYPE_LABEL[t]} (e-posta)`, emailOn && prefs.email[t] === true, (v) => setPrefs({ ...prefs, email: { ...prefs.email, [t]: v } }), !emailOn)}
+              {sw(`${NOTIFICATION_TYPE_LABEL[t]} (mobil)`, prefs.push[t] !== false, (v) => setPrefs({ ...prefs, push: { ...prefs.push, [t]: v } }))}
             </View>
           ))}
         </Card>

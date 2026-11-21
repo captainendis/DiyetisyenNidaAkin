@@ -12,16 +12,17 @@ import { BookingProvider } from '@/components/forms/BookingProvider';
 
 function ScrollManager() {
   const { pathname, hash } = useLocation();
+  const reduce = useReducedMotion();
   useEffect(() => {
     if (hash) {
       const el = document.getElementById(decodeURIComponent(hash.slice(1)));
       if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        setTimeout(() => el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }), 80);
         return;
       }
     }
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-  }, [pathname, hash]);
+  }, [pathname, hash, reduce]);
   return null;
 }
 

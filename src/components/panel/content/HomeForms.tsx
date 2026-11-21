@@ -17,8 +17,8 @@ export function HeroForm() {
       <FormSection title="Karşılama alanı (Hero)" description="Ziyaretçinin siteye girdiğinde ilk gördüğü başlık ve açıklama. Kısa ve net tutun.">
         <Input label="Üst satır" hint="İsteğe bağlı; boş bırakılırsa gösterilmez. Açıklamadaki bilgiyi tekrarlamayın." value={d.eyebrow} maxLength={80} error={f.errors.eyebrow} onChange={(e) => f.set('eyebrow', e.target.value)} />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Başlık — 1. satır" value={d.titleLine1} maxLength={40} error={f.errors.titleLine1} onChange={(e) => f.set('titleLine1', e.target.value)} />
-          <Input label="Başlık — 2. satır" hint="Pudra renginde vurgulanır" value={d.titleLine2} maxLength={40} error={f.errors.titleLine2} onChange={(e) => f.set('titleLine2', e.target.value)} />
+          <Input label="Başlık, 1. satır" value={d.titleLine1} maxLength={40} error={f.errors.titleLine1} onChange={(e) => f.set('titleLine1', e.target.value)} />
+          <Input label="Başlık, 2. satır" hint="Pudra renginde vurgulanır" value={d.titleLine2} maxLength={40} error={f.errors.titleLine2} onChange={(e) => f.set('titleLine2', e.target.value)} />
         </div>
         <Textarea
           label="Açıklama"
@@ -108,7 +108,7 @@ export function ProcessForm() {
           onChange={(steps) => f.set('steps', steps)}
           create={() => ({ title: '', body: '' })}
           addLabel="Adım ekle"
-          itemLabel={(i) => `${String(i + 1).padStart(2, '0')} — Adım`}
+          itemLabel={(i) => `Adım ${String(i + 1).padStart(2, '0')}`}
           render={(s, i, upd) => (
             <div className="grid gap-3 sm:grid-cols-[minmax(0,12rem)_1fr]">
               <Input label="Başlık" value={s.title} maxLength={40} error={f.errors[`steps.${i}.title`]} onChange={(e) => upd({ ...s, title: e.target.value })} />

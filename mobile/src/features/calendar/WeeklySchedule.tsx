@@ -52,7 +52,7 @@ export function useWeeklyRules(onWarnings: (w: AffectedAppointment[]) => void) {
     });
     if (Object.keys(local).length) {
       setErrors(local);
-      toast('Kaydedilemedi — işaretli günleri kontrol edin.', 'error');
+      toast('Kaydedilemedi. İşaretli günleri kontrol edin.', 'error');
       return;
     }
     setSaving(true);
@@ -68,7 +68,7 @@ export function useWeeklyRules(onWarnings: (w: AffectedAppointment[]) => void) {
       void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     } catch (e) {
       if (e instanceof ApiError && e.status === 422) setErrors(e.fields);
-      toast(e instanceof ApiError && e.status === 422 ? 'Kaydedilemedi — işaretli günleri kontrol edin.' : errorMessage(e), 'error');
+      toast(e instanceof ApiError && e.status === 422 ? 'Kaydedilemedi. İşaretli günleri kontrol edin.' : errorMessage(e), 'error');
     } finally {
       setSaving(false);
     }
@@ -121,8 +121,8 @@ export function WeeklySchedule({ ctl }: { ctl: WeeklyCtl }) {
                 accessibilityLabel={`${WEEKDAY_LABEL[r.weekday]} çalışıyor`}
                 trackColor={{ true: colors.gold, false: colors.line }}
               />
-              <Pressable onPress={() => setEditing(i)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${WEEKDAY_LABEL[r.weekday]} ayarları`}>
-                <Icon name="chevron-right" size={18} color={colors.mist} />
+              <Pressable onPress={() => setEditing(i)} hitSlop={13} accessibilityRole="button" accessibilityLabel={`${WEEKDAY_LABEL[r.weekday]} ayarları`}>
+                <Icon name="chevron-right" size={18} color={colors.muted} />
               </Pressable>
             </View>
           );

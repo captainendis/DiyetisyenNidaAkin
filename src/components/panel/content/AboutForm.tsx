@@ -55,7 +55,7 @@ export function AboutForm() {
           create={() => ({ label: '', value: '' })}
           addLabel="Bilgi ekle"
           itemLabel={(i) => `Kayıt ${i + 1}`}
-          empty={<Notice>Doğrulanmış eğitim/sertifika bilgilerini ekleyin. Örnek yapı: “Lisans” — “Üniversite adı, bölüm, yıl”.</Notice>}
+          empty={<Notice>Doğrulanmış eğitim/sertifika bilgilerini ekleyin. Örnek yapı: “Lisans” ve yanına “Üniversite adı, bölüm, yıl”.</Notice>}
           render={(c, i, upd) => (
             <div className="grid gap-3 sm:grid-cols-[minmax(0,12rem)_1fr]">
               <Input label="Başlık" placeholder="Lisans, Sertifika…" value={c.label} maxLength={80} error={f.errors[`credentials.${i}.label`]} onChange={(e) => upd({ ...c, label: e.target.value })} />

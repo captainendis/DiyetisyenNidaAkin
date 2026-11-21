@@ -33,7 +33,7 @@ export default function FilesScreen() {
   return (
     <Screen refreshing={q.refreshing} onRefresh={q.refresh}>
       <Stack.Screen options={{ title: 'Dosyalar' }} />
-      <T muted style={{ marginBottom: space.lg }}>Diyetisyeninin seninle paylaştığı belgeler.</T>
+      <T muted style={{ marginBottom: space.lg }}>Diyetisyeninin seninle paylaştığı belgeler. Dosyalar şifreli saklanır; panelde yalnızca diyetisyen ve yönetici hesapları görebilir.</T>
       <QueryView query={q}>
         {(data) =>
           !data.items.length ? (

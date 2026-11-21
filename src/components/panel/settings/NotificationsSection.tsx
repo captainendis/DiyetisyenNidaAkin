@@ -81,13 +81,13 @@ export function NotificationsSection() {
             <div key={t} className="grid grid-cols-[1fr_4.5rem_4.5rem_4.5rem] items-center gap-2 border-b border-panel-line px-4 py-3 last:border-0">
               <span className="text-sm text-espresso">{NOTIFICATION_TYPE_LABEL[t]}</span>
               <div className="flex justify-center">
-                <Switch checked={prefs.inApp[t] !== false} onChange={(v) => setPrefs({ ...prefs, inApp: { ...prefs.inApp, [t]: v } })} label={<span className="sr-only">{NOTIFICATION_TYPE_LABEL[t]} — panel</span>} />
+                <Switch checked={prefs.inApp[t] !== false} onChange={(v) => setPrefs({ ...prefs, inApp: { ...prefs.inApp, [t]: v } })} label={<span className="sr-only">{NOTIFICATION_TYPE_LABEL[t]}: panel</span>} />
               </div>
               <div className="flex justify-center" title={emailOn ? undefined : 'E-posta kanalı yapılandırılmadı'}>
-                <Switch disabled={!emailOn} checked={emailOn && prefs.email[t] === true} onChange={(v) => setPrefs({ ...prefs, email: { ...prefs.email, [t]: v } })} label={<span className="sr-only">{NOTIFICATION_TYPE_LABEL[t]} — e-posta</span>} />
+                <Switch disabled={!emailOn} checked={emailOn && prefs.email[t] === true} onChange={(v) => setPrefs({ ...prefs, email: { ...prefs.email, [t]: v } })} label={<span className="sr-only">{NOTIFICATION_TYPE_LABEL[t]}: e-posta</span>} />
               </div>
               <div className="flex justify-center" title="Mobil uygulamada anlık bildirim (bildirim izni verilen cihazlara)">
-                <Switch checked={prefs.push[t] !== false} onChange={(v) => setPrefs({ ...prefs, push: { ...prefs.push, [t]: v } })} label={<span className="sr-only">{NOTIFICATION_TYPE_LABEL[t]} — mobil</span>} />
+                <Switch checked={prefs.push[t] !== false} onChange={(v) => setPrefs({ ...prefs, push: { ...prefs.push, [t]: v } })} label={<span className="sr-only">{NOTIFICATION_TYPE_LABEL[t]}: mobil</span>} />
               </div>
             </div>
           ))}

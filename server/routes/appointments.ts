@@ -26,6 +26,7 @@ import {
 } from '../../shared/schemas';
 import { HARD_CONFLICT_STATUSES, SLOT_HOLDING_STATUSES, type AppointmentStatus } from '../../shared/constants';
 import { addDays, endOfDayExclusive, isoWeekday, startOfDay } from '../../shared/time';
+import { appointmentScope, isReviewer } from '../auth/reviewer';
 
 export const appointmentsRouter = router();
 const canRead = requirePermission('appointments:read');
@@ -64,7 +65,7 @@ appointmentsRouter.get('/day-plans', canRead, async (c) => {
 appointmentsRouter.get('/', canRead, async (c) => {
   const q = parse(appointmentListQuerySchema, query(c));
   const statuses = q.status ? (Array.isArray(q.status) ? q.status : [q.status]) : undefined;
-  const and: Prisma.AppointmentWhereInput[] = [];
+  const and: Prisma.AppointmentWhereInput[] = isReviewer(c) ? [appointmentScope(c)] : [];
 
   if (statuses) and.push({ status: { in: statuses } });
   if (q.meetingType) and.push({ meetingType: q.meetingType });

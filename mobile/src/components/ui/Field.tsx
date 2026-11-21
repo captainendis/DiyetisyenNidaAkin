@@ -53,7 +53,8 @@ export function TextField({ label, value, onChange, error, help, required, icon,
         <TextInput
           value={value}
           onChangeText={onChange}
-          placeholderTextColor={colors.mist}
+          // mist beyaz zeminde 2,3:1; yer tutucu metin de okunmalı (muted 6,4:1)
+          placeholderTextColor={colors.muted}
           onFocus={() => setFocus(true)}
           onBlur={() => setFocus(false)}
           multiline={multiline}
@@ -112,7 +113,7 @@ export function SelectField<V extends string | number>({
         accessibilityLabel={label ? `${label}: ${current?.label ?? placeholder}` : current?.label ?? placeholder}
         style={[styles.input, !!error && styles.invalid, disabled && { opacity: 0.5 }]}
       >
-        <T style={{ flex: 1 }} color={current ? colors.text : colors.mist} numberOfLines={1}>{current?.label ?? placeholder}</T>
+        <T style={{ flex: 1 }} color={current ? colors.text : colors.muted} numberOfLines={1}>{current?.label ?? placeholder}</T>
         <Icon name="chevron-down" size={18} color={colors.muted} />
       </Pressable>
       <FieldError error={error} help={help} />
@@ -141,7 +142,7 @@ export function SelectField<V extends string | number>({
               </Pressable>
             );
           })}
-          {!filtered.length ? <T muted style={{ padding: space.lg }}>Sonuç yok</T> : null}
+          {!filtered.length ? <T muted style={{ padding: space.lg }}>Aramayla eşleşen seçenek yok.</T> : null}
         </View>
       </Sheet>
     </View>
@@ -161,6 +162,7 @@ export function Segmented<V extends string>({ value, options, onChange, label }:
               key={o.value}
               onPress={() => onChange(o.value)}
               style={[styles.segmentItem, sel && styles.segmentSel]}
+              hitSlop={{ top: 3, bottom: 3 }}
               accessibilityRole="tab"
               accessibilityState={{ selected: sel }}
             >
@@ -202,6 +204,7 @@ export function Chips<V extends string | number>({
                 onChange(sel ? selected.filter((x) => x !== o.value) : [...selected, o.value]);
               }}
               style={[styles.chip, sel && styles.chipSel]}
+              hitSlop={{ top: 4, bottom: 4 }}
               accessibilityRole={multiple ? 'checkbox' : 'radio'}
               accessibilityState={{ checked: sel }}
             >
@@ -302,10 +305,10 @@ function PickerField({
         style={[styles.input, !!error && styles.invalid]}
       >
         <Icon name={mode === 'date' ? 'calendar' : 'clock'} size={17} color={colors.muted} />
-        <T style={{ flex: 1 }} color={value ? colors.text : colors.mist}>{display}</T>
+        <T style={{ flex: 1 }} color={value ? colors.text : colors.muted}>{display}</T>
         {clearable && value ? (
-          <Pressable onPress={() => onChange('')} hitSlop={8} accessibilityLabel="Temizle">
-            <Icon name="x-circle" size={17} color={colors.mist} />
+          <Pressable onPress={() => onChange('')} hitSlop={14} accessibilityRole="button" accessibilityLabel={label ? `${label}: temizle` : 'Temizle'}>
+            <Icon name="x-circle" size={17} color={colors.muted} />
           </Pressable>
         ) : null}
       </Pressable>
@@ -389,10 +392,11 @@ const styles = StyleSheet.create({
   option: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: space.lg, gap: space.md },
   optionLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   segment: { flexDirection: 'row', backgroundColor: '#EDE6DB', borderRadius: radius.pill, padding: 3 },
-  segmentItem: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 6, borderRadius: radius.pill },
+  // 38 pt + kabın 3 pt iç boşluğu ve hitSlop ile dokunma alanı 44 pt
+  segmentItem: { flex: 1, minHeight: 38, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, paddingHorizontal: 6, borderRadius: radius.pill },
   segmentSel: { backgroundColor: colors.espresso },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
+  chip: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.surface },
   chipSel: { backgroundColor: colors.espresso, borderColor: colors.espresso },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: 6 },
 });

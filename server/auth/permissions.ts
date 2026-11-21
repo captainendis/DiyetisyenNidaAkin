@@ -26,9 +26,11 @@ export const PERMISSIONS = [
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
-export const ROLE_PERMISSIONS: Record<'ADMIN' | 'DIETITIAN' | 'ASSISTANT', Permission[]> = {
+export const ROLE_PERMISSIONS: Record<'ADMIN' | 'DIETITIAN' | 'ASSISTANT' | 'REVIEWER', Permission[]> = {
   ADMIN: [...PERMISSIONS],
   DIETITIAN: PERMISSIONS.filter((p) => p !== 'users:manage' && p !== 'portal:manage'),
   // Asistan: randevu ve iletişim operasyonları; klinik verilere erişim yok
   ASSISTANT: ['dashboard:read', 'appointments:read', 'appointments:write', 'clients:read', 'clients:write'],
+  // Mağaza incelemesi: yalnızca okuma; veriler server/auth/reviewer.ts ile demo danışanlarla sınırlanır
+  REVIEWER: ['dashboard:read', 'appointments:read', 'clients:read', 'clinical:read'],
 };

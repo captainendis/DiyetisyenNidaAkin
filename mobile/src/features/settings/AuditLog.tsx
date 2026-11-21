@@ -162,7 +162,7 @@ export function AuditLog() {
                   </T>
                 }
               />
-              <KeyValue label="Kullanıcı" value={detail.user ? `${who(detail)} — ${detail.user.email}` : 'Sistem / anonim'} />
+              <KeyValue label="Kullanıcı" value={detail.user ? `${who(detail)} (${detail.user.email})` : 'Sistem / anonim'} />
               <KeyValue label="IP adresi" value={detail.ip ?? '—'} />
               <KeyValue label="Tarayıcı" value={<T variant="caption" style={{ textAlign: 'right' }}>{detail.userAgent ?? '—'}</T>} last />
             </Card>

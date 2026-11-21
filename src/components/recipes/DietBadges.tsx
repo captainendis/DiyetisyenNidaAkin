@@ -15,7 +15,7 @@ export function DietBadges({ tags, className }: { tags: DietTag[] | undefined; c
         const Icon = DIET_ICONS[t];
         return (
           <li key={t} title={DIET_TAG_NOTE[t]} className="flex items-center gap-1.5 text-[0.8rem] font-semibold text-cocoa">
-            <Icon className="h-5 w-5 shrink-0 text-gold" />
+            <Icon className="h-5 w-5 shrink-0 text-gold-ink" />
             {DIET_TAG_LABEL[t]}
           </li>
         );
@@ -35,7 +35,7 @@ export function DietNotes({ tags, className }: { tags: DietTag[] | undefined; cl
           const Icon = DIET_ICONS[t];
           return (
             <li key={t} className="flex items-start gap-3">
-              <Icon className="mt-0.5 h-7 w-7 shrink-0 text-gold" />
+              <Icon className="mt-0.5 h-7 w-7 shrink-0 text-gold-ink" />
               <p className="text-[0.92rem] leading-relaxed text-cocoa">
                 <strong className="font-semibold text-espresso">{DIET_TAG_LABEL[t]}. </strong>
                 {DIET_TAG_NOTE[t]}

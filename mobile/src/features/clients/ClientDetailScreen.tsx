@@ -30,7 +30,7 @@ const TABS: Tab[] = ['genel', 'randevular', 'pilates', 'notlar', 'mesajlar', 'pl
 
 function Contact({ icon, text, onPress }: { icon: 'phone' | 'mail'; text: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="link" style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32 }, pressed && { opacity: 0.6 }]}>
+    <Pressable onPress={onPress} accessibilityRole="link" style={({ pressed }) => [{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44 }, pressed && { opacity: 0.6 }]}>
       <Icon name={icon} size={14} color={colors.muted} />
       <T numberOfLines={1} style={{ flexShrink: 1 }}>{text}</T>
     </Pressable>

@@ -25,7 +25,7 @@ function planSignature() {
 }
 
 async function main() {
-  for (const key of ['ADMIN', 'DIETITIAN', 'ASSISTANT'] as const) {
+  for (const key of ['ADMIN', 'DIETITIAN', 'ASSISTANT', 'REVIEWER'] as const) {
     await prisma.role.upsert({
       where: { key },
       create: { key, name: ROLE_LABEL[key], permissions: ROLE_PERMISSIONS[key] },

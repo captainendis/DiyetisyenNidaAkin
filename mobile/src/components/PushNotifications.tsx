@@ -11,9 +11,23 @@
 import { useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { router, useRootNavigationState } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { View } from 'react-native';
+import { Button, Sheet, T } from '@/components/ui';
 import { onBeforeLogout, useAuth } from '@/lib/auth';
-import { ensureAndroidChannel, pushSupported, pushTarget, registerPush, unregisterPush, type PushKind } from '@/lib/push';
+import {
+  ensureAndroidChannel,
+  getPushConsent,
+  onPushConsentChange,
+  pushSupported,
+  pushTarget,
+  registerPush,
+  setPushConsent,
+  unregisterPush,
+  type PushConsent,
+  type PushKind,
+} from '@/lib/push';
+import { space } from '@/theme';
 
 /** Aynı bildirime dokunuşu iki kez işlememek için (yeniden bağlanmalarda da) */
 const handled = new Set<string>();
@@ -32,6 +46,26 @@ function PushNotificationsInner() {
   const who = state.status === 'staff' ? `staff:${state.user.id}` : state.status === 'client' ? `client:${state.me.email}` : null;
   const identity = who && sessionEpoch > 0 ? `${who}#${sessionEpoch}` : null;
   const registeredFor = useRef<string | null>(null);
+  // undefined: henüz okunmadı; null: hiç sorulmadı
+  const [consent, setConsent] = useState<PushConsent | undefined>(undefined);
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    let alive = true;
+    void getPushConsent().then((c) => alive && setConsent(c));
+    const off = onPushConsentChange(setConsent);
+    return () => {
+      alive = false;
+      off();
+    };
+  }, []);
+
+  // Rıza geri alındı → bu cihazın kaydı sunucudan silinir, bildirim gönderimi durur
+  useEffect(() => {
+    if (consent !== 'declined' || !kind) return;
+    registeredFor.current = null;
+    void unregisterPush(kind);
+  }, [consent, kind]);
 
   useEffect(() => {
     if (!pushSupported) return;
@@ -42,14 +76,14 @@ function PushNotificationsInner() {
     });
   }, []);
 
-  // Oturum açıldı → izin + token kaydı
+  // Oturum açıldı ve açık rıza var → izin + token kaydı
   useEffect(() => {
-    if (!pushSupported || !kind || !identity || registeredFor.current === identity) return;
+    if (!pushSupported || consent !== 'granted' || !kind || !identity || registeredFor.current === identity) return;
     registeredFor.current = identity;
     void registerPush(kind).then((ok) => {
       if (!ok && registeredFor.current === identity) registeredFor.current = null;
     });
-  }, [kind, identity]);
+  }, [kind, identity, consent]);
 
   // Uygulama açıkken gelen bildirim → ilgili verileri tazele
   useEffect(() => {
@@ -82,5 +116,31 @@ function PushNotificationsInner() {
     setTimeout(() => router.push(href as never), 0);
   }, [response, kind, navReady]);
 
-  return null;
+  return <PushConsentSheet visible={!!kind && !!identity && consent === null} kind={kind ?? 'client'} />;
+}
+
+/** Bildirimlerden önce bir kez sorulur (Açık Rıza Metni §3). "Şimdi değil" de kaydedilir; danışan Hesap ekranından değiştirebilir. */
+function PushConsentSheet({ visible, kind }: { visible: boolean; kind: PushKind }) {
+  const client = kind === 'client';
+  return (
+    <Sheet visible={visible} onClose={() => void setPushConsent('declined')} title="Bildirimler" subtitle="Açık rıza">
+      <T>
+        {client
+          ? 'Randevun onaylandığında, yeni listen hazır olduğunda ya da diyetisyeninden mesaj geldiğinde telefonuna bildirim gönderebiliriz.'
+          : 'Yeni randevu talepleri, iptaller ve hatırlatmalar için telefona bildirim gönderilebilir.'}
+      </T>
+      <T variant="caption">
+        Bildirimin telefona ulaşması için cihazın bildirim adresi ve bildirim metni Expo, Inc. (ABD) ile Google veya Apple bildirim servisleri üzerinden yurt dışına aktarılır. Bildirim metinlerinde sağlık bilgisi yer almaz. Yurt dışındaki hizmet sağlayıcılar Türkiye'deki ile aynı düzeyde koruma sağlamayabilir.
+      </T>
+      <T variant="caption">
+        {client
+          ? 'İzin vermezsen uygulama aynı şekilde çalışır; yalnızca bildirim gelmez. Kararını istediğin zaman Hesap ekranından değiştirebilirsin. Ayrıntılar web sitesindeki Açık Rıza Metni ve KVKK Aydınlatma Metni\'nde.'
+          : 'İzin verilmezse uygulama aynı şekilde çalışır; yalnızca bildirim gelmez. Ayrıntılar web sitesindeki Açık Rıza Metni ve KVKK Aydınlatma Metni\'nde.'}
+      </T>
+      <View style={{ gap: space.sm, marginTop: space.sm }}>
+        <Button title="Yurt dışına aktarıma izin veriyorum" onPress={() => void setPushConsent('granted')} full />
+        <Button title="Şimdi değil" variant="secondary" onPress={() => void setPushConsent('declined')} full />
+      </View>
+    </Sheet>
+  );
 }

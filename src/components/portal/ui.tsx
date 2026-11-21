@@ -56,7 +56,7 @@ export function LoadError({ message, onRetry }: { message?: string; onRetry?: ()
     <div role="alert" className="rounded-lg border border-danger/30 bg-danger/[0.06] px-6 py-8 text-center">
       <p className="font-semibold text-danger-ink">{message || 'Bilgiler yüklenemedi.'}</p>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="mt-3 text-[0.9rem] font-semibold text-espresso underline underline-offset-4">
+        <button type="button" onClick={onRetry} className="mt-3 cursor-pointer text-[0.9rem] font-semibold text-espresso underline underline-offset-4 hover:decoration-2">
           Tekrar dene
         </button>
       )}
@@ -66,7 +66,7 @@ export function LoadError({ message, onRetry }: { message?: string; onRetry?: ()
 
 export function Loading({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-3" aria-busy="true" aria-label="Yükleniyor">
+    <div className="space-y-3" role="status" aria-busy="true" aria-label="Yükleniyor">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="h-20 animate-pulse rounded-lg bg-espresso/[0.06]" />
       ))}
@@ -81,7 +81,7 @@ export function PortalButton({ children, className, ...rest }: React.ButtonHTMLA
       type="button"
       {...rest}
       className={cn(
-        'inline-flex h-11 items-center justify-center gap-2 rounded-full bg-espresso px-5 text-[0.92rem] font-semibold text-ivory transition-colors hover:bg-cocoa disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-espresso px-5 text-[0.92rem] font-semibold text-ivory transition-colors hover:bg-cocoa disabled:cursor-not-allowed disabled:opacity-60',
         className,
       )}
     >

@@ -146,10 +146,11 @@ export const WEEKDAY_LABEL: Record<number, string> = {
   7: 'Pazar',
 };
 
-export const ROLE_LABEL: Record<'ADMIN' | 'DIETITIAN' | 'ASSISTANT', string> = {
+export const ROLE_LABEL: Record<'ADMIN' | 'DIETITIAN' | 'ASSISTANT' | 'REVIEWER', string> = {
   ADMIN: 'Yönetici',
   DIETITIAN: 'Diyetisyen',
   ASSISTANT: 'Asistan',
+  REVIEWER: 'İnceleme',
 };
 
 /** Hizmet kartlarında kullanılabilecek özel çizgi-ikon anahtarları */
@@ -166,7 +167,7 @@ export const DEFAULT_BLOG_CATEGORIES = [
 ] as const;
 
 /** KVKK metin sürümü — metin değiştiğinde artırın; rıza kayıtları sürümle ilişkilendirilir */
-export const KVKK_NOTICE_VERSION = '2026-10-taslak';
+export const KVKK_NOTICE_VERSION = '2026-11';
 
 // ───────────────────────── Grup dersleri (Pilates) ─────────────────────────
 

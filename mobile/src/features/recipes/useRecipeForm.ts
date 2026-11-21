@@ -136,7 +136,7 @@ export function useRecipeForm(onSaved: (r: Recipe) => void) {
       const res = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
       const a = res.canceled ? null : res.assets[0];
       if (!a) return;
-      if (a.fileSize && a.fileSize > MAX_UPLOAD) return toast('Fotoğraf çok büyük — en fazla 15 MB yükleyebilirsiniz.', 'error');
+      if (a.fileSize && a.fileSize > MAX_UPLOAD) return toast('Fotoğraf çok büyük. En fazla 15 MB yükleyebilirsiniz.', 'error');
       const type = a.mimeType ?? 'image/jpeg';
       const ext = type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg';
       setFile({ uri: a.uri, name: a.fileName ?? `tarif.${ext}`, type });

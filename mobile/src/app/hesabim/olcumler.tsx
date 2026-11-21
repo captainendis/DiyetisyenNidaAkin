@@ -42,7 +42,8 @@ export default function MeasurementsScreen() {
   return (
     <Screen refreshing={q.refreshing} onRefresh={q.refresh}>
       <Stack.Screen options={{ title: 'Ölçümler' }} />
-      <T muted style={{ marginBottom: space.lg }}>Görüşmelerde alınan ölçümlerin. Kilo günden güne dalgalanır; tek tek sayılara değil, birkaç ölçümün gidişatına bak.</T>
+      <T muted style={{ marginBottom: space.sm }}>Görüşmelerde alınan ölçümlerin. Kilo günden güne dalgalanır; tek tek sayılara değil, birkaç ölçümün gidişatına bak.</T>
+      <T variant="caption" style={{ marginBottom: space.lg }}>Ölçümlerin şifreli saklanır. Panelde yalnızca diyetisyen ve yönetici hesapları görebilir.</T>
       <QueryView query={q}>
         {(data) => {
           const items = data.items;

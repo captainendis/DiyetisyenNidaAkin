@@ -115,7 +115,7 @@ export function FaqManager() {
                       <Switch
                         value={f.isPublished}
                         onValueChange={() => void togglePublish(items, f)}
-                        accessibilityLabel={`${f.question} — yayında`}
+                        accessibilityLabel={`${f.question}: yayında`}
                         trackColor={{ true: colors.gold, false: colors.line }}
                       />
                       <T variant="caption" style={{ flex: 1, marginLeft: 4 }}>Yayında</T>

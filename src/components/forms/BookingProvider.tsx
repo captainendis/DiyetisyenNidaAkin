@@ -86,12 +86,12 @@ function BookingDialog({ serviceId, onClose }: { serviceId: string | null; onClo
           <div className="flex items-center justify-between border-b border-espresso/10 px-5 py-4 sm:px-8 lg:border-0 lg:px-12 lg:pt-8 lg:pb-0">
             <div className="lg:hidden"><StepIndicator step={step === 4 ? 4 : step} /></div>
             <span className="hidden lg:block" />
-            <button type="button" onClick={onClose} aria-label="Kapat" className="-mr-2 rounded-full p-2 text-taupe transition-colors hover:bg-espresso/5 hover:text-espresso">
-              <X className="h-5 w-5" strokeWidth={1.5} />
+            <button type="button" onClick={onClose} aria-label="Kapat" className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-taupe transition-colors hover:bg-espresso/5 hover:text-espresso">
+              <X className="h-5 w-5" strokeWidth={1.5} aria-hidden />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto px-5 pt-6 pb-10 sm:px-8 lg:px-12 lg:pt-4">
-            <Suspense fallback={<div className="flex h-40 items-center justify-center" aria-busy="true"><span className="h-6 w-6 animate-spin rounded-full border-2 border-espresso/15 border-t-espresso" /></div>}>
+            <Suspense fallback={<div className="flex h-40 items-center justify-center gap-3 text-[0.9rem] text-taupe" aria-busy="true" role="status"><span className="h-6 w-6 animate-spin rounded-full border-2 border-espresso/15 border-t-espresso" aria-hidden />Form yükleniyor</div>}>
               <BookingForm initialServiceId={serviceId} onStepChange={setStep} />
             </Suspense>
           </div>

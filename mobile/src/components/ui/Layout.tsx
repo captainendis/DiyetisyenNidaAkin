@@ -104,7 +104,7 @@ export function Section({ title, action, children, style }: { title?: string; ac
     <View style={[{ marginBottom: space.xl }, style]}>
       {title || action ? (
         <View style={styles.sectionHead}>
-          {title ? <T variant="overline">{title}</T> : <View />}
+          {title ? <T variant="overline" style={{ flexShrink: 1 }}>{title}</T> : <View />}
           {action}
         </View>
       ) : null}
@@ -178,7 +178,8 @@ export function KeyValue({ label, value, last }: { label: string; value: ReactNo
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, ...shadow.card },
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: space.sm, paddingHorizontal: 2 },
+  // Dar ekranda uzun başlık + eylem düğmesi çakışmasın: başlık sarar, araya boşluk girer
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.sm, marginBottom: space.sm, paddingHorizontal: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: 14, paddingHorizontal: space.lg },
   rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   rowIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#F4EEE5', alignItems: 'center', justifyContent: 'center' },

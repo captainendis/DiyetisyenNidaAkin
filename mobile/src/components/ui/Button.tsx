@@ -45,6 +45,8 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled: !!off, busy: !!loading }}
       disabled={off}
+      // Küçük buton görselde 36 pt; dokunma alanı dikeyde 44 pt'ye tamamlanır (sarılan satırlardaki 8 pt boşlukla çakışmaz)
+      hitSlop={size === 'sm' ? { top: 4, bottom: 4 } : undefined}
       onPress={() => {
         void Haptics.selectionAsync().catch(() => {});
         onPress?.();
@@ -70,7 +72,7 @@ export function Button({
 /** Yalnızca ikonlu yuvarlak buton (başlık çubuğu vb.) */
 export function IconButton({ name, onPress, label, color = colors.text, badge }: { name: IconName; onPress: () => void; label: string; color?: string; badge?: number }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={10} style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}>
       <Icon name={name} size={21} color={color} />
       {badge ? (
         <View style={styles.badge}>
@@ -86,6 +88,7 @@ const styles = StyleSheet.create({
   md: { minHeight: 48, paddingHorizontal: space.xl },
   sm: { minHeight: 36, paddingHorizontal: space.lg },
   inner: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  iconBtn: { padding: 6 },
-  badge: { position: 'absolute', top: 0, right: -2, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.roseInk, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  // 44 pt kutu: alt alta/yan yana duran ikon butonlarının dokunma alanları üst üste binmez
+  iconBtn: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: 5, right: 3, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: colors.roseInk, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
 });

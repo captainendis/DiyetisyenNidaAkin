@@ -37,7 +37,7 @@ export function StatCard({
   );
   return (
     <Card className="p-4 transition-colors hover:border-cocoa/25 sm:p-5" as="article">
-      {href ? <a href={href} className="block focus:outline-none">{body}</a> : body}
+      {href ? <a href={href} className="block rounded-md">{body}</a> : body}
     </Card>
   );
 }
