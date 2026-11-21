@@ -192,7 +192,11 @@ describe('gönderim', () => {
     await request(app).post('/api/portal/devices').set(auth(client)).send({ token: TOKEN_B, platform: 'ANDROID' });
     expect(await prisma.pushDevice.count({ where: { token: TOKEN_B } })).toBe(1);
     // portal:manage yalnızca yöneticide
-    const a = await request(app).post('/api/auth/login').set(MOBILE).send({ email: 'nida@example.com', password: 'GucluSifre2026' });
+    // Diğer testlerle aynı: CI kendi yöneticisini TEST_ADMIN_* ile oluşturur
+    const a = await request(app)
+      .post('/api/auth/login')
+      .set(MOBILE)
+      .send({ email: process.env.TEST_ADMIN_EMAIL ?? 'nida@example.com', password: process.env.TEST_ADMIN_PASSWORD ?? 'GucluSifre2026' });
     expect(a.status).toBe(200);
     const admin = { token: a.body.token as string, csrf: a.body.csrfToken as string };
     const res = await request(app).patch(`/api/clients/${clientId}/account`).set(auth(admin)).send({ isActive: false });
