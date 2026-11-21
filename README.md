@@ -22,12 +22,13 @@ Diyetisyen Nida Akın için geliştirilmiş, **premium editorial tasarımlı her
 9. [Randevu sistemi nasıl çalışır](#randevu-sistemi-nasıl-çalışır)
    - [Pilates (grup dersleri)](#pilates-grup-dersleri)
 10. [Güvenlik ve KVKK](#güvenlik-ve-kvkk)
-11. [API özeti](#api-özeti)
-12. [Test](#test)
-13. [Üretim derlemesi ve dağıtım](#üretim-derlemesi-ve-dağıtım)
-14. [Yedekleme ve veri saklama](#yedekleme-ve-veri-saklama)
-15. [Görseller](#görseller)
-16. [Yayın öncesi kontrol listesi](#yayın-öncesi-kontrol-listesi)
+11. [Mobil uygulama](#mobil-uygulama)
+12. [API özeti](#api-özeti)
+13. [Test](#test)
+14. [Üretim derlemesi ve dağıtım](#üretim-derlemesi-ve-dağıtım)
+15. [Yedekleme ve veri saklama](#yedekleme-ve-veri-saklama)
+16. [Görseller](#görseller)
+17. [Yayın öncesi kontrol listesi](#yayın-öncesi-kontrol-listesi)
 
 ---
 
@@ -78,6 +79,7 @@ Tek bir Node süreci (Next.js) hem sayfaları hem API'yi sunar; Docker gerekmez.
 │   ├── data/                  # SiteContext (panelden yönetilen içerik)
 │   ├── lib/router.tsx         # Link / useNavigate / useParams … (next/navigation üzerinde)
 │   ├── config/ hooks/ styles/
+├── mobile/                    # iOS + Android uygulaması (Expo) — danışan ve panel girişi
 ├── scripts/                   # create-admin, reset-password, retention, backup, migrate-pg-to-mysql, prepare-images
 ├── public/                    # Statik dosyalar: görseller (AVIF + WebP), favicon, yazdırma fontları
 └── assets-src/                # Kaynak görseller
@@ -357,6 +359,21 @@ sağlık verisi tutulmaz, yalnızca katılım bilgisi.
 > envanteri, VERBİS yükümlülüğü, saklama-imha politikası ve yurt dışı aktarım (barındırma/e-posta sağlayıcısı)
 > değerlendirmesi yayın öncesinde bir hukuk uzmanı tarafından yapılmalıdır.
 
+## Mobil uygulama
+
+`mobile/` klasöründe **iOS ve Android** için tek bir Expo (React Native) uygulaması vardır: açılışta
+**Danışan girişi** (Hesabım) ya da **Nida Akın & ekip** (Panel) seçilir. Web panelinin ve Hesabım'ın tüm
+özellikleri mobilde de bulunur; aynı API'yi kullanır. Kurulum, derleme (EAS) ve geliştirme kuralları:
+[mobile/README.md](mobile/README.md).
+
+**Mobil oturum (API):** tarayıcı cookie kullanır; mobil uygulama cookie kullanmaz. Giriş isteği
+`X-App-Client: mobile` başlığını taşırsa (`POST /api/auth/login`, `POST /api/portal/auth/login`,
+`POST /api/portal/auth/set-password`) yanıt gövdesinde `{ token, csrfToken, expiresAt }` döner ve cookie yazılmaz.
+Sonraki isteklerde `Authorization: Bearer <token>` gönderilir; durum değiştiren isteklerde `X-CSRF-Token`
+mobilde de zorunludur. Mobil oturumlar "beni hatırla" süresiyle (`SESSION_REMEMBER_DAYS`) açılır; veritabanında
+yine yalnızca token özeti tutulur. Şifre değişikliği tüm oturumları kapatır ve yanıtta yeni token döner.
+Personel token'ı danışan uçlarını, danışan token'ı personel uçlarını açmaz (`tests/mobile-auth.integration.test.ts`).
+
 ## API özeti
 
 Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } }` — doğrulama hatalarında
@@ -367,7 +384,7 @@ Tüm yanıtlar JSON'dur. Hatalar: `{ "error": { "code", "message", "details"? } 
 
 | Yöntem | Yol | Açıklama |
 | --- | --- | --- |
-| POST | `/login` | `{ email, password, remember }` → oturum cookie'si. 401 hatalı bilgi · 423 hesap kilitli · 429 hız sınırı |
+| POST | `/login` | `{ email, password, remember }` → oturum cookie'si (mobil uygulamada token, bkz. [Mobil uygulama](#mobil-uygulama)). 401 hatalı bilgi · 423 hesap kilitli · 429 hız sınırı |
 | POST | `/logout` | Oturumu kapatır |
 | GET | `/me` | Kullanıcı, izinler ve CSRF token'ı |
 | POST | `/forgot-password` · `/reset-password` · `/change-password` | Şifre işlemleri |
