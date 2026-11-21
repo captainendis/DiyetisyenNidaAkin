@@ -19,8 +19,11 @@ name: Mobil derleme
 
 on:
   push:
-    paths: ['mobile/**', 'shared/**', '.github/workflows/mobile.yml']
+    # Not: "tags" tek başına verilirse dal push'ları tetiklemez — dallar da açıkça listelenmeli.
+    # (Etiket push'larında "paths" değerlendirilmez.)
+    branches: ['**']
     tags: ['mobile-v*']
+    paths: ['mobile/**', 'shared/**', '.github/workflows/mobile.yml']
   workflow_dispatch:
     inputs:
       platform:
