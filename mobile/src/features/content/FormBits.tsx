@@ -6,7 +6,7 @@ import { usePreventRemove } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { Button, Card, confirm, IconButton, T } from '@/components/ui';
+import { Button, Card, confirm, IconButton, moveItem, Sortable, T } from '@/components/ui';
 import { SITE_URL } from '@/lib/config';
 import { colors, radius, space } from '@/theme';
 
@@ -85,26 +85,26 @@ export function Repeater<I>({
   itemLabel: (i: number) => string;
   empty?: ReactNode;
 }) {
-  const move = (i: number, d: -1 | 1) => {
-    const next = [...items];
-    const [x] = next.splice(i, 1);
-    next.splice(i + d, 0, x!);
-    onChange(next);
-  };
   return (
     <View style={{ gap: space.md }}>
       {items.length === 0 ? empty : null}
-      {items.map((item, i) => (
-        <View key={i} style={{ borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, backgroundColor: colors.bg, padding: space.md, gap: space.md }}>
+      <Sortable
+        items={items}
+        keyOf={(_, i) => String(i)}
+        gap={space.md}
+        labelOf={(_, i) => itemLabel(i)}
+        onReorder={(from, to) => onChange(moveItem(items, from, to))}
+        renderItem={(item, i, handle) => (
+        <View style={{ borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, backgroundColor: colors.bg, padding: space.md, gap: space.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+            {handle}
             <T variant="overline" style={{ flex: 1 }} color={colors.muted}>{itemLabel(i)}</T>
-            {i > 0 ? <IconButton name="arrow-up" label="Yukarı taşı" onPress={() => move(i, -1)} /> : null}
-            {i < items.length - 1 ? <IconButton name="arrow-down" label="Aşağı taşı" onPress={() => move(i, 1)} /> : null}
             {items.length > min ? <IconButton name="trash-2" label="Kaldır" color={colors.dangerInk} onPress={() => onChange(items.filter((_, j) => j !== i))} /> : null}
           </View>
           {render(item, i, (v) => onChange(items.map((x, j) => (j === i ? v : x))))}
         </View>
-      ))}
+        )}
+      />
       {max === undefined || items.length < max ? (
         <Button title={addLabel} icon="plus" variant="secondary" size="sm" style={{ alignSelf: 'flex-start' }} onPress={() => onChange([...items, create()])} />
       ) : null}

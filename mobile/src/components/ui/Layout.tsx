@@ -7,13 +7,14 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// Hareket yöneticisiyle uyumlu kaydırma: içindeki sürükleme (Sortable) başlayınca kaydırma durur
+import { ScrollView } from 'react-native-gesture-handler';
 import { colors, radius, shadow, space } from '@/theme';
 import { Icon, type IconName } from './Icon';
 import { T } from './Text';

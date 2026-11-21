@@ -1,26 +1,24 @@
 // Copyright (c) 2026 Nida Akın. All rights reserved.
 // Developed by PaperAxis · paperaxis.com
 
-/** Tek öğün: saat, ad, en fazla 3 seçenek (her satır bir besin); sırala / sil (web: PlanEditorForm MealEditor) */
+/** Tek öğün: saat, ad, en fazla 3 seçenek (her satır bir besin); sürükleyerek sırala / sil (web: PlanEditorForm MealEditor) */
 import { Pressable, StyleSheet, View } from 'react-native';
+import type { ReactNode } from 'react';
 import { Button, Icon, IconButton, T, TextField } from '@/components/ui';
 import { colors, radius, space } from '@/theme';
 import type { PlanMeal } from '@shared/plan';
 import type { PlanSetter } from './api';
 
-export function MealEditor({ meal, index, count, set, editable }: { meal: PlanMeal; index: number; count: number; set: PlanSetter; editable: boolean }) {
+export function MealEditor({ meal, index, count, set, editable, handle }: { meal: PlanMeal; index: number; count: number; set: PlanSetter; editable: boolean; handle?: ReactNode }) {
   const upd = (fn: (m: PlanMeal) => void) => set((d) => fn(d.meals[index]!));
-  const move = (to: number) => set((d) => void d.meals.splice(to, 0, d.meals.splice(index, 1)[0]!));
-  const dim = (off: boolean) => (off ? colors.line : colors.text);
 
   return (
     <View style={styles.box}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+        {handle}
         <T variant="overline" style={{ flex: 1 }}>{index + 1}. öğün</T>
         {editable ? (
           <>
-            <IconButton name="arrow-up" label="Öğünü yukarı taşı" color={dim(index === 0)} onPress={() => index > 0 && move(index - 1)} />
-            <IconButton name="arrow-down" label="Öğünü aşağı taşı" color={dim(index === count - 1)} onPress={() => index < count - 1 && move(index + 1)} />
             <IconButton name="trash-2" label="Öğünü sil" color={count === 1 ? colors.line : colors.dangerInk} onPress={() => count > 1 && set((d) => void d.meals.splice(index, 1))} />
           </>
         ) : null}

@@ -5,7 +5,7 @@
 import { router, Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
-import { Badge, Button, Card, confirm, Empty, Fab, Icon, IconButton, Notice, QueryView, Screen, T, useToast } from '@/components/ui';
+import { Badge, Button, Card, confirm, Empty, Fab, Icon, IconButton, moveItem, Notice, QueryView, Screen, Sortable, T, useToast } from '@/components/ui';
 import { api, errorMessage } from '@/lib/api';
 import { useStaff } from '@/lib/auth';
 import { SITE_URL } from '@/lib/config';
@@ -43,12 +43,7 @@ export default function ServicesScreen() {
       void q.refetch();
     }
   };
-  const move = (items: Service[], i: number, d: -1 | 1) => {
-    const next = [...items];
-    const [x] = next.splice(i, 1);
-    next.splice(i + d, 0, x!);
-    void persistOrder(next);
-  };
+  const move = (items: Service[], from: number, to: number) => void persistOrder(moveItem(items, from, to));
   const toggle = async (items: Service[], s: Service) => {
     setItems(items.map((x) => (x.id === s.id ? { ...x, isPublished: !s.isPublished } : x)));
     try {
@@ -86,7 +81,7 @@ export default function ServicesScreen() {
       />
       <Screen refreshing={q.refreshing} onRefresh={q.refresh} contentStyle={{ paddingBottom: 110 }}>
         <T variant="caption" style={{ marginBottom: space.lg }}>
-          Ana sayfada ve Hizmetler sayfasında görünen hizmetler. Sıralamayı oklarla değiştirebilirsiniz.
+          Ana sayfada ve Hizmetler sayfasında görünen hizmetler. Sıralamak için ≡ tutamacına basılı tutup sürükleyin.
         </T>
         <QueryView query={q}>
           {({ items }) => {
@@ -106,8 +101,14 @@ export default function ServicesScreen() {
                 {untouched ? (
                   <Notice tone="warning" text="Hizmet metinleri taslaktır; sunulan hizmetleri doğrulayıp düzenleyin. Sunmadığınız hizmetleri yayından kaldırın veya silin." />
                 ) : null}
-                {items.map((s, i) => (
-                  <Card key={s.id} padded={false} style={!s.isPublished && { backgroundColor: '#FBF8F3' }}>
+                <Sortable
+                  items={items}
+                  keyOf={(s) => s.id}
+                  gap={space.md}
+                  labelOf={(s) => s.title}
+                  onReorder={(from, to) => move(items, from, to)}
+                  renderItem={(s, i, handle) => (
+                  <Card padded={false} style={!s.isPublished && { backgroundColor: '#FBF8F3' }}>
                     <Pressable
                       onPress={() => router.push(`/panel/hizmetler/duzenle?id=${s.id}`)}
                       accessibilityRole="button"
@@ -135,6 +136,7 @@ export default function ServicesScreen() {
                       <Icon name="chevron-right" size={18} color={colors.mist} />
                     </Pressable>
                     <View style={styles.bar}>
+                      {handle}
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, flex: 1 }}>
                         <Switch
                           value={s.isPublished}
@@ -144,13 +146,12 @@ export default function ServicesScreen() {
                         />
                         <T variant="caption">{s.isPublished ? 'Yayında' : 'Gizli'}</T>
                       </View>
-                      <ActionIcon name="arrow-up" label="Yukarı taşı" disabled={i === 0} onPress={() => move(items, i, -1)} />
-                      <ActionIcon name="arrow-down" label="Aşağı taşı" disabled={i === items.length - 1} onPress={() => move(items, i, 1)} />
                       <ActionIcon name="edit-2" label="Düzenle" onPress={() => router.push(`/panel/hizmetler/duzenle?id=${s.id}`)} />
                       <ActionIcon name="trash-2" label="Sil" danger onPress={() => void remove(s)} />
                     </View>
                   </Card>
-                ))}
+                  )}
+                />
               </View>
             );
           }}
@@ -161,7 +162,7 @@ export default function ServicesScreen() {
   );
 }
 
-function ActionIcon({ name, label, onPress, disabled, danger }: { name: 'arrow-up' | 'arrow-down' | 'edit-2' | 'trash-2'; label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
+function ActionIcon({ name, label, onPress, disabled, danger }: { name: 'edit-2' | 'trash-2'; label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
   return (
     <Pressable
       onPress={onPress}

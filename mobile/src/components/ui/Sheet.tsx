@@ -2,8 +2,10 @@
 // Developed by PaperAxis · paperaxis.com
 
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// Hareket yöneticisiyle uyumlu kaydırma: içindeki sürükleme (Sortable) başlayınca kaydırma durur
+import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
 import { colors, radius, space } from '@/theme';
 import { IconButton } from './Button';
 import { T } from './Text';
@@ -33,7 +35,8 @@ export function Sheet({
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.backdrop}>
+      {/* Modal ayrı bir kök görünümdür: içindeki hareketler (Android) kendi kökünü ister */}
+      <GestureHandlerRootView style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Kapat" />
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.wrap, full && { height: '92%' }]}>
           <View style={[styles.sheet, full && { flex: 1 }]}>
@@ -55,7 +58,7 @@ export function Sheet({
             {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.md) }]}>{footer}</View> : null}
           </View>
         </KeyboardAvoidingView>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

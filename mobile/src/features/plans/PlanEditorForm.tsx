@@ -2,9 +2,9 @@
 // Developed by PaperAxis · paperaxis.com
 
 /** Beslenme planı düzenleyici formu (kontrollü) — web: src/components/panel/plans/PlanEditorForm.tsx */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { Button, Card, FieldRow, IconButton, Section, SwitchField, T, TextField } from '@/components/ui';
+import { Button, Card, FieldRow, Icon, IconButton, Section, Sheet, Sortable, SwitchField, T, TextField } from '@/components/ui';
 import { colors, space } from '@/theme';
 import type { NutritionPlanData } from '@shared/plan';
 import type { Recipe } from '@shared/recipe';
@@ -41,6 +41,8 @@ export function PlanEditorForm({
   client?: ClientRef | null;
   editable: boolean;
 }) {
+  const [ordering, setOrdering] = useState(false);
+  const moveMeal = (from: number, to: number) => set((d) => void d.meals.splice(to, 0, d.meals.splice(from, 1)[0]!));
   const add = (title: string, onPress: () => void, show: boolean) =>
     editable && show ? <Button title={title} icon="plus" variant="ghost" size="sm" onPress={onPress} /> : undefined;
 
@@ -95,9 +97,36 @@ export function PlanEditorForm({
         action={add('Öğün', () => set((d) => void d.meals.push({ time: '', name: '', options: [[], [], []] })), data.meals.length < 7)}
       >
         {!data.meals.length ? <T muted>Henüz öğün yok. “Öğün” ile ekleyin.</T> : null}
-        {data.meals.map((m, i) => (
-          <MealEditor key={i} meal={m} index={i} count={data.meals.length} set={set} editable={editable} />
-        ))}
+        {editable && data.meals.length > 2 ? (
+          <Button title="Öğün sırasını düzenle" icon="move" variant="ghost" size="sm" style={{ alignSelf: 'flex-start' }} onPress={() => setOrdering(true)} />
+        ) : null}
+        <Sortable
+          items={data.meals}
+          keyOf={(_, i) => String(i)}
+          gap={space.md}
+          enabled={editable}
+          labelOf={(m, i) => m.name || `${i + 1}. öğün`}
+          onReorder={moveMeal}
+          renderItem={(m, i, handle) => <MealEditor meal={m} index={i} count={data.meals.length} set={set} editable={editable} handle={handle} />}
+        />
+        {/* Uzun kartları ekran boyunca sürüklemek yerine: kısa satırlarla toplu sıralama */}
+        <Sheet visible={ordering} onClose={() => setOrdering(false)} title="Öğün sırası" subtitle="Basılı tutup sürükleyin" footer={<Button title="Tamam" full style={{ flex: 1 }} onPress={() => setOrdering(false)} />}>
+          <Sortable
+            items={data.meals}
+            keyOf={(_, i) => String(i)}
+            gap={space.sm}
+            labelOf={(m, i) => m.name || `${i + 1}. öğün`}
+            onReorder={moveMeal}
+            renderItem={(m, i, handle) => (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingVertical: 6, paddingHorizontal: space.md }}>
+                {handle}
+                <T variant="label" style={{ width: 52 }} color={colors.goldInk}>{m.time || '—'}</T>
+                <T variant="subheading" style={{ flex: 1 }} numberOfLines={1}>{m.name || `${i + 1}. öğün`}</T>
+                <Icon name="coffee" size={15} color={colors.mist} />
+              </View>
+            )}
+          />
+        </Sheet>
       </Block>
 
       <Block

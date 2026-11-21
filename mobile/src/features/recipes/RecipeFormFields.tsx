@@ -4,7 +4,7 @@
 /** Tarif formu alanları (useRecipeForm ile) — Sheet ya da ekran içinde kullanılır */
 import { Image } from 'expo-image';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
-import { Button, Chips, FieldRow, Form, Icon, IconButton, Notice, SwitchField, T, TextField } from '@/components/ui';
+import { Button, Chips, FieldRow, Form, Icon, IconButton, Notice, Sortable, SwitchField, T, TextField } from '@/components/ui';
 import { SITE_URL } from '@/lib/config';
 import { colors, radius, space } from '@/theme';
 import { DIET_TAGS, DIET_TAG_LABEL, DIET_TAG_NOTE, MAX_FEATURED_RECIPES, RECIPE_CATEGORIES, RECIPE_CATEGORY_LABEL, type RecipeCategory } from '@shared/recipe';
@@ -155,21 +155,27 @@ export function RecipeFormFields({ form }: { form: RecipeForm }) {
           </T>
           {d.steps.length < 15 ? <Button title="Adım ekle" icon="plus" variant="ghost" size="sm" onPress={form.addStep} /> : null}
         </View>
-        {d.steps.map((s, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' }}>
+        <Sortable
+          items={d.steps}
+          keyOf={(_, i) => String(i)}
+          gap={space.sm}
+          labelOf={(_, i) => `${i + 1}. adım`}
+          onReorder={form.moveStep}
+          renderItem={(s, i, handle) => (
+          <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-start', backgroundColor: colors.bg }}>
+            <View style={{ marginTop: 4 }}>{handle}</View>
             <View style={styles.stepNo}>
               <T variant="label" color={colors.cocoa}>{i + 1}</T>
             </View>
             <View style={{ flex: 1 }}>
               <TextField accessibilityLabel={`${i + 1}. adım`} rows={3} value={s} maxLength={500} onChange={(v) => form.setStep(i, v)} />
             </View>
-            <View>
-              <IconButton name="arrow-up" label="Yukarı taşı" color={i === 0 ? colors.line : colors.text} onPress={() => i > 0 && form.moveStep(i, i - 1)} />
-              <IconButton name="arrow-down" label="Aşağı taşı" color={i === d.steps.length - 1 ? colors.line : colors.text} onPress={() => i < d.steps.length - 1 && form.moveStep(i, i + 1)} />
+            <View style={{ marginTop: 4 }}>
               <IconButton name="trash-2" label="Adımı sil" color={d.steps.length === 1 ? colors.line : colors.dangerInk} onPress={() => d.steps.length > 1 && form.removeStep(i)} />
             </View>
           </View>
-        ))}
+          )}
+        />
         {err.steps ? <T variant="caption" color={colors.dangerInk}>{err.steps}</T> : null}
       </View>
 

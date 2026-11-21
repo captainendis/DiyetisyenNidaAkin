@@ -4,7 +4,7 @@
 /** Sık sorulan sorular: ekleme/düzenleme, yayın durumu, sıralama, silme (web: FaqManager.tsx) */
 import { useState } from 'react';
 import { Switch, View } from 'react-native';
-import { Badge, Button, Card, confirm, Empty, Fab, IconButton, QueryView, Screen, Sheet, SwitchField, T, TextField, useToast } from '@/components/ui';
+import { Badge, Button, Card, confirm, Empty, Fab, IconButton, moveItem, QueryView, Sortable, Screen, Sheet, SwitchField, T, TextField, useToast } from '@/components/ui';
 import { api, ApiError, errorMessage } from '@/lib/api';
 import { queryClient, useApiQuery } from '@/lib/query';
 import { colors, space } from '@/theme';
@@ -59,10 +59,8 @@ export function FaqManager() {
     }
   };
 
-  const move = async (items: Faq[], i: number, d: -1 | 1) => {
-    const next = [...items];
-    const [x] = next.splice(i, 1);
-    next.splice(i + d, 0, x!);
+  const move = async (items: Faq[], from: number, to: number) => {
+    const next = moveItem(items, from, to);
     setItems(next);
     try {
       await api.post('/content/faqs/reorder', { ids: next.map((f) => f.id) });
@@ -97,9 +95,14 @@ export function FaqManager() {
             !items.length ? (
               <Empty icon="help-circle" title="Henüz soru yok" text="Danışanların sıkça sorduğu soruları ekleyerek randevu öncesi merak edilenleri yanıtlayın." action={<Button title="Soru ekle" icon="plus" onPress={openNew} />} />
             ) : (
-              <View style={{ gap: space.md }}>
-                {items.map((f, i) => (
-                  <Card key={f.id} padded={false}>
+              <Sortable
+                items={items}
+                keyOf={(f) => f.id}
+                gap={space.md}
+                labelOf={(f) => f.question}
+                onReorder={(from, to) => void move(items, from, to)}
+                renderItem={(f, _i, handle) => (
+                  <Card padded={false}>
                     <View style={{ padding: space.lg, gap: 6 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.sm }}>
                         <T variant="subheading" style={{ flex: 1 }}>{f.question}</T>
@@ -108,6 +111,7 @@ export function FaqManager() {
                       <T variant="caption" numberOfLines={3}>{f.answer}</T>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: space.md, paddingVertical: 6, borderTopWidth: 1, borderTopColor: colors.line }}>
+                      {handle}
                       <Switch
                         value={f.isPublished}
                         onValueChange={() => void togglePublish(items, f)}
@@ -115,14 +119,12 @@ export function FaqManager() {
                         trackColor={{ true: colors.gold, false: colors.line }}
                       />
                       <T variant="caption" style={{ flex: 1, marginLeft: 4 }}>Yayında</T>
-                      {i > 0 ? <IconButton name="arrow-up" label="Yukarı taşı" onPress={() => void move(items, i, -1)} /> : null}
-                      {i < items.length - 1 ? <IconButton name="arrow-down" label="Aşağı taşı" onPress={() => void move(items, i, 1)} /> : null}
                       <IconButton name="edit-2" label="Düzenle" onPress={() => (setErrors({}), setEditing(f))} />
                       <IconButton name="trash-2" label="Sil" color={colors.dangerInk} onPress={() => void remove(f)} />
                     </View>
                   </Card>
-                ))}
-              </View>
+                )}
+              />
             )
           }
         </QueryView>

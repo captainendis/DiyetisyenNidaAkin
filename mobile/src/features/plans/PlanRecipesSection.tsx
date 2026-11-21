@@ -8,7 +8,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Button, Icon, IconButton, Sheet, T, TextField } from '@/components/ui';
+import { Button, Icon, IconButton, Sheet, Sortable, T, TextField } from '@/components/ui';
 import { colors, fonts, radius, space } from '@/theme';
 import { MAX_PLAN_RECIPES, type NutritionPlanData } from '@shared/plan';
 import { RECIPE_CATEGORY_LABEL, RECIPE_DEFAULT_LABEL, recipeMeta, type Recipe } from '@shared/recipe';
@@ -45,7 +45,6 @@ export function PlanRecipesSection({
     return meal ? `${meal} için öneri` : RECIPE_DEFAULT_LABEL[r.category];
   };
   const move = (i: number, to: number) => set((d) => void d.recipes.items.splice(to, 0, d.recipes.items.splice(i, 1)[0]!));
-  const dim = (off: boolean) => (off ? colors.line : colors.text);
 
   return (
     <View style={{ gap: space.md }}>
@@ -66,11 +65,19 @@ export function PlanRecipesSection({
           </View>
         </Pressable>
       ) : (
-        items.map((it, i) => {
+        <Sortable
+          items={items}
+          keyOf={(it, i) => `${it.recipeId}-${i}`}
+          gap={space.md}
+          enabled={editable}
+          labelOf={(it) => byId.get(it.recipeId)?.title ?? 'Tarif'}
+          onReorder={move}
+          renderItem={(it, i, handle) => {
           const r = byId.get(it.recipeId);
           return (
-            <View key={`${it.recipeId}-${i}`} style={styles.item}>
+            <View style={styles.item}>
               <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
+                {handle}
                 {r ? <RecipeThumb recipe={r} style={styles.thumb} /> : <View style={[styles.thumb, { backgroundColor: '#EFE8DD' }]} />}
                 <Pressable style={{ flex: 1, gap: 2 }} disabled={!r} onPress={() => r && router.push(`/panel/tarifler/${r.id}`)} accessibilityRole="link">
                   {r ? (
@@ -115,14 +122,13 @@ export function PlanRecipesSection({
                       onPress={() => setAdapting({ index: i, recipe: r })}
                     />
                   ) : null}
-                  <IconButton name="arrow-up" label="Yukarı taşı" color={dim(i === 0)} onPress={() => i > 0 && move(i, i - 1)} />
-                  <IconButton name="arrow-down" label="Aşağı taşı" color={dim(i === items.length - 1)} onPress={() => i < items.length - 1 && move(i, i + 1)} />
                   <IconButton name="trash-2" label="Tarifi plandan çıkar" color={colors.dangerInk} onPress={() => set((d) => void d.recipes.items.splice(i, 1))} />
                 </View>
               ) : null}
             </View>
           );
-        })
+          }}
+        />
       )}
       {editable && items.length < MAX_PLAN_RECIPES ? (
         <Button title="Tarif ekle" icon="plus" variant="secondary" size="sm" disabled={!library} style={{ alignSelf: 'flex-start' }} onPress={() => setPicking(true)} />

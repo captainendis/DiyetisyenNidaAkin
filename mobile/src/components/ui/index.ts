@@ -11,3 +11,4 @@ export { TextField, SelectField, Segmented, Chips, SwitchField, DateField, TimeF
 export { Sheet } from './Sheet';
 export { QueryView, Avatar, StatTile, Grid, Fab, ProgressBar } from './Data';
 export { Markdown } from './Markdown';
+export { Sortable, moveItem } from './Sortable';
