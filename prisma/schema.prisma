@@ -354,6 +354,8 @@ enum NotificationType {
   APPOINTMENT_CANCELLED
   APPOINTMENT_UPCOMING
   CLIENT_CREATED
+  /// Danışan, uygulamadan/Hesabım'dan hesabının ve verilerinin silinmesini istedi
+  CLIENT_DELETION_REQUESTED
 }
 
 model Notification {
@@ -648,6 +650,8 @@ model ClientAccount {
   lastLoginAt       DateTime? @db.DateTime(3)
   passwordChangedAt DateTime? @db.DateTime(3)
   activatedAt       DateTime? @db.DateTime(3)
+  /// Danışanın hesap ve veri silme talebi (KVKK md. 11; en geç 30 gün içinde sonuçlandırılır)
+  deletionRequestedAt DateTime? @db.DateTime(3)
   createdById       String?
   createdBy         User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt         DateTime  @default(now()) @db.DateTime(3)

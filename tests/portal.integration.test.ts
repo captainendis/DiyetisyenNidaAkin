@@ -239,6 +239,24 @@ describe('pilates talebi (danışan hesabı)', () => {
   });
 });
 
+describe('hesap ve veri silme talebi', () => {
+  it('danışan talep eder; tarih kaydedilir, personele bildirilir, tekrar talep ilk tarihi değiştirmez', async () => {
+    expect((await portal.get('/api/portal/auth/me')).body.me.deletionRequestedAt).toBeNull();
+    const res = await portal.post('/api/portal/account/deletion-request').set('X-CSRF-Token', portalCsrf).send({});
+    expect(res.status).toBe(200);
+    const at = res.body.deletionRequestedAt;
+    expect(typeof at).toBe('string');
+    expect((await portal.get('/api/portal/auth/me')).body.me.deletionRequestedAt).toBe(at);
+    expect(await prisma.notification.count({ where: { clientId: clientA, type: 'CLIENT_DELETION_REQUESTED' } })).toBeGreaterThan(0);
+    const again = await portal.post('/api/portal/account/deletion-request').set('X-CSRF-Token', portalCsrf).send({});
+    expect(again.body.deletionRequestedAt).toBe(at);
+  });
+
+  it('CSRF başlığı olmadan talep gönderilemez', async () => {
+    expect((await portal.post('/api/portal/account/deletion-request').send({})).status).toBe(403);
+  });
+});
+
 describe('oturum sınırları', () => {
   it('danışan oturumu personel uçlarına erişemez', async () => {
     expect((await portal.get('/api/auth/me')).status).toBe(401);

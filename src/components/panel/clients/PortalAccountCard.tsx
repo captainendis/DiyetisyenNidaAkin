@@ -151,6 +151,11 @@ export function PortalAccountCard({ client }: { client: Client }) {
           </>
         ) : (
           <>
+            {acc.deletionRequestedAt && (
+              <div role="status" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-sm text-danger-ink">
+                <b className="font-semibold">Hesap ve veri silme talebi:</b> {formatDateTime(acc.deletionRequestedAt)}. KVKK gereği en geç 30 gün içinde sonuçlandırın (danışan kartında “Sil”) ve danışana bildirin.
+              </div>
+            )}
             <dl className="space-y-1.5 text-sm">
               <div className="flex justify-between gap-3"><dt className="text-panel-muted">E-posta</dt><dd className="min-w-0 truncate text-espresso">{acc.email}</dd></div>
               {acc.activatedAt && <div className="flex justify-between gap-3"><dt className="text-panel-muted">Etkinleştirildi</dt><dd className="tabular text-espresso">{formatDateTime(acc.activatedAt)}</dd></div>}

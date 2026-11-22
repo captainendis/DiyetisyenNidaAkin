@@ -10,7 +10,8 @@
     "backgroundColor": "#F5F1EA",
     "ios": {
       "bundleIdentifier": "com.nidaakin.app",
-      "supportsTablet": true,
+      "icon": "./assets/images/icon-ios.png",
+      "supportsTablet": false,
       "associatedDomains": ["applinks:nidaakin.com"],
       "infoPlist": {
         "NSFaceIDUsageDescription": "Uygulama kilidini Face ID ile açmak için kullanılır.",

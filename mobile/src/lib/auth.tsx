@@ -55,6 +55,8 @@ export interface ClientMe {
   phone: string | null;
   csrfToken: string;
   programs: { nutrition: boolean; pilates: boolean };
+  /** Hesap ve veri silme talebinin tarihi (yoksa null; eski önbellekte olmayabilir) */
+  deletionRequestedAt?: string | null;
 }
 
 /**

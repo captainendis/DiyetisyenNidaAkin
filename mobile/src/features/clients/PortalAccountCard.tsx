@@ -175,6 +175,9 @@ export function PortalAccountCard({ client }: { client: Client }) {
   } else {
     body = (
       <View style={{ gap: space.md }}>
+        {acc.deletionRequestedAt ? (
+          <Notice tone="danger" text={`Hesap ve veri silme talebi: ${formatDateTime(acc.deletionRequestedAt)}. KVKK gereği en geç 30 gün içinde sonuçlandırın (danışan kartında "Sil") ve danışana bildirin.`} />
+        ) : null}
         <View>
           <KeyValue label="E-posta" value={acc.email} />
           {acc.activatedAt ? <KeyValue label="Etkinleştirildi" value={formatDateTime(acc.activatedAt)} /> : null}
