@@ -25,7 +25,7 @@ import {
   panelAppointmentUpdateSchema,
 } from '../../shared/schemas';
 import { HARD_CONFLICT_STATUSES, SLOT_HOLDING_STATUSES, type AppointmentStatus } from '../../shared/constants';
-import { addDays, endOfDayExclusive, isoWeekday, startOfDay } from '../../shared/time';
+import { addDays, endOfDayExclusive, isoWeekday, startOfDay, zonedToDate } from '../../shared/time';
 import { appointmentScope, isReviewer } from '../auth/reviewer';
 
 export const appointmentsRouter = router();
@@ -156,10 +156,21 @@ appointmentsRouter.post('/', canWrite, async (c) => {
     }
 
     const duration = await resolveDuration(tx, { serviceId: input.serviceId, weekday: isoWeekday(input.date), explicit: input.durationMinutes });
+    // Gerçekleşmiş görüşmeyi sonradan kaydetme: geçmiş saat kabul edilir, çalışma saati aranmaz; çakışma yine kontrol edilir
+    const recordingPast = input.status === 'COMPLETED';
+    if (recordingPast && zonedToDate(input.date, input.time).getTime() > Date.now()) {
+      throw new HttpError(422, 'VALIDATION_ERROR', '“Tamamlandı” yalnızca gerçekleşmiş (geçmiş saatli) bir görüşme için seçilebilir.', {
+        fields: { time: 'Gelecek bir saat için “Onaylandı” seçin' },
+      });
+    }
     const times = await assertSlotAllowed(
       tx,
       { date: input.date, time: input.time, durationMinutes: duration },
-      { statuses: input.status === 'CONFIRMED' ? HARD_CONFLICT_STATUSES : SLOT_HOLDING_STATUSES, enforceHours: !input.allowOutsideHours },
+      {
+        statuses: input.status === 'PENDING' ? SLOT_HOLDING_STATUSES : HARD_CONFLICT_STATUSES,
+        enforceHours: !input.allowOutsideHours && !recordingPast,
+        allowPast: recordingPast,
+      },
     );
     const a = await tx.appointment.create({
       data: {
@@ -180,7 +191,12 @@ appointmentsRouter.post('/', canWrite, async (c) => {
       include: appointmentInclude,
     });
     await tx.appointmentStatusHistory.create({
-      data: { appointmentId: a.id, toStatus: input.status, note: input.allowOutsideHours ? 'Panelden özel randevu' : 'Panelden oluşturuldu', changedById: authUser(c).id },
+      data: {
+        appointmentId: a.id,
+        toStatus: input.status,
+        note: recordingPast ? 'Gerçekleşen görüşme sonradan kaydedildi' : input.allowOutsideHours ? 'Panelden özel randevu' : 'Panelden oluşturuldu',
+        changedById: authUser(c).id,
+      },
     });
     await audit(c, 'appointment.created', 'appointment', a.id, { status: input.status, outsideHours: input.allowOutsideHours }, tx);
     return a;
