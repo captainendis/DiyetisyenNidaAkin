@@ -164,3 +164,26 @@ describe('randevu çakışma kontrolü', () => {
     expect(res.body.error.code).toBe('INVALID_TRANSITION');
   });
 });
+
+describe('gerçekleşmiş görüşmeyi sonradan kaydetme', () => {
+  const past = addDays(todayStr(), -3);
+  const body = (status: string, d = past, time = '15:30', n = 7) => ({ ...panelBody(time, n, status), date: d });
+
+  it('geçmiş saate "Onaylandı" randevu oluşturulamaz', async () => {
+    const res = await post('/api/appointments', body('CONFIRMED'));
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('PAST');
+  });
+
+  it('geçmiş saate "Tamamlandı" kaydedilir; çalışma saati aranmaz', async () => {
+    const res = await post('/api/appointments', body('COMPLETED', past, '21:30', 8));
+    expect(res.status).toBe(201);
+    expect(res.body.appointment.status).toBe('COMPLETED');
+    createdIds.push(res.body.appointment.id);
+  });
+
+  it('gelecek saate "Tamamlandı" seçilemez', async () => {
+    const res = await post('/api/appointments', body('COMPLETED', addDays(todayStr(), 3), '10:00', 9));
+    expect(res.status).toBe(422);
+  });
+});

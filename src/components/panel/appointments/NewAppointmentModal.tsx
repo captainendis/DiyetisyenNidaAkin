@@ -39,7 +39,9 @@ export default function NewAppointmentModal({
   const [meetingType, setMeetingType] = useState<MeetingType>('IN_PERSON');
   const [kind, setKind] = useState<AppointmentKind>('CONSULTATION');
   const [pilatesFormat, setPilatesFormat] = useState<PilatesFormat>('PRIVATE');
-  const [status, setStatus] = useState<'CONFIRMED' | 'PENDING'>('CONFIRMED');
+  const [status, setStatus] = useState<'CONFIRMED' | 'PENDING' | 'COMPLETED'>('CONFIRMED');
+  // Gerçekleşmiş görüşmeyi sonradan kaydetme: geçmiş tarih/saat serbest girilir
+  const recordingPast = status === 'COMPLETED';
   const [outside, setOutside] = useState(false);
   const [note, setNote] = useState('');
   const [pending, setPending] = useState(false);
@@ -280,10 +282,11 @@ export default function NewAppointmentModal({
 
         <section className="space-y-3">
           <div className="flex flex-wrap items-end gap-4">
-            <Input label="Tarih" type="date" min={todayStr()} value={date} onChange={(e) => { setDate(e.target.value); setTime(''); }} error={errors.date} wrapperClassName="w-44" className="tabular" />
-            <div className="pb-2"><Switch checked={outside} onChange={(v) => { setOutside(v); setTime(''); }} label="Çalışma saatleri dışında özel randevu" /></div>
+            <Input label="Tarih" type="date" min={recordingPast ? undefined : todayStr()} max={recordingPast ? todayStr() : undefined} value={date} onChange={(e) => { setDate(e.target.value); setTime(''); }} error={errors.date} wrapperClassName="w-44" className="tabular" />
+            {!recordingPast && <div className="pb-2"><Switch checked={outside} onChange={(v) => { setOutside(v); setTime(''); }} label="Çalışma saatleri dışında özel randevu" /></div>}
           </div>
-          <SlotPicker date={date} duration={effDuration} value={time} onChange={setTime} freeTime={outside} />
+          <SlotPicker date={date} duration={effDuration} value={time} onChange={setTime} freeTime={outside || recordingPast} />
+          {recordingPast && <p className="text-[0.78rem] text-panel-muted">Gerçekleşmiş bir görüşme kaydediliyor: görüşmenin yapıldığı tarih ve saati girin. Çakışma kontrolü yine yapılır.</p>}
           {errors.time && <p className="text-[0.78rem] text-danger-ink">{errors.time}</p>}
         </section>
 
@@ -291,8 +294,12 @@ export default function NewAppointmentModal({
           <Select
             label="Durum"
             value={status}
-            onChange={(e) => setStatus(e.target.value as 'CONFIRMED' | 'PENDING')}
-            options={[{ value: 'CONFIRMED', label: 'Onaylandı' }, { value: 'PENDING', label: 'Onay bekliyor' }]}
+            onChange={(e) => { setStatus(e.target.value as 'CONFIRMED' | 'PENDING' | 'COMPLETED'); setTime(''); }}
+            options={[
+              { value: 'CONFIRMED', label: 'Onaylandı' },
+              { value: 'PENDING', label: 'Onay bekliyor' },
+              { value: 'COMPLETED', label: 'Tamamlandı (geçmiş görüşmeyi kaydet)' },
+            ]}
           />
           <Textarea label="Dahili not" rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} placeholder="Yalnızca panelde görünür" />
         </section>

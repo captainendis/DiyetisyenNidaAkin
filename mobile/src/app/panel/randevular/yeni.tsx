@@ -41,7 +41,9 @@ export default function NewAppointmentScreen() {
   const [date, setDate] = useState(params.date ?? todayStr());
   const [time, setTime] = useState(params.time ?? '');
   const [outside, setOutside] = useState(false);
-  const [status, setStatus] = useState<'CONFIRMED' | 'PENDING'>('CONFIRMED');
+  const [status, setStatus] = useState<'CONFIRMED' | 'PENDING' | 'COMPLETED'>('CONFIRMED');
+  // Gerçekleşmiş görüşmeyi sonradan kaydetme: geçmiş tarih/saat serbest girilir
+  const recordingPast = status === 'COMPLETED';
   const [note, setNote] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -172,28 +174,44 @@ export default function NewAppointmentScreen() {
           <DateField
             label="Tarih"
             value={date}
-            minimumDate={todayStr()}
+            minimumDate={recordingPast ? undefined : todayStr()}
             error={errors.date}
             onChange={(d) => {
               setDate(d);
               setTime('');
             }}
           />
-          <SwitchField
-            label="Çalışma saatleri dışında özel randevu"
-            value={outside}
-            onChange={(v) => {
-              setOutside(v);
-              setTime('');
-            }}
-          />
-          <SlotPicker date={date} duration={effDuration} value={time} onChange={setTime} freeTime={outside} error={errors.time} />
+          {recordingPast ? (
+            <T variant="caption">Gerçekleşmiş bir görüşme kaydediliyor: görüşmenin yapıldığı tarih ve saati girin. Çakışma kontrolü yine yapılır.</T>
+          ) : (
+            <SwitchField
+              label="Çalışma saatleri dışında özel randevu"
+              value={outside}
+              onChange={(v) => {
+                setOutside(v);
+                setTime('');
+              }}
+            />
+          )}
+          <SlotPicker date={date} duration={effDuration} value={time} onChange={setTime} freeTime={outside || recordingPast} error={errors.time} />
         </View>
       </Section>
 
       <Section title="Durum ve not">
         <View style={{ gap: space.md }}>
-          <Segmented<'CONFIRMED' | 'PENDING'> value={status} onChange={setStatus} options={[{ value: 'CONFIRMED', label: 'Onaylandı' }, { value: 'PENDING', label: 'Onay bekliyor' }]} />
+          <Segmented<'CONFIRMED' | 'PENDING' | 'COMPLETED'>
+            value={status}
+            onChange={(v) => {
+              setStatus(v);
+              setTime('');
+            }}
+            options={[
+              { value: 'CONFIRMED', label: 'Onaylandı' },
+              { value: 'PENDING', label: 'Onay bekliyor' },
+              { value: 'COMPLETED', label: 'Tamamlandı' },
+            ]}
+          />
+          {recordingPast ? <T variant="caption">“Tamamlandı”: gerçekleşmiş bir görüşmeyi sonradan kaydetmek için.</T> : null}
           <TextField label="Dahili not" value={note} onChange={setNote} rows={3} maxLength={2000} placeholder="Yalnızca panelde görünür" error={errors.internalNote} />
         </View>
       </Section>
