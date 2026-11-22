@@ -249,7 +249,8 @@ export function buildLegal(doc: LegalDoc, s: PublicSettings): LegalContent {
           {
             heading: 'Hesabınızın ve verilerinizin silinmesi',
             paragraphs: [
-              `Danışan hesabınızın kapatılmasını ve verilerinizin silinmesini istediğinizde, sistemde kayıtlı e-posta adresinizden ${email} adresine “Hesap ve veri silme talebi” konulu bir e-posta göndermeniz yeterlidir. Talebinizde adınızı, soyadınızı ve hesabınıza kayıtlı e-posta adresinizi belirtin.`,
+              'Danışan hesabınızın kapatılmasını ve verilerinizin silinmesini mobil uygulamadan ya da web sitesindeki danışan hesabınızdan isteyebilirsiniz: Hesap → “Hesabımın ve verilerimin silinmesini iste”. Talebiniz tarih damgasıyla kaydedilir ve diyetisyeninize iletilir.',
+              `Uygulamaya erişemiyorsanız, sistemde kayıtlı e-posta adresinizden ${email} adresine “Hesap ve veri silme talebi” konulu bir e-posta da gönderebilirsiniz. Talebinizde adınızı, soyadınızı ve hesabınıza kayıtlı e-posta adresinizi belirtin.`,
               'Talebiniz en geç 30 gün içinde sonuçlandırılır: hesabınız kapatılır, oturumlarınız sonlandırılır, sağlık verileriniz, mesajlarınız ve dosyalarınız kalıcı olarak silinir; diğer kayıtlarınız silinir veya anonim hâle getirilir. Bir mevzuat hükmü gereği saklanması zorunlu olan kayıtlar varsa, yalnızca bu süre boyunca ve erişimi kısıtlanarak saklanır ve süre sonunda silinir. Sonuç size e-postayla bildirilir.',
               'Hesabınızı kapatmadan yalnızca belirli verilerinizin silinmesini de aynı yolla isteyebilirsiniz.',
             ],

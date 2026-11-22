@@ -41,6 +41,7 @@ const ICON: Record<NotificationType, IconName> = {
   APPOINTMENT_CANCELLED: 'x-circle',
   APPOINTMENT_UPCOMING: 'clock',
   CLIENT_CREATED: 'user-plus',
+  CLIENT_DELETION_REQUESTED: 'user-minus',
 };
 
 function dayLabel(iso: string) {

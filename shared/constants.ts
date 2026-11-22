@@ -101,6 +101,7 @@ export const NOTIFICATION_TYPES = [
   'APPOINTMENT_CANCELLED',
   'APPOINTMENT_UPCOMING',
   'CLIENT_CREATED',
+  'CLIENT_DELETION_REQUESTED',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
@@ -109,6 +110,7 @@ export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   APPOINTMENT_CANCELLED: 'Randevu iptal edildi',
   APPOINTMENT_UPCOMING: 'Yaklaşan randevu',
   CLIENT_CREATED: 'Yeni danışan kaydı',
+  CLIENT_DELETION_REQUESTED: 'Hesap silme talebi',
 };
 
 export const BLOCKED_DATE_KINDS = ['FULL_DAY', 'CUSTOM_HOURS', 'TIME_RANGE'] as const;

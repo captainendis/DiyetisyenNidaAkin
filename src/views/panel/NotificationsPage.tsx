@@ -5,7 +5,7 @@
 
 import { useMemo, useState, type ComponentType } from 'react';
 import { useNavigate } from '@/lib/router';
-import { BellOff, CalendarCheck2, CalendarClock, CalendarPlus, CalendarX2, CheckCheck, Circle, Mail, MessageCircle, Trash2, UserPlus } from 'lucide-react';
+import { BellOff, CalendarCheck2, CalendarClock, CalendarPlus, CalendarX2, CheckCheck, Circle, Mail, MessageCircle, Trash2, UserMinus, UserPlus } from 'lucide-react';
 import { DateTime } from 'luxon';
 import { api } from '@/lib/api';
 import { useApi } from '@/hooks/useApi';
@@ -32,6 +32,7 @@ const ICON: Record<NotificationType, ComponentType<{ className?: string }>> = {
   APPOINTMENT_CANCELLED: CalendarX2,
   APPOINTMENT_UPCOMING: CalendarClock,
   CLIENT_CREATED: UserPlus,
+  CLIENT_DELETION_REQUESTED: UserMinus,
 };
 
 function dayLabel(iso: string) {

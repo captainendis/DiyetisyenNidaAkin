@@ -130,9 +130,23 @@ async function clientPrograms(clientId: string) {
 portalRouter.get('/auth/me', async (c) => {
   const u = c.var.portalUser;
   if (!u) throw unauthorized();
-  const [programs, client] = await Promise.all([clientPrograms(u.clientId), prisma.client.findUnique({ where: { id: u.clientId }, select: { phone: true } })]);
+  const [programs, client, account] = await Promise.all([
+    clientPrograms(u.clientId),
+    prisma.client.findUnique({ where: { id: u.clientId }, select: { phone: true } }),
+    prisma.clientAccount.findUnique({ where: { id: u.accountId }, select: { deletionRequestedAt: true } }),
+  ]);
   // phone: randevu talebi formunu (mobil uygulama) önceden doldurmak için — danışanın kendi kaydı
-  return c.json({ me: { firstName: u.firstName, lastName: u.lastName, email: u.email, phone: client?.phone ?? null, csrfToken: u.csrfToken, programs } });
+  return c.json({
+    me: {
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email,
+      phone: client?.phone ?? null,
+      csrfToken: u.csrfToken,
+      programs,
+      deletionRequestedAt: account?.deletionRequestedAt?.toISOString() ?? null,
+    },
+  });
 });
 
 async function findValidToken(token: string) {
@@ -222,6 +236,27 @@ portalRouter.post('/auth/change-password', async (c) => {
   const session = await createClientSession(c, account.id, false);
   await portalAudit(c, 'portal.password_changed', account.id);
   return c.json(session.token ? { ok: true, token: session.token, csrfToken: session.csrfToken } : { ok: true });
+});
+
+/**
+ * Hesap ve veri silme talebi (KVKK md. 11; App Store 5.1.1(v)). Hesaplar diyetisyen tarafından açıldığı ve sağlık
+ * kayıtlarının silinmeden önce gözden geçirilmesi gerektiği için silme anında yapılmaz: talep tarihlenir, personele
+ * bildirilir, gizlilik politikasındaki süre içinde (en geç 30 gün) panelden sonuçlandırılır. Tekrarlanan talep ilk
+ * tarihi değiştirmez.
+ */
+portalRouter.post('/account/deletion-request', async (c) => {
+  const u = portalUser(c);
+  const account = await prisma.clientAccount.findUniqueOrThrow({ where: { id: u.accountId }, select: { id: true, deletionRequestedAt: true } });
+  if (account.deletionRequestedAt) return c.json({ deletionRequestedAt: account.deletionRequestedAt.toISOString() });
+  const at = new Date();
+  await prisma.clientAccount.update({ where: { id: account.id }, data: { deletionRequestedAt: at } });
+  await notifyStaff('CLIENT_DELETION_REQUESTED', {
+    title: `Hesap silme talebi: ${u.firstName} ${u.lastName}`,
+    body: 'Danışan, uygulamadan hesabının ve verilerinin silinmesini istedi. En geç 30 gün içinde sonuçlandırın: Danışanlar → danışan → Sil.',
+    clientId: u.clientId,
+  });
+  await portalAudit(c, 'portal.deletion_requested', account.id);
+  return c.json({ deletionRequestedAt: at.toISOString() });
 });
 
 // ───────────────────────── Yardımcılar ─────────────────────────

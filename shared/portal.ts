@@ -39,6 +39,8 @@ export interface PortalAccountInfo {
   createdAt: string;
   /** Kullanılmamış, süresi dolmamış bir etkinleştirme bağlantısı var mı (bağlantının kendisi tekrar gösterilmez) */
   pendingActivationUntil: string | null;
+  /** Danışanın hesap ve veri silme talebi (yoksa null). Panelden danışan silinerek sonuçlandırılır. */
+  deletionRequestedAt: string | null;
 }
 
 export interface PortalLinkResult {
@@ -83,6 +85,8 @@ export interface PortalMe {
   csrfToken: string;
   /** Danışanın aldığı hizmetler: menü buna göre şekillenir (yalnızca pilatese gelen danışan beslenme menülerini görmez) */
   programs: { nutrition: boolean; pilates: boolean };
+  /** Hesap ve veri silme talebinin tarihi (talep yoksa null) */
+  deletionRequestedAt: string | null;
 }
 
 /** Danışan hesabı — pilates bölümü */

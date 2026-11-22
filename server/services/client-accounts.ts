@@ -62,6 +62,7 @@ export async function accountInfo(a: ClientAccount): Promise<PortalAccountInfo> 
     lastLoginAt: a.lastLoginAt?.toISOString() ?? null,
     createdAt: a.createdAt.toISOString(),
     pendingActivationUntil: pending?.expiresAt.toISOString() ?? null,
+    deletionRequestedAt: a.deletionRequestedAt?.toISOString() ?? null,
   };
 }
 

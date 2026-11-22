@@ -3,8 +3,8 @@
 Bu belge "Nida Akın" mobil uygulamasının (`mobile/`) mağaza kayıtları için gereken metinleri, form
 yanıtlarını ve adımları içerir. Metinler Türkçedir; mağaza dili **Türkçe (tr-TR)** seçilmelidir.
 
-> Yayın öncesi kontrol: gizlilik politikası ve KVKK metinleri hâlâ **taslak** olarak işaretli
-> (`src/components/sections/legal/content.ts`). Mağazaya göndermeden önce hukuki inceleme tamamlanmalıdır.
+> Yasal metinler (KVKK aydınlatma, açık rıza, gizlilik, çerez) sistemin gerçek işleyişine göre yazılmıştır
+> (`src/components/sections/legal/content.ts`); yayın öncesinde bir hukuk uzmanına inceletilmesi önerilir.
 
 ---
 
@@ -20,13 +20,15 @@ yanıtlarını ve adımları içerir. Metinler Türkçedir; mağaza dili **Türk
 | Fiyat | Ücretsiz, uygulama içi satın alma yok, reklam yok |
 | Destek URL'si | `https://nidaakin.com/iletisim` |
 | Gizlilik politikası URL'si | `https://nidaakin.com/gizlilik-politikasi` |
-| Hesap silme URL'si (Google Play) | `https://nidaakin.com/gizlilik-politikasi` → "Hesabın ve verilerin silinmesi" bölümü |
+| Hesap silme URL'si (Google Play) | `https://nidaakin.com/gizlilik-politikasi` → "Hesabınızın ve verilerinizin silinmesi" bölümü |
+| Uygulama içi hesap silme (App Store 5.1.1(v)) | Danışan: Hesap → "Hesabımın ve verilerimin silinmesini iste" (talep tarihlenir, diyetisyene bildirilir, en geç 30 gün) |
+| Geliştirici hesabı | PaperAxis (Google Play: kişisel hesap; App Store: PaperAxis). Uygulamanın sahibi: Nida Akın |
 
 ## 2. Mağaza metinleri
 
-**Alt başlık (App Store, en fazla 30 karakter)**
+**Alt başlık (App Store, en fazla 30 karakter)** — adda geçmeyen arama kelimeleri
 ```
-Beslenme listen ve randevun
+Diyet listesi ve kilo takibi
 ```
 
 **Kısa açıklama (Google Play, en fazla 80 karakter)**
@@ -65,14 +67,18 @@ GÜVENLİK
 Uygulama bir beslenme ve kilo takip aracıdır; teşhis veya tedavi amacı taşımaz ve tıbbi tavsiye yerine geçmez. Beslenme planın diyetisyeninle yaptığın görüşmeye dayanır.
 ```
 
-**Anahtar kelimeler (App Store, en fazla 100 karakter, virgülle)**
+**Anahtar kelimeler (App Store, en fazla 100 karakter, virgülle, boşluksuz)** — App Store ad ve alt başlıktaki
+kelimeleri zaten arar; burada tekrarlanmaz (diyetisyen, nida, akın, beslenme, diyet, listesi, kilo, takibi):
 ```
-diyetisyen,beslenme,diyet,liste,randevu,tarif,pilates,kilo,sağlıklı,beslenme planı,danışan
+randevu,tarif,sağlıklı,öğün,porsiyon,kalori,ölçü,pilates,zayıflama,program,plan,danışan,esenyurt
 ```
 
 ## 3. Ekran görüntüleri
 
 Taslak ekran görüntüleri `docs/magaza/` klasöründedir (iOS 6.9" 1290×2796 ve Android 1080×1920).
+İlk iOS sürümü yalnızca iPhone içindir (`ios.supportsTablet: false`); bu yüzden App Store iPad ekran görüntüsü istemez.
+iPad desteği açılırsa 13" iPad (2064×2752) ekran görüntüleri eklenmelidir. iOS simgesi alpha kanalı olmadan
+`mobile/assets/images/icon-ios.png` dosyasındadır (App Store saydamlık kanalı olan simgeyi reddeder).
 Tarayıcı önizlemesinden demo verilerle üretilmiştir; mağazaya göndermeden önce **gerçek cihazdan**
 (geliştirme derlemesi + demo verili sunucu) yeniden alınması önerilir. Gerçek danışan verisi içeren
 ekran görüntüsü kullanmayın.
@@ -90,6 +96,16 @@ ekran görüntüsü kullanmayın.
 | Tanımlayıcılar → Cihaz kimliği | Bildirim adresi (push token) | Yalnızca bildirim izni verilirse |
 
 "İzleme" sorusu → **Hayır**. App Tracking Transparency istemi gerekmez.
+
+**Yaş derecelendirmesi (App Store):** tüm sorulara "Yok" (şiddet, cinsellik, kumar, kontrolsüz web erişimi yok;
+"Tıbbi/Tedavi Bilgisi" → Yok: beslenme listesi ve kilo takibi tıbbi tedavi bilgisi değildir) → **4+**. Kategori:
+**Sağlık ve Fitness**, ikincil kategori: **Yaşam Tarzı**.
+
+**Geliştirici notu (App Store yönergesi 5.1.1(ix)):** Apple, sağlık gibi düzenlenmiş alanlarda hizmet veren ve hassas
+veri işleyen uygulamaların bireysel geliştiriciyle değil, kurumsal (organization) hesapla yayımlanmasını bekler.
+Uygulama PaperAxis hesabından gönderilir; inceleme notunda uygulamanın bir diyetisyenin danışanları için beslenme
+takip aracı olduğu, teşhis/tedavi yapmadığı ve PaperAxis'in hizmeti geliştirici/veri işleyen olarak yürüttüğü
+belirtilmelidir. Ret gelirse Nida Akın adına kurumsal hesap (D-U-N-S) gerekir.
 
 **Şifreleme (Export Compliance):** `app.json` içinde `ITSAppUsesNonExemptEncryption: false` (yalnızca
 standart HTTPS kullanılır).
@@ -123,13 +139,20 @@ göstermeyin:
 
 1. Ayrı bir demo kurulum açın (`DEMO_MODE=true npm run db:seed:demo`) **ya da** üretimde yalnızca demo
    verisi görecek bir danışan hesabı oluşturun.
-2. İki hesap hazırlayın:
-   - Danışan: Panel → Danışanlar → (demo danışan) → Hesap → hesap aç → bağlantıyla şifre belirle.
-   - Personel: `ADMIN_ROLE=ASSISTANT npm run admin:create` (klinik veri görmeyen asistan rolü önerilir).
-3. İnceleme notuna yazın:
+2. Hazır hesaplar (şifreler depoda değil; `~/.nidaakin-mobil/demo-hesap.txt`):
+   - Danışan: `demo@nidaakin.com` — panelde **isDemo** işaretli "Demo Danışan"; örnek liste, ölçüm ve mesaj içerir.
+   - Personel: `inceleme@nidaakin.com` — **REVIEWER** rolü (`server/auth/reviewer.ts`): salt okunur, yalnızca demo
+     danışanları görür, bildirim almaz. Raporlar, denetim kaydı, kullanıcılar ve pilates grupları kapalıdır.
+3. İnceleme notu (İngilizce; App Store Connect → App Review Information → Notes):
    ```
-   Uygulamada iki giriş vardır. Danışan girişi: <e-posta> / <şifre>. Panel girişi (asistan rolü): <e-posta> / <şifre>.
-   Hesaplar diyetisyen tarafından açılır; uygulamada kayıt olunmaz. Bildirim izni isteğe bağlıdır.
+   There is no in-app sign-up: accounts are created by the dietitian. Two logins are provided.
+   Client login: on the welcome screen tap "Danışan girişi" — demo@nidaakin.com / <password>.
+   Staff login: tap "Nida Akın & ekip" — inceleme@nidaakin.com / <password>. This review account is read-only and
+   shows demo data only, because the staff panel handles real clients' health data.
+   Account deletion: Hesap (Account) → "Hesabımın ve verilerimin silinmesini iste". The request is recorded and the
+   dietitian completes it within 30 days, as required for records kept by a health professional.
+   Notifications are optional and asked for only after a consent screen. Face ID lock is optional.
+   The app is a nutrition and weight tracking tool for a dietitian's clients; it does not diagnose or treat.
    ```
 
 ## 7. Derleme ve gönderme
